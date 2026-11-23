@@ -56,6 +56,7 @@ function view() {
     state, c: theCase, wide: wideQuery.matches, remainingMs: remaining(), dev: DEV,
     reportStyle: 'sheet', // chosen 2026-11-23: the report as a document, signed at the bottom
     askWhere: 'tap', // chosen 2026-11-23: tap a hatch (opening) or a module (motion) on the map
+    briefStyle: 'txmix', briefTyped: true, // chosen 2026-11-23: NOVA's messages + rule cards
     quit: state.phase === 'play', quitOpen: state.quitOpen,
     saved: state.resume ? { code: state.code, phase: state.resume, remainingMs: remaining() } : null,
   };
@@ -116,7 +117,11 @@ function newGame(code) {
   state.font = keepFont;
   state.code = code || randomCode();
   theCase = generateCase(state.code);
-  state.phase = 'briefing';
+  // Decided 2026-11-23 (changes the brief): the oxygen runs from NOVA's first message. There is no
+  // separate briefing screen: the investigation opens on the BRIEFING tab with the timer running.
+  state.phase = 'play';
+  state.tab = 'briefing';
+  resumeTimer();
   render();
 }
 
@@ -130,7 +135,11 @@ function endGame(kind) {
 
 const ACTIONS = {
   'new-game': () => newGame(),
-  continue: () => { state.phase = state.resume; state.resume = null; render(); },
+  continue: () => {
+    // a game saved on the old briefing screen goes on in the investigation, briefing first
+    if (state.resume === 'briefing') { state.resume = 'play'; state.tab = 'briefing'; resumeTimer(); }
+    state.phase = state.resume; state.resume = null; render();
+  },
   quit: () => { state.quitOpen = true; render.keepScroll = true; render(); },
   'cancel-quit': () => { state.quitOpen = false; render.keepScroll = true; render(); },
   'confirm-quit': () => { state = newState(); theCase = null; render(); },
@@ -239,7 +248,7 @@ function onDevClick(e) {
   const k = b.dataset.dev;
   if (k === 'fold') { devEl.classList.toggle('is-folded'); renderDev(); return; }
   if (k === 'show') state.devShow = !state.devShow;
-  if (k === 'skip' && theCase) { state.phase = 'play'; resumeTimer(); }
+  if (k === 'skip' && theCase && state.phase === 'play') state.tab = 'reports';
   if (k === 'pause') { if (state.timer.since) pauseTimer(); else if (state.phase === 'play') resumeTimer(); }
   if (k === 'speed') setSpeed(Number(b.dataset.v));
   if (k === 'minus') { state.timer.elapsed += 60000; }

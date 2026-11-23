@@ -564,6 +564,7 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 
 /* mix: NOVA's voice, then four rule cards */
 .mix-voice { margin: 12px 0 16px; }
+.tx-voice { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
 .rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
 .rule { padding: 10px 12px; background: rgba(11, 18, 32, 0.55); border: 1px solid var(--line); }
 .rule .sub { margin: 0 0 8px; padding: 0; border: 0; }
@@ -582,6 +583,24 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .viz-o2 .o2 { font-family: var(--fd), 'IBM Plex Mono', monospace; font-size: calc(var(--ds) * 26px); line-height: 1; color: var(--cyan); }
 .viz-o2 .meter { display: flex; gap: 2px; width: 140px; }
 .viz-o2 .meter i { flex: 1; height: 12px; background: var(--cyan); }
+
+/* ---------- map detail (proposals, mocks) ---------- */
+.map .d-hull { fill: none; stroke: rgba(231, 237, 244, 0.22); stroke-width: 2; stroke-dasharray: 10 4; }
+.map .deco { pointer-events: none; }
+.map .d-obj { fill: rgba(231, 237, 244, 0.16); stroke: rgba(231, 237, 244, 0.4); stroke-width: 1; }
+.map .d-crate { fill: rgba(242, 184, 75, 0.14); stroke: rgba(242, 184, 75, 0.5); stroke-width: 1; }
+.map .d-dot { fill: rgba(242, 184, 75, 0.6); }
+.map .d-soft { fill: rgba(231, 237, 244, 0.45); }
+.map .d-band { fill: rgba(231, 237, 244, 0.35); }
+.map .d-screen { fill: rgba(67, 217, 210, 0.7); }
+.map .d-glass { fill: rgba(67, 217, 210, 0.55); }
+.map .d-light { fill: rgba(67, 217, 210, 0.5); }
+.map .d-broken { fill: rgba(228, 91, 97, 0.12); stroke: var(--red); stroke-width: 1; }
+.map .d-x { stroke: var(--red); stroke-width: 1.5; }
+.map .n-box { fill: var(--deep); stroke: var(--amber); stroke-width: 1.5; pointer-events: none; }
+.map .n-txt { font-family: var(--font-mono); font-size: 9px; font-weight: 600; fill: var(--amber); text-anchor: middle; pointer-events: none; }
+.hatch-legend { list-style: none; padding: 0; margin: 8px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 2px 12px; font: 12px var(--font-mono); color: rgba(231, 237, 244, 0.8); }
+.hatch-legend b { color: var(--amber); margin-right: 4px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

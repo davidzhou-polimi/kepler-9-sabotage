@@ -146,7 +146,8 @@ const briefDir = (key, title, note, style, rec = false) => ({
   ],
 });
 const BRIEF = {
-  id: 'briefing', title: 'Briefing',
+  id: 'briefing', title: 'Briefing', decided: 'A + C, senza avvio da Mission Control', chosen: 'AC',
+  answer: 'A+C · Una trasmissione (di A si prende il formato del messaggio al posto dei ">") le altre proposte bocciate, tipo la B, perché chiede a mission control di avviare la missione e il timer, ma che senso ha? il timer dovrebbe iniziare già da quando nova scrive a mission control',
   quote: '«it\'s just a wall of text, differenzia, dai una forma a mission control e nova» · «formatta i testi del briefing»',
   context: 'Le frasi sono quelle di oggi, parola per parola: cambiano la forma, i dati evidenziati in ambra (03:00, «One report is false», 2 questions, il codice, 10 minutes) e un volto per i due. NOVA ha un occhio in pixel ciano con «NOVA · STATION AI»; Mission Control, cioè i giocatori, una parabola in ambra con «MISSION CONTROL · NIGHT SHIFT», le parole già usate nella home. Le etichette nuove vengono dalle parole dell\'app: OXYGEN, QUESTIONS ed EMERGENCY CODE dalla barra in alto e dalla scheda del codice. Lo schema del codice mostra caselle vuote e non un esempio con un ID vero, perché un esempio con il 27 indicherebbe Doyun.',
   dirs: [
@@ -155,8 +156,42 @@ const BRIEF = {
       <p>Costo: restano sette blocchi di testo da leggere, solo meglio divisi.</p>`, 'tx'),
     briefDir('B', 'B · Un fascicolo', `<p>Un documento da NOVA a Mission Control: in testa mittente e destinatario, poi una riga per argomento con la sua etichetta (SITUATION_, SABOTEUR_, …) e, dove serve, un disegno: le due domande e il codice, lo schema del codice, l'ossigeno.</p>
       <p>Costo: è il più ordinato ma il più freddo; NOVA quasi non parla.</p>`, 'file'),
+    {
+      key: 'AC', title: 'A + C · Messaggi di NOVA e schede delle regole',
+      note: `<p>Il racconto di NOVA nei messaggi di A, al posto delle righe con «>»; le regole nelle schede di C. Nessun avvio da Mission Control: NEW GAME apre l'indagine sulla scheda BRIEFING con l'ossigeno che già scende.</p>`,
+      frames: [
+        cap('Telefono, appena dopo NEW GAME', phone({ state: { ...base(), phase: 'play', tab: 'briefing' }, briefStyle: 'txmix', remainingMs: 9 * MIN + 51000 })),
+        cap('Laptop (ridotto a metà)', laptop({ state: { ...base(), phase: 'play', tab: 'briefing' }, briefStyle: 'txmix', remainingMs: 9 * MIN + 51000 })),
+      ],
+    },
     briefDir('C', 'C · NOVA racconta, le regole diventano schede', `<p>NOVA racconta solo cosa è successo (quattro righe, scritte a macchina). Le regole diventano quattro schede con un disegno ciascuna: sensori, domande, codice, ossigeno. In fondo la striscia di Mission Control con <b>[ START MISSION ]</b>.</p>
       <p>Perché: separa la storia dalle regole, che sono le cose da ritrovare durante la partita (anche dalla scheda BRIEFING); e dà a ognuno dei due un posto preciso nella schermata.</p>`, 'mix', true),
+  ],
+};
+
+
+// ---------- map detail ----------
+
+// the app as it is now (decided pieces), with one map detail
+const NOW = { reportStyle: 'sheet', askWhere: 'tap', briefStyle: 'txmix' };
+const mapDir = (key, title, note, detail, rec = false) => ({
+  key, title, rec, note,
+  frames: [
+    cap('Scheda MAP', phone({ ...NOW, mapDetail: detail, state: { ...base(), phase: 'play', tab: 'map', mapSel: 'M-K' }, remainingMs: 7 * MIN }, { cls: 'btns-b' })),
+    cap('Ask NOVA', phone({ ...NOW, mapDetail: detail, state: { ...base(), phase: 'play', tab: 'ask', draft: { kind: 'hatch', what: 'M-K', a: 45, b: 60 } }, remainingMs: 7 * MIN }, { cls: 'btns-b', scroll: '120' })),
+    cap('Laptop (ridotto a metà)', laptop({ ...NOW, mapDetail: detail, state: { ...base(), phase: 'play', tab: 'map' }, remainingMs: 7 * MIN }, { cls: 'btns-b' })),
+  ],
+});
+const MAPD = {
+  id: 'mapdetail', title: 'Mappa più dettagliata',
+  quote: '«fai la mappa più dettagliata»',
+  context: 'La disposizione dei moduli, i portelli e le zone da toccare restano dove sono, in tutte le direzioni: cambia ciò che si vede dentro e attorno. Gli oggetti dentro i moduli sono disegno e non si toccano. Le schermate sono quelle dell\'app di adesso (pulsanti con la cornice, rapporti come documento, domande dalla mappa).',
+  dirs: [
+    mapDir('now', 'Oggi', '<p>Moduli vuoti con il nome, portelli, sensori di movimento.</p>', {}),
+    mapDir('A', 'A · Gli interni', `<p>Lo scafo della stazione attorno ai moduli e, in ogni modulo, pochi oggetti in pixel: la console e il vetro del Bridge, le pompe dell'Engine Room, il letto e la croce della Medbay, le casse della Cargo Bay, le bombole e il riciclatore rotto (in rosso) in Life Support, le luci a terra del Corridor.</p>
+      <p>Perché: dà luoghi veri alla storia (i rapporti parlano di pompe, scanner, inventario) senza aggiungere scritte.</p>`, { interior: true }, true),
+    mapDir('B', 'B · Portelli numerati', '<p>Ogni portello ha un numero e sotto la mappa c\'è la legenda con i nomi, gli stessi delle domande.</p><p>Costo: aggiunge informazioni più che dettaglio, e il nome del portello compare già toccandolo.</p>', { numbers: true }),
+    mapDir('C', 'C · Interni e portelli numerati', '<p>A e B insieme.</p>', { interior: true, numbers: true }),
   ],
 };
 
@@ -260,8 +295,8 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [BRIEF];
-const DECIDED = [BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const OPEN = [MAPD];
+const DECIDED = [BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">

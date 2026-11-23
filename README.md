@@ -21,7 +21,7 @@ Then open <http://localhost:8000>. Other pages:
 
 A game in progress is saved in the browser. Opening the page always shows the home: an open saved game is offered with `[ CONTINUE ]` next to `[ NEW GAME ]`, and during the game `[ QUIT ]` in the top bar ends it after a confirmation. The oxygen clock is wall-clock based, so it keeps running while the page is closed.
 
-The game ends on the solution with `[ NEW GAME ]`. The debrief questions are not in the app: they go on the scoreboard sheet, with the line asking teams to write their code and who they believed first.
+`[ NEW GAME ]` opens the investigation on the BRIEFING tab, and the 10 minutes of oxygen start right away, with NOVA's first message (decided 2026-11-23; the original brief started them on a START MISSION button). The game ends on the solution with `[ NEW GAME ]`. The debrief questions are not in the app: they go on the scoreboard sheet, with the line asking teams to write their code and who they believed first.
 
 ## Tests
 

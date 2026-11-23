@@ -137,8 +137,30 @@ const ROOMS = {
 };
 const HATCH_POS = { 'C-B': [126, 45, 'h'], 'B-K': [190, 93, 'v'], 'N-K': [126, 141, 'h'], 'M-K': [254, 141, 'h'], 'L-K': [190, 189, 'v'] };
 
+// Map detail proposals (mocks only until one is chosen): interior objects and hull; numbered hatches.
+const r = (x, y, w, h, c) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" class="${c}"/>`;
+const DECO = {
+  C: r(20, 52, 14, 14, 'd-crate') + r(35, 52, 14, 14, 'd-crate') + r(27, 38, 14, 13, 'd-crate') + r(52, 58, 10, 8, 'd-crate')
+    + r(26, 58, 2, 2, 'd-dot') + r(41, 58, 2, 2, 'd-dot') + r(33, 43, 2, 2, 'd-dot'),
+  B: r(170, 14, 40, 3, 'd-glass') + r(152, 44, 56, 7, 'd-obj') + [155, 167, 179, 191].map((x) => r(x, 45, 9, 3, 'd-screen')).join('')
+    + r(162, 58, 8, 8, 'd-obj') + r(186, 58, 8, 8, 'd-obj'),
+  N: r(20, 132, 16, 22, 'd-obj') + r(42, 132, 16, 22, 'd-obj') + r(20, 138, 16, 2, 'd-band') + r(42, 138, 16, 2, 'd-band')
+    + r(20, 146, 16, 2, 'd-band') + r(42, 146, 16, 2, 'd-band') + r(36, 141, 6, 4, 'd-obj') + r(26, 126, 4, 6, 'd-obj')
+    + r(64, 138, 12, 12, 'd-obj') + r(68, 142, 4, 4, 'd-screen'),
+  K: [148, 158, 168, 178, 188, 198, 208].map((x) => r(x, 152, 4, 3, 'd-light')).join(''),
+  M: r(274, 140, 36, 12, 'd-obj') + r(274, 140, 9, 12, 'd-soft') + r(324, 128, 4, 12, 'd-screen') + r(320, 132, 12, 4, 'd-screen')
+    + r(290, 130, 14, 6, 'd-obj'),
+  L: r(146, 243, 9, 12, 'd-obj') + r(158, 243, 9, 12, 'd-obj') + r(170, 243, 9, 12, 'd-obj')
+    + r(146, 243, 9, 3, 'd-soft') + r(158, 243, 9, 3, 'd-soft') + r(170, 243, 9, 3, 'd-soft')
+    + r(200, 242, 32, 12, 'd-broken') + `<line x1="202" y1="244" x2="230" y2="252" class="d-x"/><line x1="230" y1="244" x2="202" y2="252" class="d-x"/>`,
+};
+const HATCH_NUM = Object.fromEntries(HATCHES.map((h, i) => [h, i + 1]));
+const NUM_POS = { 'C-B': [126, 31], 'B-K': [206, 93], 'N-K': [126, 127], 'M-K': [254, 127], 'L-K': [206, 189] };
+export const hatchLegend = () => `<ol class="hatch-legend">${HATCHES.map((h) => `<li><b>${HATCH_NUM[h]}</b> ${HATCH_NAME[h]}</li>`).join('')}</ol>`;
+
 // opts.act: action of a tap; opts.only: 'hatch' or 'room' keeps only those tappable (the others are dimmed)
-export function mapSvg(sel, { act = 'map-sel', only = null, cls = '' } = {}) {
+// opts.detail: { interior, numbers }
+export function mapSvg(sel, { act = 'map-sel', only = null, cls = '', detail = {} } = {}) {
   const tap = (kind, id, label) => (only && only !== kind ? 'class-dim' : `data-act="${act}" data-id="${id}" tabindex="0" role="button" aria-label="${label}"`);
   const room = (m) => {
     const [x, y, w, h] = ROOMS[m];
@@ -164,10 +186,16 @@ export function mapSvg(sel, { act = 'map-sel', only = null, cls = '' } = {}) {
     </g>`;
   };
   const conn = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="conn"/>`;
-  return `<svg class="map ${cls}" viewBox="0 0 360 270" shape-rendering="crispEdges">
+  const hull = detail.interior ? '<rect x="4" y="6" width="352" height="258" class="d-hull"/>' : '';
+  const deco = detail.interior ? `<g class="deco">${Object.values(DECO).join('')}</g>` : '';
+  const nums = detail.numbers ? `<g class="nums">${HATCHES.map((h) => { const [x, y] = NUM_POS[h]; return `<rect x="${x - 6}" y="${y - 6}" width="12" height="12" class="n-box"/><text x="${x}" y="${y + 3}" class="n-txt">${HATCH_NUM[h]}</text>`; }).join('')}</g>` : '';
+  return `<svg class="map ${cls} ${detail.interior ? 'map-interior' : ''}" viewBox="0 0 360 270" shape-rendering="crispEdges">
+    ${hull}
     ${conn(112, 45, 140, 45)}${conn(190, 76, 190, 110)}${conn(112, 141, 140, 141)}${conn(240, 141, 268, 141)}${conn(190, 172, 190, 206)}
     ${['C', 'B', 'N', 'K', 'M', 'L'].map(room).join('')}
+    ${deco}
     ${HATCHES.map(hatch).join('')}
+    ${nums}
   </svg>`;
 }
 
@@ -179,9 +207,10 @@ function mapInfo(sel) {
   return `> ${MOD_NAME[sel].toUpperCase()}: motion sensor online. Logs whether anything moved, never who.`;
 }
 
-export function mapPanel(sel, { title = 'STATION MAP' } = {}) {
+export function mapPanel(sel, { title = 'STATION MAP', detail = {} } = {}) {
   return win(title, `
-    ${mapSvg(sel)}
+    ${mapSvg(sel, { detail })}
+    ${detail.numbers ? hatchLegend() : ''}
     <div class="legend"><span><i class="lg lg-hatch"></i>Hatch</span><span><i class="lg lg-sensor"></i>Motion sensor</span><span><i class="lg lg-off"></i>Offline</span></div>
     ${log([esc(mapInfo(sel))], 'map-info')}`, { cls: 'win-map' });
 }
@@ -228,7 +257,22 @@ const whoMc = `<span class="who who-mc"><b>MISSION CONTROL</b><span>NIGHT SHIFT<
 //   'tx':   a transmission: NOVA's messages, Mission Control answers with START MISSION
 //   'file': a file from NOVA to Mission Control, one labelled row per rule
 //   'mix':  NOVA tells what happened; the rules become four cards; Mission Control starts
+//   'txmix' chosen 2026-11-23 (A + C): NOVA tells what happened in A's messages, the rules are C's cards,
+//           no start button: the oxygen runs from NOVA's first message
 export function briefingPanel({ typed = true, style = 'now', start = false } = {}) {
+  if (style === 'txmix') {
+    const msg = (ids) => `<div class="msg msg-nova"><div class="bubble">${ids.map((id) => `<p>${keyed(BP[id])}</p>`).join('')}</div></div>`;
+    const card = (title, id, viz) => `<div class="rule"><h3 class="sub">${title}</h3>${viz()}<p>${keyed(BP[id])}</p></div>`;
+    return win('NOVA // BRIEFING', `
+      <div class="tx">
+        ${whoNova}
+        <div class="tx-voice ${typed ? 'type-me' : ''}" data-type-key="briefing">${msg(['hello', 'situation'])}${msg(['saboteur', 'reports'])}</div>
+      </div>
+      <div class="rules">
+        ${card('SENSORS', 'sensors', sensorVisual)}${card('QUESTIONS', 'link', linkVisual)}
+        ${card('EMERGENCY CODE', 'code', codeVisual)}${card('OXYGEN', 'oxygen', oxygenVisual)}
+      </div>`, { cls: 'win-briefing win-mix' });
+  }
   if (style === 'tx') {
     const msg = (ids) => `<div class="msg msg-nova"><div class="bubble">${ids.map((id) => `<p>${keyed(BP[id])}</p>`).join('')}</div></div>`;
     return win('NOVA // BRIEFING', `
@@ -269,7 +313,7 @@ export function briefingPanel({ typed = true, style = 'now', start = false } = {
 //   'map':  sensor toggle + map, only the places of that sensor tappable
 //   'both': sensor toggle + map + list, kept in sync
 //   'tap':  no toggle: tap a hatch to ask if it opened, a module to ask about motion
-export function askPanel(state, c, where = 'chips') {
+export function askPanel(state, c, where = 'chips', detail = {}) {
   const used = state.log.length;
   const left = MAX_QUESTIONS - used;
   const d = state.draft;
@@ -291,7 +335,8 @@ export function askPanel(state, c, where = 'chips') {
     </div>`;
   const mapField = (only, hint) => `
     <div class="field"><span class="label">WHERE_</span>
-      ${mapSvg(d.what, { act: where === 'tap' ? 'draft-place' : 'draft-what', only, cls: 'map-pick' })}
+      ${mapSvg(d.what, { act: where === 'tap' ? 'draft-place' : 'draft-what', only, cls: 'map-pick', detail })}
+      ${detail.numbers ? hatchLegend() : ''}
       ${hint ? `<p class="hint map-hint">${hint}</p>` : ''}
     </div>`;
   const placeFields = {
@@ -423,10 +468,10 @@ export function screenPlay(view) {
   if (wide && tab === 'reports') tab = 'ask';
   const panel = {
     reports: () => reportsPanel(c, view.reportStyle || 'card'),
-    map: () => mapPanel(state.mapSel),
-    ask: () => askPanel(state, c, view.askWhere),
+    map: () => mapPanel(state.mapSel, { detail: view.mapDetail || {} }),
+    ask: () => askPanel(state, c, view.askWhere, view.mapDetail || {}),
     code: () => codePanel(state),
-    briefing: () => briefingPanel({ typed: false, style: view.briefStyle || 'now' }),
+    briefing: () => briefingPanel({ typed: Boolean(view.briefTyped), style: view.briefStyle || 'now' }),
   }[tab]();
   const tabs = TABS.filter(([k]) => !(wide && k === 'reports'));
   const critical = view.remainingMs <= 60000;
