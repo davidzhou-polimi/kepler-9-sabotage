@@ -76,10 +76,44 @@ export function reportBlock(c, p) {
   </article>`;
 }
 
-export function reportsPanel(c) {
+// Report block proposals (mocks only until one is chosen): the report text leads, the data follows.
+//   lead:  number, small portrait and name in one row above the text
+//   sheet: the report as a light document; who wrote it comes after the text, as a signature
+//   tag:   a small ID-card fragment (portrait + name bar) beside the text
+function reportAlt(c, p, style) {
+  const P = PEOPLE[p];
+  const n = String(c.order.indexOf(p) + 1).padStart(2, '0');
+  const body = `<p class="rep-body ${P.human ? '' : 'is-machine'}">${esc(renderReport(c, p))}</p>`;
+  // role, separator and ID never break apart: a line never ends up holding only "ID 55"
+  const meta = `${esc(P.role.toUpperCase()).replace(/ /g, '&nbsp;')}&nbsp;·&nbsp;ID&nbsp;${P.id}`;
+  const who = `<span class="rep-who"><b class="rep-name">${esc(P.name.toUpperCase())}</b><span class="rep-meta">${meta}</span></span>`;
+  const prof = `type="button" data-act="profile" data-p="${p}" aria-label="Profile of ${esc(P.name)}"`;
+  if (style === 'lead') {
+    return `<article class="rep rep-lead">
+      <button class="rep-head" ${prof}><span class="rep-n">${n}</span><span class="rep-face">${portraitSvg(p)}</span>${who}</button>
+      ${body}
+    </article>`;
+  }
+  if (style === 'sheet') {
+    return `<article class="rep rep-sheet">
+      <div class="sheet-top">REPORT <b>${n}</b></div>
+      ${body}
+      <button class="sheet-sign" ${prof}><span class="rep-face">${portraitSvg(p)}</span>${who}</button>
+    </article>`;
+  }
+  return `<article class="rep rep-tag">
+    <button class="tag" ${prof}><span class="tag-photo">${portraitSvg(p)}</span><span class="tag-name">${esc(P.short.toUpperCase())}</span></button>
+    <div class="tag-main"><div class="rep-meta">REPORT&nbsp;<b>${n}</b> · ${meta}</div>${body}</div>
+  </article>`;
+}
+
+const REPORT_HINT = { card: 'Tap a card for the profile.', lead: 'Tap a name for the profile.', sheet: 'Tap a signature for the profile.', tag: 'Tap a card for the profile.' };
+
+export function reportsPanel(c, style = 'card') {
+  const block = (p) => (style === 'card' ? reportBlock(c, p) : reportAlt(c, p, style));
   return win('CREW REPORTS', `
-    <p class="hint">Tap a card for the profile.</p>
-    <div class="reports">${c.order.map((p) => reportBlock(c, p)).join('')}</div>`, { cls: 'win-reports' });
+    <p class="hint">${REPORT_HINT[style]}</p>
+    <div class="reports reports-${style}">${c.order.map(block).join('')}</div>`, { cls: 'win-reports' });
 }
 
 export function profileModal(c, p) {
@@ -103,12 +137,15 @@ const ROOMS = {
 };
 const HATCH_POS = { 'C-B': [126, 45, 'h'], 'B-K': [190, 93, 'v'], 'N-K': [126, 141, 'h'], 'M-K': [254, 141, 'h'], 'L-K': [190, 189, 'v'] };
 
-export function mapSvg(sel) {
+// opts.act: action of a tap; opts.only: 'hatch' or 'room' keeps only those tappable (the others are dimmed)
+export function mapSvg(sel, { act = 'map-sel', only = null, cls = '' } = {}) {
+  const tap = (kind, id, label) => (only && only !== kind ? 'class-dim' : `data-act="${act}" data-id="${id}" tabindex="0" role="button" aria-label="${label}"`);
   const room = (m) => {
     const [x, y, w, h] = ROOMS[m];
     const off = m === 'L';
     const isSel = sel === m;
-    return `<g class="room ${off ? 'is-off' : ''} ${isSel ? 'is-sel' : ''}" data-act="map-sel" data-id="${m}" tabindex="0" role="button" aria-label="${MOD_NAME[m]}">
+    const t = tap('room', m, MOD_NAME[m]);
+    return `<g class="room ${off ? 'is-off' : ''} ${isSel ? 'is-sel' : ''} ${t === 'class-dim' ? 'is-dim' : ''}" ${t === 'class-dim' ? '' : t}>
       <rect x="${x}" y="${y}" width="${w}" height="${h}"/>
       <text x="${x + 6}" y="${y + 15}" class="room-name">${MOD_NAME[m].toUpperCase()}</text>
       ${off ? `<text x="${x + 6}" y="${y + 32}" class="room-off">SENSORS OFFLINE</text>`
@@ -119,13 +156,15 @@ export function mapSvg(sel) {
     const [x, y, o] = HATCH_POS[h];
     const off = h === 'L-K';
     const w = o === 'h' ? 28 : 12, hh = o === 'h' ? 12 : 28;
-    return `<g class="hatch ${off ? 'is-off' : ''} ${sel === h ? 'is-sel' : ''}" data-act="map-sel" data-id="${h}" tabindex="0" role="button" aria-label="${HATCH_NAME[h]} hatch">
+    const t = tap('hatch', h, `${HATCH_NAME[h]} hatch`);
+    return `<g class="hatch ${off ? 'is-off' : ''} ${sel === h ? 'is-sel' : ''} ${t === 'class-dim' ? 'is-dim' : ''}" ${t === 'class-dim' ? '' : t}>
       <rect x="${x - w / 2}" y="${y - hh / 2}" width="${w}" height="${hh}"/>
       <rect x="${x - 2}" y="${y - 2}" width="4" height="4" class="hatch-core"/>
+      <rect x="${x - 20}" y="${y - 20}" width="40" height="40" class="hit"/>
     </g>`;
   };
   const conn = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="conn"/>`;
-  return `<svg class="map" viewBox="0 0 360 270" shape-rendering="crispEdges">
+  return `<svg class="map ${cls}" viewBox="0 0 360 270" shape-rendering="crispEdges">
     ${conn(112, 45, 140, 45)}${conn(190, 76, 190, 110)}${conn(112, 141, 140, 141)}${conn(240, 141, 268, 141)}${conn(190, 172, 190, 206)}
     ${['C', 'B', 'N', 'K', 'M', 'L'].map(room).join('')}
     ${HATCHES.map(hatch).join('')}
@@ -155,7 +194,12 @@ export function briefingPanel({ typed = true } = {}) {
 
 // ---------- ask NOVA ----------
 
-export function askPanel(state, c) {
+// where (proposals for asking from the map, mocks only until one is chosen):
+//   'chips' today: sensor toggle + list of names
+//   'map':  sensor toggle + map, only the places of that sensor tappable
+//   'both': sensor toggle + map + list, kept in sync
+//   'tap':  no toggle: tap a hatch to ask if it opened, a module to ask about motion
+export function askPanel(state, c, where = 'chips') {
   const used = state.log.length;
   const left = MAX_QUESTIONS - used;
   const d = state.draft;
@@ -164,21 +208,36 @@ export function askPanel(state, c) {
   const valid = d.b > d.a && Boolean(d.what);
   const q = { kind: d.kind, what: d.what, a: d.a, b: d.b };
 
-  const builder = left > 0 ? `
+  const kindField = `
     <div class="field"><span class="label">SENSOR_</span>
       <div class="seg">
         ${btn('HATCH OPENING', 'draft-kind', { cls: d.kind === 'hatch' ? 'is-on' : '', attrs: 'data-v="hatch"' })}
         ${btn('MOTION', 'draft-kind', { cls: d.kind === 'motion' ? 'is-on' : '', attrs: 'data-v="motion"' })}
       </div>
-    </div>
+    </div>`;
+  const chipsField = `
     <div class="field"><span class="label">WHERE_</span>
       <div class="chips">${choices.map(([v, label]) => `<button type="button" class="chip ${v === d.what ? 'is-on' : ''} ${v === 'L' || v === 'L-K' ? 'is-off' : ''}" data-act="draft-what" data-v="${v}">${esc(label)}</button>`).join('')}</div>
-    </div>
+    </div>`;
+  const mapField = (only, hint) => `
+    <div class="field"><span class="label">WHERE_</span>
+      ${mapSvg(d.what, { act: where === 'tap' ? 'draft-place' : 'draft-what', only, cls: 'map-pick' })}
+      ${hint ? `<p class="hint map-hint">${hint}</p>` : ''}
+    </div>`;
+  const placeFields = {
+    chips: () => kindField + chipsField,
+    map: () => kindField + mapField(d.kind === 'hatch' ? 'hatch' : 'room'),
+    both: () => kindField + mapField(d.kind === 'hatch' ? 'hatch' : 'room') + chipsField.replace('<span class="label">WHERE_</span>', ''),
+    tap: () => mapField(null, 'Tap a hatch to ask if it opened, or a module to ask about motion.'),
+  }[where]();
+
+  const builder = left > 0 ? `
+    ${placeFields}
     <div class="field field-time"><span class="label">TIME_</span>
       <label>From <select data-field="a">${GRID.slice(0, -1).map((v) => opt(v, d.a)).join('')}</select></label>
       <label>To <select data-field="b">${GRID.slice(1).map((v) => opt(v, d.b)).join('')}</select></label>
     </div>
-    <div class="preview">&gt; ${!d.what ? `Choose ${d.kind === 'hatch' ? 'a hatch' : 'a module'}.` : d.b <= d.a ? 'The end of the window must come after the start.' : esc(questionText(q))}</div>
+    <div class="preview">&gt; ${!d.what ? (where === 'tap' ? 'Tap a hatch or a module.' : `Choose ${d.kind === 'hatch' ? 'a hatch' : 'a module'}.`) : d.b <= d.a ? 'The end of the window must come after the start.' : esc(questionText(q))}</div>
     <div class="actions">${btn(`SEND QUESTION`, 'send-question', { cls: 'btn-primary', disabled: !valid })}
       <span class="note">Uses 1 of ${MAX_QUESTIONS}. ${left} left.</span></div>`
     : log(['&gt; Link capacity reached. Only the emergency code can still be sent.'], 'nova');
@@ -215,7 +274,13 @@ export function codePanel(state) {
 
 // ---------- screens ----------
 
-export function screenHome() {
+// view.saved: { code, phase, remainingMs } of a saved game, offered on the home (reset A)
+export function screenHome(view = {}) {
+  const s = view.saved;
+  const open = s && (s.phase === 'briefing' || s.phase === 'play');
+  const caseLines = !s ? ['&gt; Awaiting Mission Control']
+    : open ? [`&gt; Case ${esc(s.code)}: in progress`, ...(s.phase === 'play' ? [`&gt; Oxygen: <span data-timer>${fmtClock(s.remainingMs)}</span>`] : [])]
+    : [`&gt; Case ${esc(s.code)}: closed`];
   return `<main class="screen screen-home">
     <div class="home-top"><span>NOVA // STATION AI</span><span>LINK: UNSTABLE</span></div>
     <div class="home-title">
@@ -223,9 +288,10 @@ export function screenHome() {
       <h1 class="title">KEPLER-9</h1>
       <p class="title-sub">SABOTAGE</p>
     </div>
-    ${log(['&gt; Oxygen recycler test: in progress', '&gt; Crew aboard: 4', '&gt; Awaiting Mission Control'], 'home-log')}
+    ${log(['&gt; Oxygen recycler test: in progress', '&gt; Crew aboard: 4', ...caseLines], 'home-log')}
     <div class="menu">
-      ${btn('NEW GAME', 'new-game', { cls: 'btn-primary' })}
+      ${open ? btn('CONTINUE', 'continue', { cls: 'btn-primary' }) : ''}
+      ${btn('NEW GAME', 'new-game', { cls: open ? '' : 'btn-primary' })}
     </div>
   </main>`;
 }
@@ -262,6 +328,18 @@ export function statusBar(view) {
       <span class="status-num">${left}/${MAX_QUESTIONS}</span>
     </div>
     <div class="status-case">CASE ${esc(c.code)}</div>
+    ${view.quit ? btn('QUIT', 'quit', { cls: 'btn-quit' }) : ''}
+  </div>`;
+}
+
+// Reset B: QUIT in the status bar, with a confirmation inside the page.
+export function quitModal(c) {
+  return `<div class="modal" data-act="cancel-quit">
+    <div class="modal-inner" data-stop>
+      ${win('QUIT GAME', `
+        <p>Case ${esc(c.code)} will be lost.</p>
+        <div class="actions">${btn('QUIT', 'confirm-quit', { cls: 'btn-danger' })}${btn('CANCEL', 'cancel-quit')}</div>`, { tone: 'amber' })}
+    </div>
   </div>`;
 }
 
@@ -272,9 +350,9 @@ export function screenPlay(view) {
   let tab = state.tab;
   if (wide && tab === 'reports') tab = 'ask';
   const panel = {
-    reports: () => reportsPanel(c),
+    reports: () => reportsPanel(c, view.reportStyle || 'card'),
     map: () => mapPanel(state.mapSel),
-    ask: () => askPanel(state, c),
+    ask: () => askPanel(state, c, view.askWhere),
     code: () => codePanel(state),
     briefing: () => briefingPanel({ typed: false }),
   }[tab]();
@@ -282,15 +360,16 @@ export function screenPlay(view) {
   const critical = view.remainingMs <= 60000;
   return `<main class="screen screen-play">
     ${statusBar(view)}
-    ${critical ? `<div class="alarm-strip" role="alert">${warningIcon()}<span>OXYGEN CRITICAL // LESS THAN ONE MINUTE</span></div>` : ''}
+    ${critical ? `<div class="alarm-strip" role="alert">${warningIcon()}<span>OXYGEN CRITICAL // LESS&nbsp;THAN&nbsp;ONE&nbsp;MINUTE</span></div>` : ''}
     <div class="play ${wide ? 'play-wide' : ''}">
-      ${wide ? `<div class="play-left">${reportsPanel(c)}</div>` : ''}
+      ${wide ? `<div class="play-left">${reportsPanel(c, view.reportStyle || 'card')}</div>` : ''}
       <div class="play-right">
         <nav class="tabs">${tabs.map(([k, label]) => `<button type="button" class="tab ${k === tab ? 'is-on' : ''}" data-act="tab" data-v="${k}">${label}</button>`).join('')}</nav>
         ${panel}
       </div>
     </div>
     ${state.profile ? profileModal(c, state.profile) : ''}
+    ${view.quitOpen ? quitModal(c) : ''}
   </main>`;
 }
 

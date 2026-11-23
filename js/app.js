@@ -52,7 +52,12 @@ function setSpeed(speed) {
 // ---------- render ----------
 
 function view() {
-  return { state, c: theCase, wide: wideQuery.matches, remainingMs: remaining(), dev: DEV };
+  return {
+    state, c: theCase, wide: wideQuery.matches, remainingMs: remaining(), dev: DEV,
+    reportStyle: 'sheet', // chosen 2026-11-23: the report as a document, signed at the bottom
+    quit: state.phase === 'play', quitOpen: state.quitOpen,
+    saved: state.resume ? { code: state.code, phase: state.resume, remainingMs: remaining() } : null,
+  };
 }
 
 let lastCritical = null;
@@ -62,6 +67,8 @@ function render() {
   render.keepScroll = false;
   root.innerHTML = screen(view());
   document.body.classList.toggle('emergency', isRed());
+  // last minute: alarm frame and hazard stripes; the windows keep their colours
+  document.body.classList.toggle('alarm', state.phase === 'play' && remaining() <= 60000);
   lastCritical = remaining() <= 60000;
   typeIn(root);
   if (DEV) renderDev();
@@ -91,6 +98,11 @@ function tick() {
     meter.forEach((m, i) => m.classList.toggle('on', i < on));
     if ((ms <= 60000) !== lastCritical) { render.keepScroll = true; render(); }
   }
+  if (state.phase === 'home' && state.resume === 'play') {
+    // the home shows the oxygen of the saved game: it keeps running
+    const el = root.querySelector('[data-timer]');
+    if (el) el.textContent = fmtClock(remaining());
+  }
   if (DEV) updateDevClock();
 }
 setInterval(tick, 250);
@@ -117,6 +129,10 @@ function endGame(kind) {
 
 const ACTIONS = {
   'new-game': () => newGame(),
+  continue: () => { state.phase = state.resume; state.resume = null; render(); },
+  quit: () => { state.quitOpen = true; render.keepScroll = true; render(); },
+  'cancel-quit': () => { state.quitOpen = false; render.keepScroll = true; render(); },
+  'confirm-quit': () => { state = newState(); theCase = null; render(); },
   'start-mission': () => { state.phase = 'play'; state.tab = 'reports'; state.mapSel = null; resumeTimer(); render(); },
   tab: (el) => { state.tab = el.dataset.v; state.confirming = false; render(); },
   profile: (el) => { state.profile = el.dataset.p; render.keepScroll = true; render(); },
@@ -151,7 +167,7 @@ root.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
   if (!el || !root.contains(el)) return;
   // clicks inside a modal window don't close it, except on its own buttons
-  if (el.dataset.act === 'close-modal' && el.classList.contains('modal') && e.target.closest('[data-stop]')) return;
+  if (el.classList.contains('modal') && e.target.closest('[data-stop]')) return;
   if (el.disabled) return;
   const f = ACTIONS[el.dataset.act];
   if (f) { e.preventDefault(); f(el); }
@@ -159,6 +175,7 @@ root.addEventListener('click', (e) => {
 root.addEventListener('keydown', (e) => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('g[data-act]')) { e.preventDefault(); ACTIONS[e.target.dataset.act]?.(e.target); }
   if (e.key === 'Escape' && state.profile) ACTIONS['close-modal']();
+  if (e.key === 'Escape' && state.quitOpen) ACTIONS['cancel-quit']();
   if (e.key === 'Enter' && e.target.matches('[data-field="code"]')) ACTIONS['send-code']();
 });
 root.addEventListener('change', (e) => {
@@ -235,7 +252,14 @@ function onDevClick(e) {
 
 initFontSwitch();
 initStars(document.getElementById('stars'));
-// A saved game resumes where it was. The oxygen clock is wall-clock based: it kept running while the page was closed.
+// Opening the page always shows the home (reset, chosen 2026-11-23: A + B). A saved game is offered with
+// CONTINUE if still open. The oxygen clock is wall-clock based: it kept running while the page was closed.
+if (state.code && state.phase !== 'home') {
+  state.resume = state.phase;
+  state.phase = 'home';
+  state.quitOpen = false;
+  state.profile = null;
+}
 render();
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !DEV) {

@@ -220,6 +220,7 @@ button { font: inherit; color: inherit; }
 .pips i.on { background: var(--amber); }
 .status-num { font-size: 13px; color: var(--amber); }
 .status-case { font-size: 11px; color: rgba(231, 237, 244, 0.55); margin-left: auto; }
+.btn-quit { min-height: 34px; padding: 4px 8px; font-size: calc(var(--ds) * 15px); }
 
 .emergency .timer { color: var(--red); animation: blink 1s steps(1) infinite; }
 .emergency .meter i { border-color: rgba(228, 91, 97, 0.5); }
@@ -305,6 +306,7 @@ button.idcard:hover, button.idcard:focus-visible { outline: 3px solid var(--cyan
 .map .sensor .sensor-core { fill: var(--cyan); stroke: none; }
 .map .hatch rect { fill: var(--amber); }
 .map .hatch .hatch-core { fill: var(--deep); }
+.map .hatch .hit { fill: transparent; } /* a touch area larger than the drawn hatch */
 .map .hatch.is-off rect:first-child { fill: var(--red); }
 .map [data-act] { cursor: pointer; outline: none; }
 .map .room.is-sel rect:first-child, .map .room:focus-visible rect:first-child { stroke: var(--cyan); stroke-width: 3; }
@@ -412,6 +414,128 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .dev input { font: inherit; background: var(--deep); color: var(--star); border: 1px solid var(--line-strong); padding: 3px 6px; width: 90px; }
 .dev-sol b { color: var(--amber); }
 .dev-note { color: rgba(231, 237, 244, 0.5); }
+
+/* ---------- report block proposals (mocks) ---------- */
+
+.rep-body { margin: 0; font-size: 18px; line-height: 1.6; }
+.rep-body.is-machine { font-family: var(--font-mono); font-size: 15px; letter-spacing: 0.02em; line-height: 1.65; }
+.rep-face { flex: none; display: grid; place-items: center; width: 44px; height: 44px; background: var(--star); }
+.rep-face .portrait { width: 36px; height: 36px; }
+.rep-who { display: flex; flex-direction: column; min-width: 0; text-align: left; }
+.rep-name { font-family: var(--fd), 'IBM Plex Mono', monospace; font-weight: 400; font-size: calc(var(--ds) * 17px); line-height: 1.1; letter-spacing: 0.03em; }
+.rep-meta { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: rgba(231, 237, 244, 0.65); }
+.rep-meta b { color: var(--cyan); font-weight: 600; }
+.rep button { font: inherit; color: inherit; cursor: pointer; }
+.rep button:hover .rep-name, .rep button:focus-visible .rep-name { color: var(--cyan); }
+.rep button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+/* lead: one row of data, then the text */
+.reports-lead { gap: 0; }
+.rep-lead { padding: 16px 0; border-top: 1px solid var(--line); }
+.rep-lead:first-child { border-top: 0; padding-top: 4px; }
+.rep-head { display: flex; align-items: center; gap: 10px; padding: 0; margin-bottom: 10px; background: none; border: 0; }
+.rep-n { font-family: var(--fd), 'IBM Plex Mono', monospace; font-size: calc(var(--ds) * 30px); line-height: 1; color: var(--cyan); min-width: 1.4em; }
+
+/* sheet: a light document, signed at the bottom */
+.reports-sheet { gap: 16px; }
+.rep-sheet { background: var(--star); color: var(--ink); box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.45); }
+.sheet-top { background: var(--ink); color: var(--star); margin: 6px 6px 0; padding: 5px 10px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; }
+.sheet-top b { font-size: 14px; margin-left: 4px; }
+.rep-sheet .rep-body { padding: 14px 16px 12px; color: var(--ink); }
+.sheet-sign { display: flex; align-items: center; gap: 10px; width: calc(100% - 12px); margin: 0 6px 6px; padding: 8px 10px; background: rgba(11, 18, 32, 0.08); border: 0; border-top: 2px solid var(--ink); }
+.rep-sheet .rep-face { background: transparent; border: 2px solid var(--ink); }
+.rep-sheet .rep-meta { color: rgba(11, 18, 32, 0.7); }
+.rep-sheet button:hover .rep-name, .rep-sheet button:focus-visible .rep-name { color: var(--cyan-ink); }
+
+/* tag: a small ID-card fragment beside the text */
+.reports-tag { gap: 20px; }
+.rep-tag { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 14px; align-items: start; }
+.tag { display: flex; flex-direction: column; padding: 4px; background: var(--star); border: 0; box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45); }
+.tag-photo { display: grid; place-items: center; padding: 4px; border: 2px solid var(--ink); border-bottom: 0; }
+.tag-photo .portrait { width: 56px; height: 56px; }
+.tag-name { display: block; background: var(--ink); color: var(--star); font-family: var(--fd), 'IBM Plex Mono', monospace; font-size: calc(var(--ds) * 14px); line-height: 1; padding: 5px 2px 4px; text-align: center; }
+.tag:hover, .tag:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.tag-main .rep-meta { margin-bottom: 6px; }
+
+/* ---------- last-minute danger proposals (mocks): added to .emergency ---------- */
+/* In all three the timer never disappears: it alternates red and white. */
+.crit-a .timer, .crit-b .timer { animation: timer-alarm 1s steps(1) infinite; }
+@keyframes timer-alarm { 50% { color: var(--star); } }
+
+/* a: everything turns red (the cyan of data and interactions becomes red) */
+.crit-a {
+  --cyan: var(--red);
+  --line: rgba(228, 91, 97, 0.32);
+  --line-strong: rgba(228, 91, 97, 0.7);
+  --panel: rgba(48, 20, 30, 0.94);
+  --bar: #2A1019;
+}
+
+/* b: a pulsing alarm frame around the whole screen, colours unchanged */
+.crit-b::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 15;
+  box-shadow: inset 0 0 0 4px var(--red), inset 0 0 160px 24px rgba(228, 91, 97, 0.5);
+  animation: alarm-pulse 1.2s ease-in-out infinite;
+}
+@keyframes alarm-pulse { 50% { opacity: 0.3; } }
+.crit-b .alarm-strip { animation: strip-pulse 1.2s ease-in-out infinite; }
+@keyframes strip-pulse { 50% { background: rgba(228, 91, 97, 0.32); } }
+
+/* c: critical error, a + b, with hazard stripes and red title bars, like the error reference */
+.crit-c .status {
+  background: repeating-linear-gradient(-45deg, rgba(228, 91, 97, 0.2) 0 10px, transparent 10px 20px), rgba(30, 10, 16, 0.96);
+}
+.crit-c .alarm-strip { background: var(--red); color: var(--deep); animation: none; }
+.crit-c .alarm-strip .warn-icon { fill: var(--deep); }
+.crit-c .win-bar { background: var(--red); border-bottom-color: var(--red); }
+.crit-c .win-title { color: var(--deep); }
+.crit-c .ctl { border-color: var(--deep); }
+.crit-c .ctl::before, .crit-c .ctl::after { background: var(--deep); border-color: var(--deep); }
+
+/* last minute, chosen 2026-11-23: alarm frame (b) + stripes and full strip (c), windows keep their colours */
+.alarm .timer { animation: timer-alarm 1s steps(1) infinite; }
+.alarm::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 15;
+  box-shadow: inset 0 0 0 4px var(--red), inset 0 0 160px 24px rgba(228, 91, 97, 0.5);
+  animation: alarm-pulse 1.2s ease-in-out infinite;
+}
+.alarm .status {
+  background: repeating-linear-gradient(-45deg, rgba(228, 91, 97, 0.2) 0 10px, transparent 10px 20px), rgba(30, 10, 16, 0.96);
+}
+.alarm .alarm-strip { background: var(--red); color: var(--deep); }
+.alarm .alarm-strip .warn-icon { fill: var(--deep); }
+
+/* ---------- asking from the map (proposals, mocks) ---------- */
+.map .is-dim { opacity: 0.28; }
+.map-pick .hatch.is-sel rect:first-child { fill: var(--cyan); stroke: var(--star); stroke-width: 2; }
+.map-pick .room.is-sel rect:first-child { fill: rgba(67, 217, 210, 0.28); stroke: var(--cyan); stroke-width: 3; }
+.map-hint { margin: 6px 0 0; }
+
+/* ---------- buttons that read as buttons (proposals, mocks) ---------- */
+/* a: primary filled, the others boxed */
+.btns-a .btn { border: 2px solid var(--line-strong); }
+.btns-a .btn-primary:not(:disabled) { background: var(--cyan); border-color: var(--cyan); color: var(--deep); }
+.btns-a .btn-primary:not(:disabled) > span::before, .btns-a .btn-primary:not(:disabled) > span::after { color: var(--deep); }
+.btns-a .btn-danger:not(:disabled) { border-color: var(--red); }
+
+/* b: the brackets become the frame, as in the START / CONFIGURE / QUIT reference */
+.btns-b .btn { position: relative; padding: 8px 18px; background: rgba(231, 237, 244, 0.07); }
+.btns-b .btn > span::before, .btns-b .btn > span::after { content: none; }
+.btns-b .btn::before, .btns-b .btn::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 7px;
+  border: 2px solid var(--accent); border-right: 0;
+}
+.btns-b .btn::before { left: 0; }
+.btns-b .btn::after { right: 0; transform: scaleX(-1); }
+.btns-b .btn-primary { background: rgba(67, 217, 210, 0.14); }
+.btns-b .btn-danger::before, .btns-b .btn-danger::after { border-color: var(--red); }
+.btns-b .btn:disabled::before, .btns-b .btn:disabled::after { border-color: var(--star); }
+
+/* c: brackets kept, inside a box with a cut corner */
+.btns-c .btn { border: 2px solid currentColor; background: rgba(231, 237, 244, 0.06); clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%); }
+.btns-c .btn-primary { background: rgba(67, 217, 210, 0.12); }
+/* the selected state stays a full cyan fill in every proposal */
+.btns-a .btn.is-on, .btns-b .btn.is-on, .btns-c .btn.is-on { background: var(--cyan); border-color: var(--cyan); color: var(--deep); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

@@ -1,27 +1,52 @@
 <!doctype html>
-<html lang="en" data-font="1">
+<html lang="en" data-font="3">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NOVA // Font mocks</title>
+  <title>NOVA // Mock</title>
   <link rel="stylesheet" href="fonts/fonts.css">
   <link rel="stylesheet" href="css/style.css">
   <style>
     body { background-attachment: scroll; }
-    .mock-head { padding: 24px 24px 8px; max-width: 900px; }
-    .mock-head h1 { margin: 0 0 6px; font: 600 22px var(--font-text); }
-    .mock-head p { color: rgba(231, 237, 244, 0.7); font-size: 14px; }
-    .mock-grid { padding: 0 24px 60px; overflow-x: auto; }
+    .mock-head { padding: 24px 24px 8px; max-width: 980px; }
+    .mock-head h1 { margin: 0 0 6px; font: 600 24px var(--font-text); }
+    .mock-head p { color: rgba(231, 237, 244, 0.75); font-size: 15px; }
+    .mock-nav { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font: 500 13px var(--font-mono); }
+    .mock-nav a { color: var(--cyan); }
+
+    .board { padding: 28px 24px 12px; border-top: 2px solid var(--line-strong); margin-top: 28px; }
+    .board-head { max-width: 980px; }
+    .board-head h2 { margin: 0 0 8px; font: 600 22px var(--font-text); }
+    .board-head p { font-size: 15px; color: rgba(231, 237, 244, 0.8); }
+    .board-head .quote { font-style: italic; color: var(--amber); }
+    .done { margin-left: 10px; padding: 2px 8px; font: 600 12px var(--font-mono); background: var(--cyan); color: var(--deep); vertical-align: middle; }
+
+    .dir { margin: 26px 0 8px; padding-left: 16px; border-left: 3px solid var(--line); }
+    .dir:has(input:checked) { border-left-color: var(--amber); }
+    .pick { display: inline-flex; align-items: center; gap: 10px; font: 17px var(--font-text); cursor: pointer; }
+    .pick input { width: 20px; height: 20px; accent-color: var(--amber); margin: 0; }
+    .rec { padding: 2px 8px; font: 600 11px var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; background: var(--amber); color: var(--deep); }
+    .dir-note { max-width: 860px; margin: 8px 0 14px; font-size: 15px; color: rgba(231, 237, 244, 0.85); }
+    .dir-note p { margin-bottom: 0.5em; }
+    .dir-frames { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+    .mock-fig { margin: 0; }
+    .mock-fig figcaption { margin-top: 8px; font: 500 12px var(--font-mono); letter-spacing: 0.06em; color: rgba(231, 237, 244, 0.65); }
+    .dir.is-chosen { border-left-color: var(--cyan); }
+    .answer { font-size: 15px; color: var(--amber); }
+    .summary { font: 15px/1.7 var(--font-mono); background: var(--panel); border: 2px solid var(--line-strong); padding: 14px 18px; max-width: 760px; white-space: pre-wrap; }
+
+    .mock-grid { padding: 8px 0 60px; overflow-x: auto; }
     .mock-cols { display: grid; grid-template-columns: repeat(4, 390px); gap: 24px; width: max-content; }
     .mock-col-head {
       position: sticky; top: 0; z-index: 30; padding: 10px 12px; background: var(--amber); color: var(--deep);
       font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em;
     }
     .mock-col-head .mock-fontname { font-family: var(--fd); font-weight: 400; font-size: calc(var(--ds) * 20px); margin-left: 6px; }
-    .mock-row > h2 { font: 500 12px var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--cyan); margin: 32px 0 10px; }
+    .mock-row > h3 { font: 500 12px var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--cyan); margin: 32px 0 10px; }
+
     .mock-frame {
       position: relative; width: 390px; height: 780px; overflow: hidden auto; scrollbar-width: none;
-      transform: translateZ(0); /* fixed children (modal) stay inside the frame */
+      transform: translateZ(0); /* fixed children (modal, alarm frame) stay inside the frame */
       container-type: inline-size;
       border: 1px solid var(--line);
       background-color: var(--deep);
@@ -38,6 +63,9 @@
     .mock-frame .screen { min-height: 0 !important; height: 100%; }
     .mock-frame .status { position: relative; }
     .mock-frame .modal { position: absolute; }
+    .mock-column { width: 580px; }
+    .mock-wide-wrap { width: 640px; height: 390px; overflow: hidden; }
+    .mock-wide { width: 1280px; height: 780px; transform: scale(0.5); transform-origin: top left; }
     .mock-card { padding-top: 8px; }
     .mock-cardscreen .modal { position: static; background: none; padding: 16px 0 0; display: block; }
   </style>
