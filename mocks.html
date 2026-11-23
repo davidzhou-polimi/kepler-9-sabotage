@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" data-font="1">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NOVA // Font mocks</title>
+  <link rel="stylesheet" href="fonts/fonts.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { background-attachment: scroll; }
+    .mock-head { padding: 24px 24px 8px; max-width: 900px; }
+    .mock-head h1 { margin: 0 0 6px; font: 600 22px var(--font-text); }
+    .mock-head p { color: rgba(231, 237, 244, 0.7); font-size: 14px; }
+    .mock-grid { padding: 0 24px 60px; overflow-x: auto; }
+    .mock-cols { display: grid; grid-template-columns: repeat(4, 390px); gap: 24px; width: max-content; }
+    .mock-col-head {
+      position: sticky; top: 0; z-index: 30; padding: 10px 12px; background: var(--amber); color: var(--deep);
+      font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em;
+    }
+    .mock-col-head .mock-fontname { font-family: var(--fd); font-weight: 400; font-size: calc(var(--ds) * 20px); margin-left: 6px; }
+    .mock-row > h2 { font: 500 12px var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--cyan); margin: 32px 0 10px; }
+    .mock-frame {
+      position: relative; width: 390px; height: 780px; overflow: hidden auto; scrollbar-width: none;
+      transform: translateZ(0); /* fixed children (modal) stay inside the frame */
+      container-type: inline-size;
+      border: 1px solid var(--line);
+      background-color: var(--deep);
+      background-image:
+        linear-gradient(rgba(67, 217, 210, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(67, 217, 210, 0.055) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+    .mock-frame.emergency {
+      background-image:
+        linear-gradient(rgba(228, 91, 97, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(228, 91, 97, 0.08) 1px, transparent 1px);
+    }
+    .mock-frame .screen { min-height: 0 !important; height: 100%; }
+    .mock-frame .status { position: relative; }
+    .mock-frame .modal { position: absolute; }
+    .mock-card { padding-top: 8px; }
+    .mock-cardscreen .modal { position: static; background: none; padding: 16px 0 0; display: block; }
+  </style>
+</head>
+<body>
+  <div id="mocks"></div>
+  <script type="module" src="js/mocks.js"></script>
+</body>
+</html>
