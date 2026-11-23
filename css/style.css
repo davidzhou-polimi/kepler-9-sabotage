@@ -602,6 +602,50 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .hatch-legend { list-style: none; padding: 0; margin: 8px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 2px 12px; font: 12px var(--font-mono); color: rgba(231, 237, 244, 0.8); }
 .hatch-legend b { color: var(--amber); margin-right: 4px; }
 
+/* ---------- hologram map (proposals, mocks) ---------- */
+.holo { position: relative; perspective: 900px; margin: -34px 0 -44px; overflow: hidden; padding: 10px 0 20px; }
+.holo-stage { position: relative; transform-style: preserve-3d; transform: rotateX(50deg); transform-origin: 50% 60%; animation: holo-flicker 4s steps(1) infinite; }
+.holo .map { filter: drop-shadow(0 0 3px rgba(67, 217, 210, 0.7)); }
+.holo .map .room rect:first-child { fill: rgba(67, 217, 210, 0.07); stroke: rgba(67, 217, 210, 0.85); }
+.holo .map .room.is-off rect:first-child { fill: rgba(228, 91, 97, 0.1); stroke: var(--red); }
+.holo .map .room-name { fill: var(--cyan); }
+.holo .map .conn { stroke: rgba(67, 217, 210, 0.35); }
+.holo-layer { position: absolute; inset: 0; transform: translateZ(var(--z)); pointer-events: none; filter: none !important; }
+.holo-layer rect { fill: none; stroke: rgba(67, 217, 210, 0.4); stroke-width: 1.5; }
+.holo-rim rect { stroke: rgba(67, 217, 210, 0.95); stroke-width: 2; }
+.holo-rim { filter: drop-shadow(0 0 3px rgba(67, 217, 210, 0.8)) !important; }
+.holo-layer rect.is-off { stroke: rgba(228, 91, 97, 0.45); }
+.holo-scan {
+  position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(67, 217, 210, 0.07) 0 1px, transparent 1px 4px);
+  animation: holo-scan 6s linear infinite;
+}
+@keyframes holo-scan { to { background-position: 0 120px; } }
+@keyframes holo-flicker { 0%, 100% { opacity: 1; } 47% { opacity: 0.9; } 48% { opacity: 1; } 83% { opacity: 0.94; } 84% { opacity: 1; } }
+.holo-3 .holo-stage { animation: holo-flicker 4s steps(1) infinite, holo-sway 10s ease-in-out infinite; }
+.holo-3:hover .holo-stage, .holo-3:focus-within .holo-stage { animation-play-state: running, paused; }
+@keyframes holo-sway { 0%, 100% { transform: rotateX(50deg) rotateZ(-5deg); } 50% { transform: rotateX(50deg) rotateZ(5deg); } }
+.holo-beam {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 70%; pointer-events: none;
+  background: linear-gradient(to top, rgba(67, 217, 210, 0.22), rgba(67, 217, 210, 0));
+  clip-path: polygon(40% 100%, 60% 100%, 100% 0, 0 0);
+}
+.holo-3::after { content: ''; position: absolute; left: 38%; right: 38%; bottom: 8px; height: 6px; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+
+/* ---------- home grey texts (proposals, mocks) ---------- */
+.home-top-bright { color: rgba(231, 237, 244, 0.92); font-size: 12px; }
+.home-top-bright b { color: var(--cyan); font-weight: 600; }
+.home-top-bright .warn { color: var(--amber); }
+.prompt { color: var(--cyan); font-weight: 600; }
+.home-log-bright { color: var(--star); font-size: 16px; max-width: 420px; }
+.home-status { max-width: 440px; margin: 28px auto 0; width: 100%; }
+.home-status .win { margin: 0; }
+.home-status-log { margin-top: 10px; font-size: 15px; }
+.home-data { max-width: 420px; margin: 28px auto 0; width: 100%; border-top: 1px solid var(--line-strong); }
+.home-data > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 2px; border-bottom: 1px solid var(--line); }
+.home-data dt { font: 500 11px var(--font-mono); letter-spacing: 0.12em; color: var(--cyan); }
+.home-data dd { margin: 0; font: 500 16px var(--font-mono); color: var(--star); text-align: right; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

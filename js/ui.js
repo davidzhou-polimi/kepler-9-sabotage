@@ -159,7 +159,8 @@ const NUM_POS = { 'C-B': [126, 31], 'B-K': [206, 93], 'N-K': [126, 127], 'M-K': 
 export const hatchLegend = () => `<ol class="hatch-legend">${HATCHES.map((h) => `<li><b>${HATCH_NUM[h]}</b> ${HATCH_NAME[h]}</li>`).join('')}</ol>`;
 
 // opts.act: action of a tap; opts.only: 'hatch' or 'room' keeps only those tappable (the others are dimmed)
-// opts.detail: { interior, numbers }
+// opts.detail: { interior, numbers, holo: 1 | 2 | 3 } (holo: hologram proposals, mocks only until one is chosen)
+//   1 tilted hologram, 2 + walls in layers, 3 + projector beam and a slow sway
 export function mapSvg(sel, { act = 'map-sel', only = null, cls = '', detail = {} } = {}) {
   const tap = (kind, id, label) => (only && only !== kind ? 'class-dim' : `data-act="${act}" data-id="${id}" tabindex="0" role="button" aria-label="${label}"`);
   const room = (m) => {
@@ -189,7 +190,7 @@ export function mapSvg(sel, { act = 'map-sel', only = null, cls = '', detail = {
   const hull = detail.interior ? '<rect x="4" y="6" width="352" height="258" class="d-hull"/>' : '';
   const deco = detail.interior ? `<g class="deco">${Object.values(DECO).join('')}</g>` : '';
   const nums = detail.numbers ? `<g class="nums">${HATCHES.map((h) => { const [x, y] = NUM_POS[h]; return `<rect x="${x - 6}" y="${y - 6}" width="12" height="12" class="n-box"/><text x="${x}" y="${y + 3}" class="n-txt">${HATCH_NUM[h]}</text>`; }).join('')}</g>` : '';
-  return `<svg class="map ${cls} ${detail.interior ? 'map-interior' : ''}" viewBox="0 0 360 270" shape-rendering="crispEdges">
+  const svg = `<svg class="map ${cls} ${detail.interior ? 'map-interior' : ''}" viewBox="0 0 360 270" shape-rendering="crispEdges">
     ${hull}
     ${conn(112, 45, 140, 45)}${conn(190, 76, 190, 110)}${conn(112, 141, 140, 141)}${conn(240, 141, 268, 141)}${conn(190, 172, 190, 206)}
     ${['C', 'B', 'N', 'K', 'M', 'L'].map(room).join('')}
@@ -197,6 +198,16 @@ export function mapSvg(sel, { act = 'map-sel', only = null, cls = '', detail = {
     ${HATCHES.map(hatch).join('')}
     ${nums}
   </svg>`;
+  if (!detail.holo) return svg;
+  // hologram: the same map, tilted in 3D; walls are outline copies raised in layers (not tappable)
+  const wall = (z) => `<svg class="map holo-layer ${z === 30 ? 'holo-rim' : ''}" style="--z:${z}px" viewBox="0 0 360 270" shape-rendering="crispEdges" aria-hidden="true">
+    ${['C', 'B', 'N', 'K', 'M', 'L'].map((m) => { const [x, y, w, h] = ROOMS[m]; return `<rect x="${x}" y="${y}" width="${w}" height="${h}" class="${m === 'L' ? 'is-off' : ''}"/>`; }).join('')}
+  </svg>`;
+  return `<div class="holo holo-${detail.holo}">
+    <div class="holo-stage">${svg}${detail.holo >= 2 ? [6, 12, 18, 24, 30].map(wall).join('') : ''}</div>
+    ${detail.holo >= 3 ? '<div class="holo-beam" aria-hidden="true"></div>' : ''}
+    <div class="holo-scan" aria-hidden="true"></div>
+  </div>`;
 }
 
 function mapInfo(sel) {
@@ -390,20 +401,38 @@ export function codePanel(state) {
 // ---------- screens ----------
 
 // view.saved: { code, phase, remainingMs } of a saved game, offered on the home (reset A)
+// view.homeStyle (proposals for the grey texts, mocks only until one is chosen):
+//   'now' today; 'bright' brighter lines, cyan prompt; 'window' the lines in a NOVA status window; 'data' label/value pairs
 export function screenHome(view = {}) {
   const s = view.saved;
+  const style = view.homeStyle || 'now';
   const open = s && (s.phase === 'briefing' || s.phase === 'play');
-  const caseLines = !s ? ['&gt; Awaiting Mission Control']
-    : open ? [`&gt; Case ${esc(s.code)}: in progress`, ...(s.phase === 'play' ? [`&gt; Oxygen: <span data-timer>${fmtClock(s.remainingMs)}</span>`] : [])]
-    : [`&gt; Case ${esc(s.code)}: closed`];
+  const oxygen = s && s.phase === 'play' ? `<span data-timer>${fmtClock(s.remainingMs)}</span>` : null;
+  // [label for 'data', value for 'data', line for the log]
+  const rows = [
+    ['RECYCLER TEST_', 'In progress', 'Oxygen recycler test: in progress'],
+    ['CREW ABOARD_', '4', 'Crew aboard: 4'],
+    ...(!s ? [['STATUS_', 'Awaiting Mission Control', 'Awaiting Mission Control']]
+      : open ? [[`CASE_`, `${esc(s.code)} · in progress`, `Case ${esc(s.code)}: in progress`], ...(oxygen ? [['OXYGEN_', oxygen, `Oxygen: ${oxygen}`]] : [])]
+      : [['CASE_', `${esc(s.code)} · closed`, `Case ${esc(s.code)}: closed`]]),
+  ];
+  const lines = rows.map((r) => r[2]);
+  let info;
+  if (style === 'bright') info = `<div class="log home-log home-log-bright">${lines.map((l) => `<p><span class="prompt">&gt;</span> ${l}</p>`).join('')}</div>`;
+  else if (style === 'window') info = `<div class="home-status">${win('NOVA // STATUS', `${whoNova}<div class="log nova home-status-log">${lines.map((l) => `<p><span class="prompt">&gt;</span> ${l}</p>`).join('')}</div>`)}</div>`;
+  else if (style === 'data') info = `<dl class="home-data">${rows.map((r) => `<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl>`;
+  else info = log(lines.map((l) => `&gt; ${l}`), 'home-log');
+  const top = style === 'now'
+    ? '<div class="home-top"><span>NOVA // STATION AI</span><span>LINK: UNSTABLE</span></div>'
+    : '<div class="home-top home-top-bright"><span><b>NOVA</b> // STATION AI</span><span>LINK: <b class="warn">UNSTABLE</b></span></div>';
   return `<main class="screen screen-home">
-    <div class="home-top"><span>NOVA // STATION AI</span><span>LINK: UNSTABLE</span></div>
+    ${top}
     <div class="home-title">
       <p class="kicker">MISSION CONTROL // NIGHT SHIFT</p>
       <h1 class="title">KEPLER-9</h1>
       <p class="title-sub">SABOTAGE</p>
     </div>
-    ${log(['&gt; Oxygen recycler test: in progress', '&gt; Crew aboard: 4', ...caseLines], 'home-log')}
+    ${info}
     <div class="menu">
       ${open ? btn('CONTINUE', 'continue', { cls: 'btn-primary' }) : ''}
       ${btn('NEW GAME', 'new-game', { cls: open ? '' : 'btn-primary' })}

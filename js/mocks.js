@@ -125,11 +125,12 @@ const CRITICAL = {
 function board(b) {
   return `<section class="board" id="${b.id}">
     <header class="board-head">
-      <h2>${b.title}${b.decided ? ` <span class="done">Deciso: ${b.decided}</span>` : ''}</h2>
+      <h2>${b.title}${b.decided ? ` <span class="done">Deciso: ${b.decided}</span>` : ''}${b.rejected ? ' <span class="done done-no">Bocciata</span>' : ''}</h2>
       <p class="quote">${b.quote}</p>
       <p>${tidy(b.context)}</p>
     </header>
     ${b.decided && b.answer ? `<p class="answer">La tua scelta: <b>${b.answer}</b></p>` : ''}
+    ${b.rejected ? `<p class="answer">La tua risposta: <b>${b.rejected}</b></p>` : ''}
     ${b.dirs.map((d) => direction(b.id, d, b.chosen)).join('')}
   </section>`;
 }
@@ -170,6 +171,7 @@ const BRIEF = {
 };
 
 
+
 // ---------- map detail ----------
 
 // the app as it is now (decided pieces), with one map detail
@@ -184,6 +186,7 @@ const mapDir = (key, title, note, detail, rec = false) => ({
 });
 const MAPD = {
   id: 'mapdetail', title: 'Mappa più dettagliata',
+  rejected: '«per migliorare la mappa non intendevo questo, intendevo renderla meno schematica, sparo, magari un ologramma? è fattibile?»',
   quote: '«fai la mappa più dettagliata»',
   context: 'La disposizione dei moduli, i portelli e le zone da toccare restano dove sono, in tutte le direzioni: cambia ciò che si vede dentro e attorno. Gli oggetti dentro i moduli sono disegno e non si toccano. Le schermate sono quelle dell\'app di adesso (pulsanti con la cornice, rapporti come documento, domande dalla mappa).',
   dirs: [
@@ -192,6 +195,50 @@ const MAPD = {
       <p>Perché: dà luoghi veri alla storia (i rapporti parlano di pompe, scanner, inventario) senza aggiungere scritte.</p>`, { interior: true }, true),
     mapDir('B', 'B · Portelli numerati', '<p>Ogni portello ha un numero e sotto la mappa c\'è la legenda con i nomi, gli stessi delle domande.</p><p>Costo: aggiunge informazioni più che dettaglio, e il nome del portello compare già toccandolo.</p>', { numbers: true }),
     mapDir('C', 'C · Interni e portelli numerati', '<p>A e B insieme.</p>', { interior: true, numbers: true }),
+  ],
+};
+
+// ---------- hologram map ----------
+
+const holoDir = (key, title, note, detail, rec = false) => ({
+  key, title, rec, note,
+  frames: [
+    cap('Scheda MAP', phone({ ...NOW, mapDetail: detail, state: { ...base(), phase: 'play', tab: 'map', mapSel: 'M-K' }, remainingMs: 7 * MIN }, { cls: 'btns-b' })),
+    cap('Ask NOVA', phone({ ...NOW, mapDetail: detail, state: { ...base(), phase: 'play', tab: 'ask', draft: { kind: 'hatch', what: 'M-K', a: 45, b: 60 } }, remainingMs: 7 * MIN }, { cls: 'btns-b', scroll: '120' })),
+    cap('Laptop (ridotto a metà)', laptop({ ...NOW, mapDetail: detail, state: { ...base(), phase: 'play', tab: 'map' }, remainingMs: 7 * MIN }, { cls: 'btns-b' })),
+  ],
+});
+const HOLO = {
+  id: 'holo', title: 'Mappa a ologramma',
+  quote: '«per migliorare la mappa non intendevo questo, intendevo renderla meno schematica, sparo, magari un ologramma? è fattibile?»',
+  context: 'Sì, è fattibile, e senza librerie: è la stessa mappa inclinata in 3D con il CSS, quindi portelli e moduli si toccano ancora, anche nelle domande a NOVA, e funziona offline. Le pareti sono copie dei contorni sollevate a strati. Un ologramma 3D vero (con una libreria come three.js, da girare con il dito) è fattibile anche lui, ma costa un giorno o più, pesa sul telefono e rende più difficile toccare i portelli: con la scadenza di due giorni non lo consiglio. Con «riduci movimento» attivo, niente tremolio né oscillazione.',
+  dirs: [
+    holoDir('now', 'Oggi', '<p>La mappa piatta.</p>', {}),
+    holoDir('A', 'A · Ologramma inclinato', '<p>La mappa inclinata all\'indietro, ciano luminoso con un leggero alone, righe di scansione che scorrono e un tremolio raro.</p><p>Costo: inclinata, la mappa è più bassa e le scritte più schiacciate.</p>', { holo: 1 }),
+    holoDir('B', 'B · Ologramma con le pareti', '<p>Come A, con le pareti dei moduli in rilievo: quattro contorni sovrapposti che salgono, come una proiezione in volume.</p><p>Perché: è quella che smette davvero di sembrare uno schema, e resta ferma, quindi i portelli si toccano bene.</p>', { holo: 2 }, true),
+    holoDir('C', 'C · Ologramma proiettato', '<p>Come B, con il fascio di luce che sale da un proiettore sotto la mappa e un\'oscillazione lenta (si ferma quando ci passi sopra con il mouse).</p><p>Costo: la più scenografica, ma su un telefono si tocca una mappa che si muove.</p>', { holo: 3 }),
+  ],
+};
+
+// ---------- home: grey texts ----------
+
+const homeDir = (key, title, note, style, rec = false) => ({
+  key, title, rec, note,
+  frames: [
+    cap('Con una partita salvata', phone({ homeStyle: style, state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 7 * MIN + 42000 } }, { cls: 'btns-b' })),
+    cap('Prima apertura', phone({ homeStyle: style, state: { ...base(), phase: 'home' } }, { cls: 'btns-b' })),
+    cap('Laptop (ridotto a metà)', laptop({ homeStyle: style, state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 7 * MIN + 42000 } }, { cls: 'btns-b' })),
+  ],
+});
+const HOME = {
+  id: 'home', title: 'Home: i testi in grigio',
+  quote: '«da migliorare, i testi in grigio soprattutto»',
+  context: 'Ho misurato: il contrasto dei grigi sul fondo è già buono (circa 9 a 1). Il difetto è un altro: sono piccoli, sottili e tutti dello stesso grigio, quindi non dicono cosa conta. Le direzioni lavorano su gerarchia e colore; i testi restano quelli di oggi.',
+  dirs: [
+    homeDir('now', 'Oggi', '<p>Barra in alto e registro in grigio, 14px.</p>', 'now'),
+    homeDir('A', 'A · Più luce', '<p>Stesse righe, ma bianche e a 16px, con il «>» in ciano. In alto «NOVA» in ciano e «UNSTABLE» in ambra.</p>', 'bright'),
+    homeDir('B', 'B · Lo stato in una finestra di NOVA', '<p>Le righe del registro dentro una finestra «NOVA // STATUS», con l\'occhio di NOVA del briefing: si capisce chi parla.</p><p>Perché: è lo stesso volto che poi apre il briefing, quindi NOVA si presenta già dalla home.</p>', 'window', true),
+    homeDir('C', 'C · Dati, come la barra in alto', '<p>Ogni riga diventa etichetta e valore (RECYCLER TEST_, CREW ABOARD_, CASE_, OXYGEN_), come la barra dell\'ossigeno durante la partita.</p>', 'data'),
   ],
 };
 
@@ -295,14 +342,14 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [MAPD];
-const DECIDED = [BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const OPEN = [HOLO, HOME];
+const DECIDED = [MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">
     <h1>NOVA // Mock</h1>
     <p>${tidy(`Schermate vere dell'app, caso di prova ${SAMPLE}, font Jersey 10. Ogni riquadro scorre. Prima le tavole aperte: in ognuna scegli una direzione con il pallino, e in fondo trovi la raccolta. Sotto, le tavole già decise, con tutte le prove.`)}</p>
-    <nav class="mock-nav">${OPEN.map((b) => `<a href="#${b.id}">${b.title}</a>`).join('')}<a href="#summary">Raccolta</a>${DECIDED.map((b) => `<a href="#${b.id}">${b.title} (deciso)</a>`).join('')}<a href="#fonts">Font (deciso)</a></nav>
+    <nav class="mock-nav">${OPEN.map((b) => `<a href="#${b.id}">${b.title}</a>`).join('')}<a href="#summary">Raccolta</a>${DECIDED.map((b) => `<a href="#${b.id}">${b.title} (${b.rejected ? 'bocciata' : 'deciso'})</a>`).join('')}<a href="#fonts">Font (deciso)</a></nav>
   </div>
   ${OPEN.map(board).join('')}
   <section class="board" id="summary">
