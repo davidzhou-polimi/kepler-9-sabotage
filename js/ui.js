@@ -56,7 +56,7 @@ export function crewCard(c, p, { asButton = true } = {}) {
       <div class="idcard-name">${P.short.toUpperCase()}</div>
     </div>
     <div class="idcard-right">
-      <div class="idcard-role">{ ${esc(P.role)} }</div>
+      <div class="idcard-role"><span aria-hidden="true">{</span><span>${esc(P.role)}</span><span aria-hidden="true">}</span></div>
       <dl class="idcard-list">
         <div><dt>NAME_</dt><dd>${esc(P.name)}</dd></div>
         <div><dt>ROLE_</dt><dd>${esc(P.role)}</dd></div>

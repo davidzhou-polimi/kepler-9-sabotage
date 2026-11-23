@@ -16,8 +16,8 @@ Then open <http://localhost:8000>. Other pages:
 |---|---|
 | `/` | The game |
 | `/?dev=1` | The game with developer tools (show the solution, skip the briefing, pause or speed up the timer, load a seed, new case) |
-| `/?font=1` … `/?font=4` | Display font: 1 Pixelify Sans, 2 Silkscreen, 3 Jersey 10, 4 Press Start 2P. On these URLs and with `?dev=1`, the F key cycles the fonts |
-| `/mocks.html` | Key screens side by side in the 4 fonts, on a fixed sample case |
+| `/?font=1` … `/?font=4` | Display font candidates: 1 Pixelify Sans, 2 Silkscreen, 3 Jersey 10 (the chosen one, default), 4 Press Start 2P. On these URLs and with `?dev=1`, the F key cycles the fonts |
+| `/mocks.html` | Key screens side by side in the 4 candidate fonts, on a fixed sample case (used to choose Jersey 10) |
 
 A game in progress is saved in the browser: reloading the page resumes it. The oxygen clock is wall-clock based, so it keeps running while the page is closed.
 
@@ -41,7 +41,7 @@ gh api repos/{owner}/kepler-9-sabotage/pages -X POST -f "source[branch]=main" -f
 
 The site appears at `https://<user>.github.io/kepler-9-sabotage/` after a minute or two. Without `gh`: create the repository on github.com, push, then Settings → Pages → Deploy from a branch → `main`, folder `/ (root)`. On a free account, Pages needs a public repository.
 
-Every later `git push` publishes the new version. Players who already opened the site get it on their next load (the service worker fetches the network first and falls back to its cache after 2.5 s or when offline). When files are added or renamed, update the list in `sw.js` and change `CACHE` (`nova-v2`, …).
+Every later `git push` publishes the new version. Players who already opened the site get it on their next load (the service worker fetches the network first and falls back to its cache after 2.5 s or when offline). When files are added or renamed, update the list in `sw.js` and change `CACHE` (`nova-v3`, …).
 
 ## Files
 

@@ -18,8 +18,8 @@
   --bar: #101C2E;
   --accent: var(--cyan);
 
-  --fd: 'Pixelify Sans';
-  --ds: 1;                 /* per-font size correction */
+  --fd: 'Jersey 10';       /* chosen display font (candidates below, for the mocks and ?font=) */
+  --ds: 1.3;               /* per-font size correction */
   --font-text: 'IBM Plex Sans', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 }
@@ -273,11 +273,15 @@ button.idcard:hover, button.idcard:focus-visible { outline: 3px solid var(--cyan
   font-size: calc(var(--ds) * 17px); line-height: 1; padding: 6px 2px 5px; letter-spacing: 0.03em;
 }
 .idcard-right { display: flex; flex-direction: column; border: 2px solid var(--ink); border-left: 0; min-width: 0; }
-.idcard-role { font-size: 13px; font-style: italic; padding: 6px 10px; border-bottom: 2px solid var(--ink); }
+.idcard-role {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  font-size: 13px; font-style: italic; line-height: 1.3; text-align: center;
+  padding: 6px 10px; border-bottom: 2px solid var(--ink);
+}
 .idcard-list { margin: 0; font-size: 12px; }
 .idcard-list div { display: flex; gap: 6px; padding: 3px 10px; border-bottom: 1px solid rgba(11, 18, 32, 0.35); }
 .idcard-list dt { font-weight: 600; }
-.idcard-list dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.idcard-list dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .idcard-num { margin-top: auto; padding: 6px 10px; background: rgba(11, 18, 32, 0.12); display: flex; justify-content: space-between; align-items: baseline; }
 .idcard-num b { font-size: 18px; letter-spacing: 0.05em; }
 

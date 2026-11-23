@@ -1,7 +1,7 @@
 // Offline cache: after the first visit the game loads even without network (festival wifi).
 // Network first, so a new version shows up at once; if the network fails or takes more than
 // 2.5 s, the cached copy is served.
-const CACHE = 'nova-v1';
+const CACHE = 'nova-v2';
 const TIMEOUT_MS = 2500;
 const SHELL = [
   './', './index.html', './mocks.html', './css/style.css', './fonts/fonts.css',
@@ -29,7 +29,10 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   e.respondWith((async () => {
     const cache = await caches.open(CACHE);
-    const network = fetch(req).then((res) => {
+    // no-cache: always revalidate with the server, so a new release never mixes with old files
+    // (a navigation request can't be copied with options, so it is rebuilt from its URL)
+    const fresh = req.mode === 'navigate' ? new Request(req.url, { cache: 'no-cache' }) : new Request(req, { cache: 'no-cache' });
+    const network = fetch(fresh).then((res) => {
       if (res.ok) cache.put(req, res.clone());
       return res;
     });
