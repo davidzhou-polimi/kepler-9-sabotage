@@ -382,14 +382,10 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .ok-mark::after { content: ''; position: absolute; left: 14px; top: 10px; width: 18px; height: 32px; border: solid var(--cyan); border-width: 0 6px 6px 0; transform: rotate(45deg); }
 @container (max-width: 520px) { .ending-body { grid-template-columns: 1fr; } .warn-icon { width: 64px; } }
 
-/* ---------- solution & debrief ---------- */
+/* ---------- solution ---------- */
 
 .sol-sec:first-child .sub { margin-top: 0; border-top: 0; padding-top: 0; }
-.screen-solution .win, .screen-debrief .win { max-width: 820px; margin-left: auto; margin-right: auto; }
-.debrief { padding-left: 1.4em; font-size: 19px; }
-.debrief li { margin-bottom: 14px; padding-left: 4px; }
-.debrief li::marker { font-family: var(--font-mono); color: var(--cyan); }
-.scoreboard { margin-top: 22px; padding: 12px 14px; border: 2px solid var(--amber); color: var(--amber); font-weight: 500; }
+.screen-solution .win { max-width: 820px; margin-left: auto; margin-right: auto; }
 
 /* ---------- dev & toast ---------- */
 
@@ -518,7 +514,8 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .btns-a .btn-primary:not(:disabled) > span::before, .btns-a .btn-primary:not(:disabled) > span::after { color: var(--deep); }
 .btns-a .btn-danger:not(:disabled) { border-color: var(--red); }
 
-/* b: the brackets become the frame, as in the START / CONFIGURE / QUIT reference */
+/* b: the brackets become the frame, as in the START / CONFIGURE / QUIT reference.
+   Chosen 2026-11-23: the game sets it on <body>; mock frames without it show the earlier buttons. */
 .btns-b .btn { position: relative; padding: 8px 18px; background: rgba(231, 237, 244, 0.07); }
 .btns-b .btn > span::before, .btns-b .btn > span::after { content: none; }
 .btns-b .btn::before, .btns-b .btn::after {
@@ -536,6 +533,55 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .btns-c .btn-primary { background: rgba(67, 217, 210, 0.12); }
 /* the selected state stays a full cyan fill in every proposal */
 .btns-a .btn.is-on, .btns-b .btn.is-on, .btns-c .btn.is-on { background: var(--cyan); border-color: var(--cyan); color: var(--deep); }
+
+/* ---------- briefing layouts (proposals, mocks) ---------- */
+.who { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; color: rgba(231, 237, 244, 0.6); }
+.who b { font-family: var(--fd), 'IBM Plex Mono', monospace; font-weight: 400; font-size: calc(var(--ds) * 18px); letter-spacing: 0.04em; color: var(--cyan); }
+.who-mc b { color: var(--amber); }
+.who-icon { width: 30px; height: 30px; flex: none; }
+.key { color: var(--amber); font-weight: 600; }
+.nw { white-space: nowrap; }
+
+/* tx: a transmission */
+.tx { display: flex; flex-direction: column; gap: 10px; }
+.msg { max-width: 92%; }
+.msg .bubble { padding: 10px 14px; background: rgba(11, 18, 32, 0.6); border-left: 3px solid var(--cyan); font-size: 16px; line-height: 1.55; }
+.msg .bubble p { margin: 0 0 0.4em; }
+.msg .bubble p:last-child { margin: 0; }
+.msg-mc { align-self: flex-end; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; margin-top: 8px; }
+.msg-mc .bubble { border-left: 0; border-right: 3px solid var(--amber); padding: 6px 8px; }
+
+/* file: a file from NOVA to Mission Control */
+.file-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.file-to { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; color: rgba(231, 237, 244, 0.6); }
+.file-hello { font-size: 18px; margin: 14px 0 6px; }
+.file-rows { margin: 0; }
+.file-rows > div { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.file-rows dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; color: var(--cyan); padding-top: 3px; }
+.file-rows dd { margin: 0; }
+.file-rows dd p { margin: 0; }
+@container (max-width: 520px) { .file-rows > div { grid-template-columns: 1fr; gap: 4px; } }
+
+/* mix: NOVA's voice, then four rule cards */
+.mix-voice { margin: 12px 0 16px; }
+.rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.rule { padding: 10px 12px; background: rgba(11, 18, 32, 0.55); border: 1px solid var(--line); }
+.rule .sub { margin: 0 0 8px; padding: 0; border: 0; }
+.rule p { margin: 8px 0 0; font-size: 14px; line-height: 1.5; }
+.mc-strip { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-top: 16px; padding-top: 12px; border-top: 2px solid var(--amber); }
+
+/* visuals */
+.viz { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: rgba(231, 237, 244, 0.7); }
+.viz-link span, .viz-sensors span { display: inline-flex; align-items: center; gap: 6px; }
+.pip { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--amber); background: var(--amber); }
+.pip-code { border-color: var(--cyan); background: var(--cyan); }
+.viz-code { display: grid; grid-template-columns: repeat(3, 34px); gap: 4px; }
+.viz-code .box { display: grid; place-items: center; height: 38px; border: 2px solid var(--line-strong); font: 600 20px var(--font-mono); color: var(--amber); }
+.viz-code .viz-cap { grid-column: 1 / -1; display: grid; grid-template-columns: 34px 72px; gap: 4px; }
+.viz-code .viz-cap b { font-weight: 500; text-align: center; border-top: 2px solid var(--cyan); padding-top: 3px; }
+.viz-o2 .o2 { font-family: var(--fd), 'IBM Plex Mono', monospace; font-size: calc(var(--ds) * 26px); line-height: 1; color: var(--cyan); }
+.viz-o2 .meter { display: flex; gap: 2px; width: 140px; }
+.viz-o2 .meter i { flex: 1; height: 12px; background: var(--cyan); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

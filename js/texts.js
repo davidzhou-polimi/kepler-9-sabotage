@@ -16,6 +16,18 @@ export const BRIEFING = [
   'Oxygen: 10 minutes. The countdown starts on your command.',
 ];
 
+// The briefing in parts, for the briefing layouts (same sentences as BRIEFING). keys: words to highlight.
+export const BRIEFING_PARTS = [
+  { id: 'hello', text: BRIEFING[0], keys: [] },
+  { id: 'situation', label: 'SITUATION_', text: BRIEFING[1], keys: ['03:00', 'sabotaged', 'every module is sealed'] },
+  { id: 'saboteur', label: 'SABOTEUR_', text: BRIEFING[2], keys: ['Whoever was in Life Support is the saboteur.'] },
+  { id: 'reports', label: 'REPORTS_', text: BRIEFING[3], keys: ['One report is false.'] },
+  { id: 'sensors', label: 'SENSORS_', text: BRIEFING[4], keys: ['hatch openings', 'motion', 'never who opened them'] },
+  { id: 'link', label: 'LINK_', text: BRIEFING[5], keys: ['2 questions', 'is still sent'] },
+  { id: 'code', label: 'CODE_', text: BRIEFING[6], keys: ['the number of the false report', 'the saboteur\'s ID', 'One attempt.'] },
+  { id: 'oxygen', label: 'OXYGEN_', text: BRIEFING[7], keys: ['10 minutes'] },
+];
+
 export const ENDINGS = {
   right: {
     title: 'Code accepted',
@@ -37,12 +49,6 @@ export const ANSWERS = {
   refused: 'Refused. The Life Support sensors are offline. The question was still sent and counts as one of your 2.',
 };
 
-export const DEBRIEF = [
-  'Who did you believe first, and why?',
-  'Did your questions to NOVA test your idea, or confirm it?',
-  'Where else do you have to decide whom to believe?',
-];
-export const SCOREBOARD = 'Write your code and who you believed first on the scoreboard.';
 
 // ---------- crew profiles ----------
 

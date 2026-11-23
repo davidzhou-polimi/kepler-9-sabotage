@@ -1,5 +1,5 @@
 // NOVA: game state, events, timer, persistence, developer tools.
-import { generateCase, randomCode, normalizeCode, answer, PEOPLE } from './generator.js';
+import { generateCase, randomCode, normalizeCode, answer, PEOPLE, HATCH_NAME } from './generator.js';
 import { screen, newState, fmtClock, MAX_QUESTIONS, OXYGEN_MS, esc } from './ui.js';
 import { initFontSwitch } from './fonts.js';
 import { initStars } from './stars.js';
@@ -55,6 +55,7 @@ function view() {
   return {
     state, c: theCase, wide: wideQuery.matches, remainingMs: remaining(), dev: DEV,
     reportStyle: 'sheet', // chosen 2026-11-23: the report as a document, signed at the bottom
+    askWhere: 'tap', // chosen 2026-11-23: tap a hatch (opening) or a module (motion) on the map
     quit: state.phase === 'play', quitOpen: state.quitOpen,
     saved: state.resume ? { code: state.code, phase: state.resume, remainingMs: remaining() } : null,
   };
@@ -143,6 +144,12 @@ const ACTIONS = {
     render.keepScroll = true; render();
   },
   'draft-what': (el) => { state.draft.what = el.dataset.v; render.keepScroll = true; render(); },
+  // the place tapped on the map decides the sensor: a hatch asks about openings, a module about motion
+  'draft-place': (el) => {
+    state.draft.what = el.dataset.id;
+    state.draft.kind = HATCH_NAME[el.dataset.id] ? 'hatch' : 'motion';
+    render.keepScroll = true; render();
+  },
   'send-question': () => {
     if (state.log.length >= MAX_QUESTIONS) return;
     const d = state.draft;
@@ -160,7 +167,6 @@ const ACTIONS = {
     endGame(state.codeInput === theCase.emergencyCode ? 'right' : 'wrong');
   },
   solution: () => { state.phase = 'solution'; render(); },
-  debrief: () => { state.phase = 'debrief'; render(); },
 };
 
 root.addEventListener('click', (e) => {

@@ -2,7 +2,7 @@
 // view = { state, c (case), wide, remainingMs, dev }
 
 import { CREW, PEOPLE, MOD_NAME, HATCH_NAME, HATCHES, MODULES, GRID, fmtTime } from './generator.js';
-import { BRIEFING, ENDINGS, ANSWERS, DEBRIEF, SCOREBOARD, PROFILES, renderReport, questionText, solutionText } from './texts.js';
+import { BRIEFING, BRIEFING_PARTS, ENDINGS, ANSWERS, PROFILES, renderReport, questionText, solutionText } from './texts.js';
 import { portraitSvg } from './portraits.js';
 
 export const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -188,7 +188,77 @@ export function mapPanel(sel, { title = 'STATION MAP' } = {}) {
 
 // ---------- briefing ----------
 
-export function briefingPanel({ typed = true } = {}) {
+// ---------- NOVA and Mission Control ----------
+
+const pixels = (rows, fills, cls) => {
+  let r = '';
+  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (fills[ch]) r += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${fills[ch]}"/>`; }));
+  return `<svg class="${cls}" viewBox="0 0 ${rows[0].length} ${rows.length}" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
+};
+// NOVA: the station's eye. Mission Control: a dish on Earth.
+export const novaIcon = () => pixels([
+  '....kkkk....', '..kk....kk..', '.k..cccc..k.', '.k.cc..cc.k.', 'k.cc.cc.cc.k', 'k.c.cccc.c.k',
+  'k.c.cccc.c.k', 'k.cc.cc.cc.k', '.k.cc..cc.k.', '.k..cccc..k.', '..kk....kk..', '....kkkk....',
+], { k: 'var(--star)', c: 'var(--cyan)' }, 'who-icon');
+export const mcIcon = () => pixels([
+  '.........aa.', '.......aa...', '..aaa.a.....', '.a...aa.....', 'a...a.a.....', 'a..a...a....',
+  'a.a.....a...', '.a.......a..', '..a.....a...', '...aaaaa....', '.....a......', '...aaaaa....',
+], { a: 'var(--amber)' }, 'who-icon');
+
+const keyed = (part) => {
+  let s = esc(part.text);
+  for (const k of part.keys) s = s.replace(esc(k), `<b class="key">${esc(k)}</b>`);
+  // "Kepler-9" never breaks at its hyphen, and the last two words of a part stay together
+  return s.replace(/Kepler-9/g, '<span class="nw">Kepler-9</span>').replace(/ (\S+)$/, '&nbsp;$1');
+};
+const BP = Object.fromEntries(BRIEFING_PARTS.map((p) => [p.id, p]));
+
+// small visuals for the rules
+const linkVisual = () => `<div class="viz viz-link"><span><i class="pip"></i>Q1</span><span><i class="pip"></i>Q2</span><span><i class="pip pip-code"></i>CODE</span></div>`;
+const codeVisual = () => `<div class="viz viz-code"><span class="box">#</span><span class="box">#</span><span class="box">#</span>
+  <span class="viz-cap"><b>REPORT</b> <b>ID</b></span></div>`;
+const oxygenVisual = () => `<div class="viz viz-o2"><span class="o2">10:00</span><span class="meter">${'<i class="on"></i>'.repeat(20)}</span></div>`;
+const sensorVisual = () => `<div class="viz viz-sensors"><span><i class="lg lg-hatch"></i>HATCH OPENING</span><span><i class="lg lg-sensor"></i>MOTION</span></div>`;
+
+const whoNova = `<span class="who who-nova">${novaIcon()}<b>NOVA</b><span>STATION AI</span></span>`;
+const whoMc = `<span class="who who-mc"><b>MISSION CONTROL</b><span>NIGHT SHIFT</span>${mcIcon()}</span>`;
+
+// style (proposals, mocks only until one is chosen):
+//   'now':  today, one log of eight lines
+//   'tx':   a transmission: NOVA's messages, Mission Control answers with START MISSION
+//   'file': a file from NOVA to Mission Control, one labelled row per rule
+//   'mix':  NOVA tells what happened; the rules become four cards; Mission Control starts
+export function briefingPanel({ typed = true, style = 'now', start = false } = {}) {
+  if (style === 'tx') {
+    const msg = (ids) => `<div class="msg msg-nova"><div class="bubble">${ids.map((id) => `<p>${keyed(BP[id])}</p>`).join('')}</div></div>`;
+    return win('NOVA // BRIEFING', `
+      <div class="tx">
+        ${whoNova}
+        ${msg(['hello', 'situation'])}${msg(['saboteur', 'reports'])}${msg(['sensors'])}${msg(['link'])}${msg(['code'])}${msg(['oxygen'])}
+        ${start ? `<div class="msg msg-mc">${whoMc}<div class="bubble">${btn('START MISSION', 'start-mission', { cls: 'btn-primary' })}</div></div>` : ''}
+      </div>`, { cls: 'win-briefing win-tx' });
+  }
+  if (style === 'file') {
+    const rows = ['situation', 'saboteur', 'reports', 'sensors', 'link', 'code', 'oxygen'];
+    const extra = { link: linkVisual, code: codeVisual, oxygen: oxygenVisual };
+    return win('NOVA // BRIEFING', `
+      <div class="file-head">${whoNova}<span class="file-to">TO_ ${whoMc}</span></div>
+      <p class="file-hello">${keyed(BP.hello)}</p>
+      <dl class="file-rows">${rows.map((id) => `<div><dt>${BP[id].label}</dt><dd><p>${keyed(BP[id])}</p>${extra[id] ? extra[id]() : ''}</dd></div>`).join('')}</dl>`,
+    { cls: 'win-briefing win-file' });
+  }
+  if (style === 'mix') {
+    const card = (title, id, viz) => `<div class="rule"><h3 class="sub">${title}</h3>${viz()}<p>${keyed(BP[id])}</p></div>`;
+    return win('NOVA // BRIEFING', `
+      ${whoNova}
+      <div class="log nova mix-voice ${typed ? 'type-me' : ''}">${['hello', 'situation', 'saboteur', 'reports'].map((id) => `<p>&gt; ${keyed(BP[id])}</p>`).join('')}</div>
+      <div class="rules">
+        ${card('SENSORS', 'sensors', sensorVisual)}${card('QUESTIONS', 'link', linkVisual)}
+        ${card('EMERGENCY CODE', 'code', codeVisual)}${card('OXYGEN', 'oxygen', oxygenVisual)}
+      </div>
+      ${start ? `<div class="mc-strip">${whoMc}${btn('START MISSION', 'start-mission', { cls: 'btn-primary' })}</div>` : ''}`,
+    { cls: 'win-briefing win-mix' });
+  }
   return win('NOVA // BRIEFING', log(BRIEFING.map((l) => `&gt; ${esc(l)}`), typed ? 'nova type-me' : 'nova'), { cls: 'win-briefing' });
 }
 
@@ -298,13 +368,15 @@ export function screenHome(view = {}) {
 
 export function screenBriefing(view) {
   const { c } = view;
+  const style = view.briefStyle || 'now';
+  const startInside = style === 'tx' || style === 'mix'; // Mission Control starts the mission from inside the briefing
   return `<main class="screen screen-briefing">
     ${caseBar(c)}
     <div class="brief-grid">
-      ${briefingPanel()}
+      ${briefingPanel({ style, start: startInside, typed: !view.static })}
       ${mapPanel(view.state.mapSel)}
     </div>
-    <div class="menu">${btn('START MISSION', 'start-mission', { cls: 'btn-primary' })}</div>
+    ${startInside ? '' : `<div class="menu">${btn('START MISSION', 'start-mission', { cls: 'btn-primary' })}</div>`}
   </main>`;
 }
 
@@ -354,7 +426,7 @@ export function screenPlay(view) {
     map: () => mapPanel(state.mapSel),
     ask: () => askPanel(state, c, view.askWhere),
     code: () => codePanel(state),
-    briefing: () => briefingPanel({ typed: false }),
+    briefing: () => briefingPanel({ typed: false, style: view.briefStyle || 'now' }),
   }[tab]();
   const tabs = TABS.filter(([k]) => !(wide && k === 'reports'));
   const critical = view.remainingMs <= 60000;
@@ -410,28 +482,18 @@ export function screenSolution(view) {
       ${section('ONE QUESTION THAT SETTLED IT', `<p class="mono">&gt; ${esc(s.question.text)}</p><p>${esc(s.question.answer)}</p>`)}
       ${section('THE CODE', `<p class="big-code">${esc(c.emergencyCode)}</p><p>${esc(s.code)}</p>`)}
       ${section('YOUR TRANSMISSIONS', `<div class="log">${asked}${state.sentCode ? `<p>&gt; Code: ${esc(state.sentCode)}</p>` : '<p>&gt; Code: not sent.</p>'}</div>`)}
-      <div class="actions">${btn('DEBRIEF', 'debrief', { cls: 'btn-primary' })}</div>
-    `)}
-  </main>`;
-}
-
-export function screenDebrief(view) {
-  const { c } = view;
-  return `<main class="screen screen-debrief">
-    ${caseBar(c)}
-    ${win('DEBRIEF', `
-      <ol class="debrief">${DEBRIEF.map((q) => `<li>${esc(q)}</li>`).join('')}</ol>
-      <p class="scoreboard">${esc(SCOREBOARD)}</p>
       <div class="actions">${btn('NEW GAME', 'new-game', { cls: 'btn-primary' })}</div>
     `)}
   </main>`;
 }
 
+// The debrief questions are on the scoreboard sheet, not in NOVA (decided 2026-11-23).
+
 export function screen(view) {
   const f = {
     home: screenHome, briefing: screenBriefing, play: screenPlay,
-    ending: screenEnding, solution: screenSolution, debrief: screenDebrief,
-  }[view.state.phase];
+    ending: screenEnding, solution: screenSolution,
+  }[view.state.phase] || screenHome;
   return f(view);
 }
 

@@ -53,7 +53,7 @@ const RESET = {
         <p>Perché: risolve il caso del gruppo successivo senza aggiungere nell'indagine un pulsante che si può premere per sbaglio. Costo: dopo un ricaricamento involontario serve un tocco in più (CONTINUE). Il timer intanto corre, come oggi.</p>`,
       frames: [
         cap('Riapertura con una partita in corso', phone({ state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 7 * MIN + 42000 } })),
-        cap('Riapertura dopo una partita finita', phone({ state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'debrief' } })),
+        cap('Riapertura dopo una partita finita', phone({ state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'solution' } })),
       ],
     },
     {
@@ -135,6 +135,31 @@ function board(b) {
 }
 
 
+
+// ---------- briefing ----------
+
+const briefDir = (key, title, note, style, rec = false) => ({
+  key, title, rec, note,
+  frames: [
+    cap('Telefono (scorre)', phone({ state: { ...base(), phase: 'briefing' }, briefStyle: style, static: true })),
+    cap('Laptop (ridotto a metà)', laptop({ state: { ...base(), phase: 'briefing' }, briefStyle: style, static: true })),
+  ],
+});
+const BRIEF = {
+  id: 'briefing', title: 'Briefing',
+  quote: '«it\'s just a wall of text, differenzia, dai una forma a mission control e nova» · «formatta i testi del briefing»',
+  context: 'Le frasi sono quelle di oggi, parola per parola: cambiano la forma, i dati evidenziati in ambra (03:00, «One report is false», 2 questions, il codice, 10 minutes) e un volto per i due. NOVA ha un occhio in pixel ciano con «NOVA · STATION AI»; Mission Control, cioè i giocatori, una parabola in ambra con «MISSION CONTROL · NIGHT SHIFT», le parole già usate nella home. Le etichette nuove vengono dalle parole dell\'app: OXYGEN, QUESTIONS ed EMERGENCY CODE dalla barra in alto e dalla scheda del codice. Lo schema del codice mostra caselle vuote e non un esempio con un ID vero, perché un esempio con il 27 indicherebbe Doyun.',
+  dirs: [
+    briefDir('now', 'Oggi', '<p>Otto righe di registro, tutte uguali.</p>', 'now'),
+    briefDir('A', 'A · Una trasmissione', `<p>NOVA parla a messaggi, uno per argomento, con i dati chiave in ambra. In fondo risponde Mission Control, a destra e in ambra, con <b>[ START MISSION ]</b>: il via lo dà chi gioca.</p>
+      <p>Costo: restano sette blocchi di testo da leggere, solo meglio divisi.</p>`, 'tx'),
+    briefDir('B', 'B · Un fascicolo', `<p>Un documento da NOVA a Mission Control: in testa mittente e destinatario, poi una riga per argomento con la sua etichetta (SITUATION_, SABOTEUR_, …) e, dove serve, un disegno: le due domande e il codice, lo schema del codice, l'ossigeno.</p>
+      <p>Costo: è il più ordinato ma il più freddo; NOVA quasi non parla.</p>`, 'file'),
+    briefDir('C', 'C · NOVA racconta, le regole diventano schede', `<p>NOVA racconta solo cosa è successo (quattro righe, scritte a macchina). Le regole diventano quattro schede con un disegno ciascuna: sensori, domande, codice, ossigeno. In fondo la striscia di Mission Control con <b>[ START MISSION ]</b>.</p>
+      <p>Perché: separa la storia dalle regole, che sono le cose da ritrovare durante la partita (anche dalla scheda BRIEFING); e dà a ognuno dei due un posto preciso nella schermata.</p>`, 'mix', true),
+  ],
+};
+
 // ---------- buttons ----------
 
 const solutionEnd = { ...base(), phase: 'solution', log: [{ q: { kind: 'hatch', what: 'M-K', a: 35, b: 50 }, ans: 'no' }], sentCode: '127' };
@@ -148,7 +173,7 @@ const btnDir = (key, title, note, cls, rec = false) => ({
   ],
 });
 const BUTTONS = {
-  id: 'buttons', title: 'Pulsanti',
+  id: 'buttons', title: 'Pulsanti', decided: 'B, le parentesi diventano la cornice', chosen: 'B', answer: 'B · Le parentesi diventano la cornice',
   quote: '«non si capisce che debrief è un pulsante»',
   context: 'Vale per tutti i pulsanti tra parentesi quadre, non solo per DEBRIEF: oggi sono testo con le parentesi, e solo passandoci sopra diventano un blocco. Le schede, i pulsanti di scelta (HATCH OPENING / MOTION) e i nomi da toccare non cambiano: quando sono selezionati sono pieni di ciano, e un pulsante non deve sembrare una cosa selezionata.',
   dirs: [
@@ -165,7 +190,7 @@ const BUTTONS = {
 
 const askOn = (draft, where) => phone({ state: { ...base(), phase: 'play', tab: 'ask', draft }, askWhere: where, remainingMs: 6 * MIN + 5000 });
 const MAPQ = {
-  id: 'mapq', title: 'Domande a NOVA dalla mappa',
+  id: 'mapq', title: 'Domande a NOVA dalla mappa', decided: 'C, si tocca il luogo', chosen: 'C', answer: 'C · Si tocca il luogo, il sensore segue',
   quote: '«anche l\'interfaccia di prompt a nova si può migliorare, mostrando la mappa con selezionabile la zona»',
   context: 'In tutte le direzioni la domanda resta quella di oggi, con l\'anteprima per intero; cambia solo come si sceglie il luogo. La mappa è la stessa della scheda MAP. Life Support resta selezionabile, perché la domanda rifiutata fa parte del gioco.',
   dirs: [
@@ -235,8 +260,8 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [BUTTONS, MAPQ];
-const DECIDED = [RESET, REPORTS, CRITICAL];
+const OPEN = [BRIEF];
+const DECIDED = [BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">
