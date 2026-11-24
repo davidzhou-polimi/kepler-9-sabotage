@@ -242,6 +242,37 @@ const HOME = {
   ],
 };
 
+// ---------- Mission Control console ----------
+
+// the app as decided now, dressed as a console: cls = 'console bg-* fx-*'
+const NOW2 = { ...NOW, mapDetail: { holo: 3 }, homeStyle: 'window' };
+const consoleFrames = (cls) => [
+  cap('Laptop, indagine (ridotto a metà)', laptop({ ...NOW2, state: { ...base(), phase: 'play', tab: 'ask', draft: { kind: 'hatch', what: 'M-K', a: 45, b: 60 }, log: [{ q: { kind: 'motion', what: 'K', a: 40, b: 55 }, ans: 'yes' }] }, remainingMs: 6 * MIN + 12000 }, { cls: `btns-b ${cls}` })),
+  cap('Telefono, rapporti', phone({ ...NOW2, state: { ...base(), phase: 'play', tab: 'reports' }, remainingMs: 6 * MIN + 12000 }, { cls: `btns-b ${cls}` })),
+  cap('Telefono, mappa', phone({ ...NOW2, state: { ...base(), phase: 'play', tab: 'map' }, remainingMs: 6 * MIN + 12000 }, { cls: `btns-b ${cls}` })),
+  cap('Telefono, home', phone({ ...NOW2, state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 } }, { cls: `btns-b ${cls}` })),
+];
+const CONSOLE_BG = {
+  id: 'console-bg', title: 'Console di Mission Control: lo sfondo',
+  quote: '«keep the visual references but make it more like a mission control console, how do we reach nova? how do we view the spaceship data etc. is the webapp the game, or nova, or the console...» · sullo sfondo: «fai prove nel mock»',
+  context: `La mia proposta, da approvare: la webapp è la console di Mission Control, la scrivania di chi gioca, sulla Terra. NOVA è dall'altra parte del collegamento, sulla stazione: la si raggiunge solo dal canale COMMS, dove arriva il briefing e partono le domande. I dati della stazione non si vedono in diretta: arrivano solo come risposte di NOVA, due al massimo, perché il collegamento è danneggiato. Il resto è di Mission Control: il modello della stazione dal suo archivio (l'ologramma), i fascicoli dell'equipaggio (i profili), i rapporti che NOVA ha inoltrato, la telemetria (ossigeno e domande rimaste) e il canale d'emergenza per il codice. Per questo ogni finestra diventa un monitor con il suo canale inciso sopra: MON 1 // RELAYED BY NOVA (rapporti), MON 2 // STATION MODEL · ARCHIVE (mappa), MON 3 // COMMS · KEPLER-9 (briefing, domande e la home), MON 4 // EMERGENCY UPLINK (codice), TELEMETRY sulla barra in alto, MISSION CONTROL // CREW FILE sui profili. Sono testi nuovi, ricavati da questa idea: li tolgo o cambio se l'idea non ti torna. Qui cambia solo lo sfondo, con l'effetto video medio; l'effetto ha la tavola dopo.`,
+  dirs: [
+    { key: 'A', title: 'A · Cornice del monitor', rec: true, note: '<p>Ogni finestra è un monitor con una cornice spessa e le viti agli angoli; attorno, il piano scuro della console con le giunture dei pannelli.</p><p>Perché: dice subito che è una console, senza parole.</p>', frames: consoleFrames('console bg-bezel fx-medium') },
+    { key: 'B', title: 'B · Solo vetro scuro', note: '<p>Nessun oggetto: lo sfondo è il vetro stesso, con la griglia di oggi e i bordi che si scuriscono come uno schermo grande.</p><p>Costo: la più vicina a oggi, la console si capisce solo dalle etichette dei monitor.</p>', frames: consoleFrames('console bg-glass fx-medium') },
+    { key: 'C', title: 'C · Pannello della console', note: '<p>I monitor sono incassati in un pannello scuro con i rivetti, e accanto al nome di ogni canale c\'è una spia accesa.</p>', frames: consoleFrames('console bg-panel fx-medium') },
+  ],
+};
+const CONSOLE_FX = {
+  id: 'console-fx', title: 'Console di Mission Control: l\'effetto video',
+  quote: 'sull\'effetto video: «fai prove nel mock»',
+  context: 'L\'effetto sta sul vetro di ogni monitor, non sulla pagina; sopra i rapporti è a metà, perché vanno letti. Le prove sono sulla cornice del monitor (A della tavola prima). Con «riduci movimento» attivo, niente rumore né disturbi in movimento: le immagini qui sono ferme per questo.',
+  dirs: [
+    { key: 'L', title: 'Leggero', note: '<p>Righe di scansione appena visibili e un leggero bagliore sui titoli e sul timer.</p>', frames: consoleFrames('console bg-bezel fx-light') },
+    { key: 'M', title: 'Medio', rec: true, note: '<p>Righe di scansione, bordi del vetro curvi e scuriti, bagliore su titoli, timer e voce di NOVA.</p><p>Perché: si legge come un monitor vero, e il testo dei rapporti resta pulito.</p>', frames: consoleFrames('console bg-bezel fx-medium') },
+    { key: 'S', title: 'Forte', note: '<p>Come il medio, più un rumore che vibra su ogni vetro e una banda di disturbo che scorre sul canale di NOVA: il collegamento danneggiato si vede.</p><p>Costo: si muove sempre qualcosa sullo schermo; il disturbo passa anche sopra il testo delle domande.</p>', frames: consoleFrames('console bg-bezel fx-strong') },
+  ],
+};
+
 // ---------- buttons ----------
 
 const solutionEnd = { ...base(), phase: 'solution', log: [{ q: { kind: 'hatch', what: 'M-K', a: 35, b: 50 }, ans: 'no' }], sentCode: '127' };
@@ -342,7 +373,7 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [];
+const OPEN = [CONSOLE_BG, CONSOLE_FX];
 const DECIDED = [HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `

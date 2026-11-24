@@ -644,6 +644,94 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .home-data dt { font: 500 11px var(--font-mono); letter-spacing: 0.12em; color: var(--cyan); }
 .home-data dd { margin: 0; font: 500 16px var(--font-mono); color: var(--star); text-align: right; }
 
+/* ---------- Mission Control console (proposals, mocks): class "console" + one bg-* + one fx-* ---------- */
+/* Monitors: every window is a monitor with its channel engraved above it. */
+.console .win { position: relative; margin-top: 24px; }
+.console .win-body { position: relative; }
+.console .win::before {
+  position: absolute; left: 0; bottom: 100%; margin-bottom: 6px;
+  font: 600 10px var(--font-mono); letter-spacing: 0.16em; color: var(--amber); white-space: nowrap;
+}
+.console .win-reports::before { content: 'MON 1 // RELAYED BY NOVA'; }
+.console .win-map::before { content: 'MON 2 // STATION MODEL · ARCHIVE'; }
+.console .win-ask::before, .console .win-briefing::before, .console .home-status .win::before { content: 'MON 3 // COMMS · KEPLER-9'; }
+.console .win-code::before { content: 'MON 4 // EMERGENCY UPLINK'; }
+.console .status::before { content: 'TELEMETRY'; font: 600 10px var(--font-mono); letter-spacing: 0.16em; color: var(--amber); width: 100%; }
+.console .modal .win::before { content: 'MISSION CONTROL // CREW FILE'; }
+.console .modal .win-amber::before { content: none; }
+
+/* bg-bezel: each monitor in a thick bezel with screws; around them, the console desk */
+.bg-bezel, body.bg-bezel, .mock-frame.bg-bezel {
+  background-size: auto;
+  background-color: #10161f;
+  background-image:
+    repeating-linear-gradient(180deg, transparent 0 219px, rgba(0, 0, 0, 0.45) 219px 221px, rgba(255, 255, 255, 0.03) 221px 222px),
+    linear-gradient(180deg, #141c27, #0d131b);
+}
+.bg-bezel .win {
+  border: 2px solid #3a4658;
+  box-shadow: 0 0 0 9px #1a2230, 0 0 0 10px #303c4f, 8px 12px 0 10px rgba(0, 0, 0, 0.55);
+  margin: 36px 11px 26px;
+}
+.bg-bezel .win::before { bottom: calc(100% + 12px); left: -10px; }
+.bg-bezel .win::after {
+  content: ''; position: absolute; inset: -8px; pointer-events: none;
+  background:
+    radial-gradient(circle, #56647a 0 2px, transparent 2.5px) left top / 10px 10px no-repeat,
+    radial-gradient(circle, #56647a 0 2px, transparent 2.5px) right top / 10px 10px no-repeat,
+    radial-gradient(circle, #56647a 0 2px, transparent 2.5px) left bottom / 10px 10px no-repeat,
+    radial-gradient(circle, #56647a 0 2px, transparent 2.5px) right bottom / 10px 10px no-repeat;
+}
+.bg-bezel .status { background: #0c1219; border-bottom: 2px solid #303c4f; }
+
+/* bg-glass: no objects, the whole screen is the glass: grid, deep vignette */
+.bg-glass .screen::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 14;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/* bg-panel: a console panel with rivets; monitors set into it */
+.bg-panel, body.bg-panel, .mock-frame.bg-panel {
+  background-color: #111924;
+  background-image: radial-gradient(circle, rgba(231, 237, 244, 0.12) 0 1px, transparent 1.5px);
+  background-size: 28px 28px;
+}
+.bg-panel .win { box-shadow: 0 0 0 4px #0a0f16, 0 0 0 5px #2a374a, inset 0 0 18px rgba(0, 0, 0, 0.6); margin-top: 30px; }
+.bg-panel .win::before { padding-left: 14px; background: radial-gradient(circle, var(--cyan) 0 3px, transparent 3.5px) left center / 8px 8px no-repeat; }
+.bg-panel .status { background: #0d141d; }
+
+/* fx: the video effect lives on the glass of each monitor (.win-body), never on the page */
+.fx-light .win-body::after, .fx-medium .win-body::after, .fx-strong .win-body::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 3;
+}
+.fx-light .win-body::after { background: repeating-linear-gradient(180deg, transparent 0 2px, rgba(0, 0, 0, 0.1) 2px 3px); }
+.fx-medium .win-body::after, .fx-strong .win-body::after {
+  background:
+    radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.45) 100%),
+    repeating-linear-gradient(180deg, transparent 0 2px, rgba(0, 0, 0, 0.2) 2px 3px);
+  box-shadow: inset 0 0 40px rgba(67, 217, 210, 0.12);
+}
+.fx-medium .win-reports .win-body::after, .fx-strong .win-reports .win-body::after { opacity: 0.5; } /* the reports stay readable */
+/* curved glass: the clip is on the glass only, so the channel label and the screws outside the monitor stay visible */
+.fx-medium .win, .fx-strong .win { border-radius: 10px / 14px; }
+.fx-medium .win-bar, .fx-strong .win-bar { border-radius: 8px 8px 0 0 / 12px 12px 0 0; }
+.fx-medium .win-body, .fx-strong .win-body { overflow: hidden; border-radius: 0 0 8px 8px / 0 0 12px 12px; }
+.fx-medium .win-title, .fx-medium .timer, .fx-medium .nova, .fx-strong .win-title, .fx-strong .timer, .fx-strong .nova { text-shadow: 0 0 6px currentColor; }
+.fx-light .win-title, .fx-light .timer { text-shadow: 0 0 4px currentColor; }
+/* strong: noise on every glass, and a signal glitch rolling over NOVA's channel (the damaged link) */
+.fx-strong .win-body::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 4; opacity: 0.12;
+  background-image: radial-gradient(rgba(231, 237, 244, 0.9) 0.5px, transparent 0.6px);
+  background-size: 3px 3px; animation: fx-noise 0.3s steps(3) infinite;
+}
+@keyframes fx-noise { 33% { background-position: 1px 2px; } 66% { background-position: 2px 1px; } }
+.fx-strong .win-ask .win-body, .fx-strong .win-briefing .win-body, .fx-strong .home-status .win-body { overflow: hidden; }
+.fx-strong .win-ask .win-body::before, .fx-strong .win-briefing .win-body::before, .fx-strong .home-status .win-body::before {
+  background-image: radial-gradient(rgba(231, 237, 244, 0.9) 0.5px, transparent 0.6px), linear-gradient(180deg, transparent 0 46%, rgba(67, 217, 210, 0.9) 48%, transparent 50%);
+  background-size: 3px 3px, 100% 200%; animation: fx-noise 0.3s steps(3) infinite, fx-roll 3.5s linear infinite;
+}
+@keyframes fx-roll { from { background-position: 0 0, 0 100%; } to { background-position: 0 0, 0 -100%; } }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
