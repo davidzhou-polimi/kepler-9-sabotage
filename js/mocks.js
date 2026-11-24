@@ -17,9 +17,9 @@ function phone(view, { cls = '', font = JERSEY, scroll = '' } = {}) {
   const v = { c, wide: false, remainingMs: 10 * MIN, dev: false, ...view };
   return `<div class="mock-frame ${cls}" data-font="${font}" ${scroll ? `data-scroll="${scroll}"` : ''}>${screen(v)}</div>`;
 }
-function laptop(view, { cls = '' } = {}) {
+function laptop(view, { cls = '', big = false } = {}) {
   const v = { c, wide: true, remainingMs: 10 * MIN, dev: false, ...view };
-  return `<div class="mock-wide-wrap"><div class="mock-frame mock-wide ${cls}" data-font="${JERSEY}">${screen(v)}</div></div>`;
+  return `<div class="mock-wide-wrap ${big ? 'is-big' : ''}"><div class="mock-frame mock-wide ${cls}" data-font="${JERSEY}">${screen(v)}</div></div>`;
 }
 function column(html) {
   return `<div class="mock-frame mock-column" data-font="${JERSEY}"><main class="screen">${html}</main></div>`;
@@ -31,9 +31,9 @@ const tidy = (html) => html
 const cap = (label, html) => `<figure class="mock-fig">${html}<figcaption>${label}</figcaption></figure>`;
 
 function direction(board, d, chosen) {
-  const lock = chosen ? `disabled ${chosen === d.key ? 'checked' : ''}` : '';
+  const lock = chosen ? `disabled ${[].concat(chosen).includes(d.key) ? 'checked' : ''}` : '';
   return `<div class="dir ${chosen === d.key ? 'is-chosen' : ''}" id="${board}-${d.key}">
-    <label class="pick"><input type="radio" name="${board}" value="${d.key}" ${lock}> <b>${d.title}</b>${d.rec ? ' <span class="rec">Consigliata</span>' : ''}${chosen === d.key ? ' <span class="done">Scelta</span>' : ''}</label>
+    <label class="pick"><input type="${d.multi ? 'checkbox' : 'radio'}" name="${board}" value="${d.key}" ${lock}> <b>${d.title}</b>${d.rec ? ' <span class="rec">Consigliata</span>' : ''}${chosen === d.key ? ' <span class="done">Scelta</span>' : ''}</label>
     <div class="dir-note">${tidy(d.note)}</div>
     <div class="dir-frames">${d.frames.join('')}</div>
   </div>`;
@@ -253,7 +253,7 @@ const consoleFrames = (cls) => [
   cap('Telefono, home', phone({ ...NOW2, state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 } }, { cls: `btns-b ${cls}` })),
 ];
 const CONSOLE_BG = {
-  id: 'console-bg', title: 'Console di Mission Control: lo sfondo',
+  id: 'console-bg', title: 'Console di Mission Control: lo sfondo', rejected: '«sul background mi hai solo cambiato le cornici delle finestrelle.. io per console intendo TUTTA LA WEBAPP da trattare come console della mission control. idem effetti video da rifare...»',
   quote: '«keep the visual references but make it more like a mission control console, how do we reach nova? how do we view the spaceship data etc. is the webapp the game, or nova, or the console...» · sullo sfondo: «fai prove nel mock»',
   context: `La mia proposta, da approvare: la webapp è la console di Mission Control, la scrivania di chi gioca, sulla Terra. NOVA è dall'altra parte del collegamento, sulla stazione: la si raggiunge solo dal canale COMMS, dove arriva il briefing e partono le domande. I dati della stazione non si vedono in diretta: arrivano solo come risposte di NOVA, due al massimo, perché il collegamento è danneggiato. Il resto è di Mission Control: il modello della stazione dal suo archivio (l'ologramma), i fascicoli dell'equipaggio (i profili), i rapporti che NOVA ha inoltrato, la telemetria (ossigeno e domande rimaste) e il canale d'emergenza per il codice. Per questo ogni finestra diventa un monitor con il suo canale inciso sopra: MON 1 // RELAYED BY NOVA (rapporti), MON 2 // STATION MODEL · ARCHIVE (mappa), MON 3 // COMMS · KEPLER-9 (briefing, domande e la home), MON 4 // EMERGENCY UPLINK (codice), TELEMETRY sulla barra in alto, MISSION CONTROL // CREW FILE sui profili. Sono testi nuovi, ricavati da questa idea: li tolgo o cambio se l'idea non ti torna. Qui cambia solo lo sfondo, con l'effetto video medio; l'effetto ha la tavola dopo.`,
   dirs: [
@@ -263,13 +263,50 @@ const CONSOLE_BG = {
   ],
 };
 const CONSOLE_FX = {
-  id: 'console-fx', title: 'Console di Mission Control: l\'effetto video',
+  id: 'console-fx', title: 'Console di Mission Control: l\'effetto video', rejected: '«sul background mi hai solo cambiato le cornici delle finestrelle.. io per console intendo TUTTA LA WEBAPP da trattare come console della mission control. idem effetti video da rifare...»',
   quote: 'sull\'effetto video: «fai prove nel mock»',
   context: 'L\'effetto sta sul vetro di ogni monitor, non sulla pagina; sopra i rapporti è a metà, perché vanno letti. Le prove sono sulla cornice del monitor (A della tavola prima). Con «riduci movimento» attivo, niente rumore né disturbi in movimento: le immagini qui sono ferme per questo.',
   dirs: [
     { key: 'L', title: 'Leggero', note: '<p>Righe di scansione appena visibili e un leggero bagliore sui titoli e sul timer.</p>', frames: consoleFrames('console bg-bezel fx-light') },
     { key: 'M', title: 'Medio', rec: true, note: '<p>Righe di scansione, bordi del vetro curvi e scuriti, bagliore su titoli, timer e voce di NOVA.</p><p>Perché: si legge come un monitor vero, e il testo dei rapporti resta pulito.</p>', frames: consoleFrames('console bg-bezel fx-medium') },
     { key: 'S', title: 'Forte', note: '<p>Come il medio, più un rumore che vibra su ogni vetro e una banda di disturbo che scorre sul canale di NOVA: il collegamento danneggiato si vede.</p><p>Costo: si muove sempre qualcosa sullo schermo; il disturbo passa anche sopra il testo delle domande.</p>', frames: consoleFrames('console bg-bezel fx-strong') },
+  ],
+};
+
+// ---------- the whole app as the console (second round) ----------
+
+const NOW3 = { ...NOW2 };
+const shellFrames = (shell, fx = ['crt']) => [
+  cap('Laptop, indagine (ridotto)', laptop({ ...NOW3, shell, fx, state: { ...base(), phase: 'play', tab: 'ask', draft: { kind: 'hatch', what: 'M-K', a: 45, b: 60 }, log: [{ q: { kind: 'motion', what: 'K', a: 40, b: 55 }, ans: 'yes' }] }, remainingMs: 6 * MIN + 12000 }, { cls: 'btns-b', big: true })),
+  cap('Laptop, home (ridotto)', laptop({ ...NOW3, shell, fx, state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 } }, { cls: 'btns-b', big: true })),
+  cap('Telefono, rapporti', phone({ ...NOW3, shell, fx, state: { ...base(), phase: 'play', tab: 'reports' }, remainingMs: 6 * MIN + 12000 }, { cls: 'btns-b' })),
+  cap('Telefono, domande', phone({ ...NOW3, shell, fx, state: { ...base(), phase: 'play', tab: 'ask', draft: { kind: 'hatch', what: 'M-K', a: 45, b: 60 } }, remainingMs: 6 * MIN + 12000 }, { cls: 'btns-b' })),
+  cap('Telefono, ultimo minuto', phone({ ...NOW3, shell, fx, state: { ...base(), phase: 'play', tab: 'map' }, remainingMs: 42000 }, { cls: 'btns-b emergency alarm' })),
+];
+const CONSOLE2 = {
+  id: 'console', title: 'Tutta la webapp è la console di Mission Control',
+  quote: '«io per console intendo TUTTA LA WEBAPP da trattare come console della mission control» · sul telefono: «ma scusa ti ho detto che è LA console di mission control»',
+  context: `In tutte e tre le direzioni lo schermo intero è la console, sul laptop e sul telefono (la stessa console, non un altro apparecchio). Il contenuto resta quello già deciso (rapporti come documento, ologramma, domande dalla mappa, briefing); cambia ciò che lo contiene. Le parti hanno i nomi della proposta di prima: COMMS è il canale con NOVA, STATION MODEL l'ologramma dall'archivio, REPORTS i rapporti inoltrati da NOVA, EMERGENCY UPLINK il codice, e in alto MC-OS, il sistema della console (nome nuovo, da approvare). Tutte con il vetro CRT acceso; gli altri effetti hanno la loro tavola sotto.`,
+  dirs: [
+    { key: 'monitor', title: 'A · Lo schermo è il monitor', note: '<p>La finestra del browser è un unico grande monitor CRT della console: vetro curvo, cornice di plastica solo ai bordi, e sotto la cornice le spie PWR, LINK (ambra, il collegamento è danneggiato) e ALARM (rossa nell\'ultimo minuto). Dentro gira il software della console, con la sua riga di sistema in alto.</p><p>Perché: è la console senza cambiare il modo di giocare; sul telefono è lo stesso monitor.</p>', frames: shellFrames('monitor') },
+    { key: 'desk', title: 'B · La console fisica', rec: true, note: '<p>Sullo schermo c\'è la console stessa: sul laptop tre monitor (rapporti, modello della stazione, COMMS) e sotto un pannello di tasti veri, il display dell\'ossigeno, le spie delle domande, il tasto rosso CODE sotto una protezione a strisce. Sul telefono un monitor solo, e i tasti del pannello cambiano canale.</p><p>Perché: è quella in cui si sente di più di essere seduti a Mission Control, e i tasti fisici sostituiscono le schede.</p>', frames: shellFrames('desk') },
+    { key: 'dash', title: 'C · Il software della console a schermo pieno', note: '<p>Nessun oggetto fisico: sul laptop il software della console occupa tutto lo schermo, con tutti i pannelli visibili insieme (telemetria, rapporti, modello, COMMS, codice), senza schede e senza scorrere la pagina. Sul telefono resta il monitor con le schede.</p><p>Costo: sul laptop è densa, e ogni pannello è più piccolo.</p>', frames: shellFrames('dash') },
+  ],
+};
+
+const fxFrames = (fx, freeze, replay) => [
+  cap('Laptop, indagine (dal vivo)', `${laptop({ ...NOW3, shell: 'desk', fx: ['crt', fx], state: { ...base(), phase: 'play', tab: 'ask', log: [{ q: { kind: 'motion', what: 'K', a: 40, b: 55 }, ans: 'yes' }] }, remainingMs: 6 * MIN + 12000 }, { cls: 'btns-b', big: true })}${replay ? `<button type="button" class="replay" data-replay="${replay}">Riguarda</button>` : ''}`),
+  cap('Telefono, il momento fermo', phone({ ...NOW3, shell: 'desk', fx: ['crt', fx], fxFreeze: freeze, state: { ...base(), phase: fx === 'link' ? 'play' : 'play', tab: fx === 'link' ? 'briefing' : 'ask', log: [{ q: { kind: 'motion', what: 'K', a: 40, b: 55 }, ans: 'yes' }] }, remainingMs: 6 * MIN + 12000 }, { cls: 'btns-b' })),
+];
+const CONSOLE2_FX = {
+  id: 'console-fx2', title: 'Effetti video su tutto lo schermo',
+  quote: 'sugli effetti video: «mock»',
+  context: 'Gli effetti stanno su tutto lo schermo della console, non sulle finestre. Si possono scegliere più di uno (le caselle). Le prove sono sulla console fisica (B della tavola sopra) ma valgono per tutte e tre. Il laptop si muove dal vivo («Riguarda» rifà l\'accensione o il cambio di canale); il telefono mostra il momento fermo. Con «riduci movimento» attivo nel sistema, accensione, scariche e disturbi non si muovono.',
+  dirs: [
+    { key: 'crt', multi: true, rec: true, title: 'Il vetro CRT, sempre', note: '<p>Righe di scansione, angoli scuriti e un leggero bagliore su tutto lo schermo, sempre accesi.</p>', frames: [cap('Laptop', laptop({ ...NOW3, shell: 'desk', fx: ['crt'], state: { ...base(), phase: 'play', tab: 'ask' }, remainingMs: 6 * MIN }, { cls: 'btns-b', big: true })), cap('Telefono', phone({ ...NOW3, shell: 'desk', fx: ['crt'], state: { ...base(), phase: 'play', tab: 'reports' }, remainingMs: 6 * MIN }, { cls: 'btns-b' }))] },
+    { key: 'boot', multi: true, rec: true, title: 'L\'accensione', note: '<p>Quando si apre la pagina la console si accende: una riga di luce al centro che si apre su tutto lo schermo.</p>', frames: fxFrames('boot', 'boot', 'boot') },
+    { key: 'static', multi: true, title: 'La scarica al cambio di canale', note: '<p>Ogni volta che si cambia canale (un tasto della console) passa una scarica di statico per un terzo di secondo.</p><p>Costo: si cambia canale spesso, sul telefono a ogni tasto.</p>', frames: fxFrames('static', 'static', 'static') },
+    { key: 'link', multi: true, rec: true, title: 'Il collegamento danneggiato di NOVA', note: '<p>I messaggi e le risposte di NOVA ogni tanto si disturbano: uno scatto di lato, i colori separati per un attimo. Solo NOVA, il resto della console è stabile.</p><p>Perché: racconta il guasto del collegamento senza parole, e non tocca i rapporti da leggere.</p>', frames: fxFrames('link', 'link', null) },
   ],
 };
 
@@ -373,8 +410,8 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [CONSOLE_BG, CONSOLE_FX];
-const DECIDED = [HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const OPEN = [CONSOLE2, CONSOLE2_FX];
+const DECIDED = [CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">
@@ -390,13 +427,19 @@ root.innerHTML = `
   ${DECIDED.map(board).join('')}
   ${fontsBoard}`;
 
+root.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-replay]');
+  if (!b) return;
+  const cs = b.closest('.mock-fig').querySelector('.cs');
+  if (b.dataset.replay === 'boot') { cs.classList.remove('fx-boot'); void cs.offsetWidth; cs.classList.add('fx-boot'); }
+  if (b.dataset.replay === 'static') { cs.classList.remove('cs-switching'); void cs.offsetWidth; cs.classList.add('cs-switching'); setTimeout(() => cs.classList.remove('cs-switching'), 400); }
+});
 root.querySelectorAll('[data-scroll]').forEach((f) => { f.scrollTop = f.dataset.scroll === 'bottom' ? f.scrollHeight : Number(f.dataset.scroll); });
 
 function summary() {
   const lines = OPEN.map((b) => {
-    const v = root.querySelector(`input[name="${b.id}"]:checked`);
-    const d = v && b.dirs.find((x) => x.key === v.value);
-    return `${b.title}: ${d ? d.title : '(da scegliere)'}`;
+    const vs = [...root.querySelectorAll(`input[name="${b.id}"]:checked`)].map((v) => b.dirs.find((x) => x.key === v.value).title);
+    return `${b.title}: ${vs.length ? vs.join(' + ') : '(da scegliere)'}`;
   });
   root.querySelector('[data-summary]').textContent = lines.join('\n');
 }

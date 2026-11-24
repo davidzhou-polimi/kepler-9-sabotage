@@ -6,6 +6,7 @@
   <title>NOVA // Mock</title>
   <link rel="stylesheet" href="fonts/fonts.css">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/console.css">
   <style>
     body { background-attachment: scroll; }
     .mock-head { padding: 24px 24px 8px; max-width: 980px; }
@@ -67,6 +68,9 @@
     .mock-column { width: 580px; }
     .mock-wide-wrap { width: 640px; height: 390px; overflow: hidden; }
     .mock-wide { width: 1280px; height: 780px; transform: scale(0.5); transform-origin: top left; }
+    .mock-wide-wrap.is-big { width: 832px; height: 507px; }
+    .mock-wide-wrap.is-big .mock-wide { transform: scale(0.65); }
+    .replay { margin-top: 6px; font: 600 12px var(--font-mono); background: var(--amber); color: var(--deep); border: 0; padding: 5px 10px; cursor: pointer; }
     .mock-card { padding-top: 8px; }
     .mock-cardscreen .modal { position: static; background: none; padding: 16px 0 0; display: block; }
   </style>

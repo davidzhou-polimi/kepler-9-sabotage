@@ -1,0 +1,184 @@
+/* Mission Control console: the whole web app as the console (proposals, mocks only until chosen). See js/console.js. */
+
+.cs { position: relative; height: 100vh; height: 100dvh; overflow: hidden; color: var(--star); }
+.cs-scroll { height: 100%; overflow: auto; scrollbar-width: none; }
+.cs-scroll::-webkit-scrollbar { display: none; }
+.cs .screen { min-height: 0; }
+
+/* lamps, system line, brand */
+.cs-lamp { display: inline-flex; align-items: center; gap: 6px; font: 600 10px var(--font-mono); letter-spacing: 0.14em; color: rgba(231, 237, 244, 0.65); }
+.cs-lamp i { width: 11px; height: 11px; border-radius: 50%; background: #2a3340; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7); }
+.cs-lamp.is-on i { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+.cs-lamp.is-warn i { background: var(--amber); box-shadow: 0 0 8px var(--amber); animation: blink 1.6s steps(1) infinite; }
+.cs-lamp.is-alarm i { background: var(--red); box-shadow: 0 0 10px var(--red); animation: blink 0.5s steps(1) infinite; }
+.cs-lamp.is-q i { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.cs-sys { display: flex; justify-content: space-between; gap: 12px; padding: 10px 28px 2px; font: 600 10px var(--font-mono); letter-spacing: 0.16em; color: var(--cyan); }
+.cs-brand { margin-left: auto; font: 600 10px var(--font-mono); letter-spacing: 0.22em; color: rgba(231, 237, 244, 0.4); }
+
+/* ---------- monitor: the browser window is one console CRT ---------- */
+.cs-monitor {
+  display: flex; flex-direction: column; padding: 16px 16px 0;
+  background: linear-gradient(180deg, #263040, #151b25);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.06);
+}
+.cs-monitor .cs-glass, .cs-dash .cs-glass {
+  position: relative; flex: 1; min-height: 0; overflow: hidden;
+  border-radius: 30px / 40px;
+  background-color: var(--deep);
+  background-image:
+    linear-gradient(rgba(67, 217, 210, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(67, 217, 210, 0.055) 1px, transparent 1px);
+  background-size: 32px 32px;
+  box-shadow: 0 0 0 3px #05080d, 0 0 0 6px #303b4c, inset 0 0 90px rgba(0, 0, 0, 0.85);
+}
+.cs-monitor .screen { padding-left: 28px; padding-right: 28px; }
+.cs-monitor .status { margin-left: -28px; margin-right: -28px; padding-left: 28px; padding-right: 28px; }
+.cs-panel { flex: none; height: 46px; display: flex; align-items: center; gap: 18px; padding: 0 12px; }
+
+/* ---------- desk: monitors above, a panel of keys below ---------- */
+.cs-desk {
+  display: flex; flex-direction: column; gap: 10px; padding: 14px 14px 0;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 239px, rgba(0, 0, 0, 0.4) 239px 241px),
+    linear-gradient(180deg, #121925, #0b1018);
+}
+.cs-monitors { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.cs-monitors-one { grid-template-columns: minmax(0, 1fr); }
+.cs-mon { display: flex; flex-direction: column; min-height: 0; }
+.cs-mon-label { font: 600 10px var(--font-mono); letter-spacing: 0.16em; color: var(--amber); margin: 0 0 6px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-mon-glass {
+  position: relative; flex: 1; min-height: 0; overflow: hidden;
+  border: 12px solid #1d2634; border-radius: 10px;
+  background-color: var(--deep);
+  box-shadow: 0 0 0 1px #3a475c, 0 10px 0 #070a10, inset 0 0 50px rgba(0, 0, 0, 0.8);
+}
+.cs-mon .cs-scroll { padding: 10px; }
+.cs-mon .win { margin-bottom: 10px; }
+.cs-mon-main .screen { padding: 8px 6px; }
+.cs-deskpanel {
+  flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 18px;
+  margin: 0 -14px; padding: 14px 18px 18px;
+  background: linear-gradient(180deg, #2b3546, #1a212c);
+  border-top: 2px solid #3d4a5e; box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.07);
+}
+.cs-keys, .cs-side, .cs-readouts { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.cs-key {
+  min-width: 84px; padding: 12px 12px 10px; cursor: pointer; border: 0; border-radius: 4px;
+  font-family: var(--fd), 'IBM Plex Mono', monospace; font-size: calc(var(--ds) * 15px); letter-spacing: 0.04em; color: var(--star);
+  background: linear-gradient(180deg, #3d4a5e, #28313f);
+  box-shadow: 0 5px 0 #0e131a, inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.cs-key:active { transform: translateY(4px); box-shadow: 0 1px 0 #0e131a, inset 0 1px 0 rgba(255, 255, 255, 0.18); }
+.cs-key.is-on { color: var(--cyan); box-shadow: 0 5px 0 #0e131a, inset 0 0 0 2px var(--cyan), 0 0 14px rgba(67, 217, 210, 0.35); }
+.cs-key-red { background: linear-gradient(180deg, #ee6b71, #b9383e); color: #fff; }
+.cs-key-red.is-on { color: #fff; box-shadow: 0 5px 0 #5a1418, inset 0 0 0 2px #fff, 0 0 16px rgba(228, 91, 97, 0.6); }
+.cs-key-small { min-width: 0; padding: 7px 10px 6px; font-size: calc(var(--ds) * 12px); }
+.cs-guard { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 8px 10px; border: 4px solid transparent; border-image: repeating-linear-gradient(45deg, var(--amber) 0 6px, #111 6px 12px) 4; }
+.cs-guard-label { font: 600 9px var(--font-mono); letter-spacing: 0.16em; color: var(--amber); }
+.cs-o2 { display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: #04070c; border-radius: 4px; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 0 1px #3d4a5e; }
+.cs-o2-label { font: 600 10px var(--font-mono); letter-spacing: 0.16em; color: rgba(231, 237, 244, 0.6); }
+.cs-o2-val { font-family: var(--fd), 'IBM Plex Mono', monospace; font-size: calc(var(--ds) * 30px); line-height: 1; color: var(--cyan); text-shadow: 0 0 8px rgba(67, 217, 210, 0.7); min-width: 3.1em; }
+.cs-o2-bar { width: 90px; height: 8px; background: #16202d; }
+.cs-o2-bar i { display: block; height: 100%; background: var(--cyan); }
+.cs-q { display: flex; align-items: center; gap: 8px; }
+.alarm .cs-o2-val { color: var(--red); text-shadow: 0 0 10px rgba(228, 91, 97, 0.8); }
+.alarm .cs-o2-bar i { background: var(--red); }
+.cs-desk > .alarm-strip { margin: 0; flex: none; }
+
+/* ---------- dash: the console software fills the screen ---------- */
+.cs-dash { display: flex; flex-direction: column; padding: 10px; background: #05080d; }
+.cs-dash .cs-glass { border-radius: 16px / 20px; }
+.cs-dashgrid {
+  height: 100%; display: grid; gap: 10px; padding: 6px 18px 16px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-areas: "sys sys sys" "tele tele tele" "rep map comms" "rep code comms";
+}
+.dash-sys { grid-area: sys; } .dash-sys .cs-sys { padding: 6px 0 0; }
+.dash-tele { grid-area: tele; } .dash-tele .status { position: static; margin: 0; border: 1px solid var(--line-strong); }
+.dash-tele .alarm-strip { margin: 8px 0 0; }
+.dash-rep { grid-area: rep; } .dash-map { grid-area: map; } .dash-code { grid-area: code; } .dash-comms { grid-area: comms; }
+.dash-cell { min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--line-strong); background: rgba(25, 40, 61, 0.35); }
+.dash-label { flex: none; padding: 5px 10px; font: 600 10px var(--font-mono); letter-spacing: 0.16em; color: var(--amber); border-bottom: 1px solid var(--line); }
+.dash-cell .cs-scroll { flex: 1; min-height: 0; padding: 8px; }
+.dash-cell .win { margin-bottom: 8px; }
+.cs-dash .screen { padding-left: 22px; padding-right: 22px; }
+
+.cs-subkeys { display: flex; gap: 4px; margin-bottom: 8px; }
+.cs-subkey { padding: 6px 10px; min-height: 34px; cursor: pointer; background: transparent; border: 2px solid var(--line); color: var(--star); font-family: var(--fd), 'IBM Plex Mono', monospace; font-size: calc(var(--ds) * 13px); }
+.cs-subkey.is-on { background: var(--cyan); border-color: var(--cyan); color: var(--deep); }
+
+/* ---------- whole-screen video effects ---------- */
+.cs-fx { position: absolute; inset: 0; pointer-events: none; z-index: 30; }
+.cs-glass, .cs-mon-glass { isolation: isolate; }
+
+/* crt: the glass, always */
+.fx-crt .cs-fx {
+  background:
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.6) 100%),
+    repeating-linear-gradient(180deg, transparent 0 2px, rgba(0, 0, 0, 0.2) 2px 3px);
+  box-shadow: inset 0 0 140px rgba(67, 217, 210, 0.1);
+}
+.fx-crt .cs-scroll { filter: drop-shadow(0 0 1.5px rgba(67, 217, 210, 0.35)); }
+
+/* boot: when the console turns on, a line of light opens into the screen */
+.fx-boot .cs-scroll { animation: cs-boot 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.fx-boot .cs-glass, .fx-boot .cs-mon-glass { background-color: #000; }
+@keyframes cs-boot {
+  0% { clip-path: inset(49.6% 3% 49.6% 3%); filter: brightness(6) saturate(0); }
+  30% { clip-path: inset(49.6% 0 49.6% 0); filter: brightness(6) saturate(0); }
+  60% { clip-path: inset(0 0 0 0); filter: brightness(2.2); }
+  100% { clip-path: inset(0 0 0 0); filter: none; }
+}
+.fx-freeze-boot .cs-scroll { animation: none; clip-path: inset(38% 0 38% 0); filter: brightness(3.5) saturate(0.4); }
+
+/* static: a burst of static when the channel changes (the app adds .cs-switching for a moment) */
+.cs-switching .cs-fx::after, .fx-freeze-static .cs-fx::after {
+  content: ''; position: absolute; inset: 0; opacity: 0.6; mix-blend-mode: screen;
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.91  0 0 0 0 0.93  0 0 0 0 0.96  0 0 0 1.6 -0.55'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+    repeating-linear-gradient(180deg, rgba(231, 237, 244, 0.18) 0 1px, transparent 1px 3px);
+  animation: cs-static 0.32s steps(4) both;
+}
+.fx-freeze-static .cs-fx::after { animation: none; }
+@keyframes cs-static {
+  0% { background-position: 0 0, 0 0; opacity: 0.8; }
+  33% { background-position: 57px -35px, 0 3px; }
+  66% { background-position: -46px 88px, 0 7px; }
+  100% { background-position: 23px 12px, 0 11px; opacity: 0; }
+}
+
+/* link: NOVA's damaged link, her messages and answers glitch now and then */
+.fx-link .tx-voice .bubble, .fx-link .qa .a, .fx-link .home-status-log, .fx-link .log.nova { animation: cs-glitch 5s steps(1) infinite; }
+.fx-link .tx-voice .msg:nth-child(2) .bubble, .fx-link .qa:nth-child(2) .a { animation-delay: -2.3s; }
+@keyframes cs-glitch {
+  0%, 88%, 92%, 100% { transform: none; text-shadow: none; clip-path: none; }
+  89% { transform: translateX(4px) skewX(-10deg); text-shadow: -2px 0 rgba(228, 91, 97, 0.9), 2px 0 rgba(67, 217, 210, 0.9); }
+  90% { transform: translateX(-3px); clip-path: inset(20% 0 35% 0); text-shadow: 3px 0 rgba(228, 91, 97, 0.9); }
+  91% { transform: translateX(2px); text-shadow: -1px 0 rgba(67, 217, 210, 0.9); }
+}
+.fx-freeze-link .tx-voice .bubble, .fx-freeze-link .qa .a, .fx-freeze-link .home-status-log {
+  animation: none; transform: translateX(4px) skewX(-8deg);
+  text-shadow: -2px 0 rgba(228, 91, 97, 0.9), 2px 0 rgba(67, 217, 210, 0.9);
+}
+
+/* mock frames: the console fills the frame */
+.mock-frame .cs { height: 100%; }
+
+/* narrow screens: one line of system text, no brand */
+@container (max-width: 520px) {
+  .cs-sys span:last-child, .cs-brand { display: none; }
+  .cs-sys { padding: 10px 22px 2px; }
+  .cs-monitor .screen { padding-left: 18px; padding-right: 18px; }
+  .cs-monitor .status { margin-left: -18px; margin-right: -18px; padding-left: 18px; padding-right: 18px; }
+  /* the key panel stays compact: one row of channel keys, one row of readouts and the code key */
+  .cs-deskpanel { gap: 8px 10px; padding: 10px 12px 12px; }
+  .cs-keys { width: 100%; flex-wrap: nowrap; gap: 6px; }
+  .cs-key { flex: 1; min-width: 0; padding: 10px 6px 8px; }
+  .cs-readouts { flex: 1; gap: 6px 10px; }
+  .cs-o2-val { font-size: calc(var(--ds) * 24px); }
+  .cs-o2-bar { width: 44px; }
+  .cs-side { gap: 8px; }
+  .cs-side .cs-lamp:first-child { display: none; }
+  .cs-guard { padding: 4px 6px 6px; }
+}

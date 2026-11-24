@@ -4,6 +4,7 @@
 import { CREW, PEOPLE, MOD_NAME, HATCH_NAME, HATCHES, MODULES, GRID, fmtTime } from './generator.js';
 import { BRIEFING, BRIEFING_PARTS, ENDINGS, ANSWERS, PROFILES, renderReport, questionText, solutionText } from './texts.js';
 import { portraitSvg } from './portraits.js';
+import { consoleScreen } from './console.js';
 
 export const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 
@@ -564,6 +565,7 @@ export function screenSolution(view) {
 // The debrief questions are on the scoreboard sheet, not in NOVA (decided 2026-11-23).
 
 export function screen(view) {
+  if (view.shell) return consoleScreen(view, screen); // the whole app as Mission Control's console (proposals)
   const f = {
     home: screenHome, briefing: screenBriefing, play: screenPlay,
     ending: screenEnding, solution: screenSolution,
