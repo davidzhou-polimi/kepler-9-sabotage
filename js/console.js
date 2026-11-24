@@ -2,6 +2,7 @@
 // view.shell: 'monitor' the browser window is one console CRT; 'desk' the physical console (monitors + key panel);
 //             'dash' the console software fills the screen, every panel visible at once on a laptop.
 //             'desk2' third round: the desk combined with today's interface (see below)
+//             'deck' fourth round: one screen with today's windows, and the physical bar (see below)
 // view.fx: whole-screen video effects, a list: 'crt' (glass, always), 'boot' (power-on), 'static' (channel change),
 //          'link' (NOVA's damaged link). In mocks a frame can be frozen on a moment with view.fxFreeze.
 import { esc, fmtClock, warningIcon, statusBar, reportsPanel, mapPanel, askPanel, briefingPanel, codePanel, profileModal, quitModal, MAX_QUESTIONS, OXYGEN_MS } from './ui.js';
@@ -179,7 +180,44 @@ function desk2Shell(view, inner) {
   </div>`;
 }
 
+// ---------- fourth round: one screen with windows, and the physical bar ----------
+// 2026-11-24, after the third round. The boxes don't sit in monitors (they read as cards, not windows): the screen
+// is one display and shows today's screens as they are, windows on the grid, the status bar on top. The video
+// effect stays on the screen, never on the hardware. The physical bar has more on it, none of it a fake control:
+// the keys (today's tabs, each with its lamp), the red CODE key under its guard, the power button (QUIT), the PWR
+// and ALARM lamps, the LINK meter (low and unsteady: the link is damaged), the speaker of the voice channel.
+// view.deck: 'retro' chunky dark keys, slotted grille, needle gauge, a tube with its bezel
+//            'color' as retro, with coloured key caps: amber ASK NOVA (the amber of the QUESTIONS marks), red CODE
+//            'scifi' flat backlit keys, light strips, no bezel
+function deckShell(view, screenFn) {
+  const { state } = view;
+  const playing = state.phase === 'play';
+  const style = view.deck || 'retro';
+  const inner = screenFn({ ...view, shell: null, quit: false, noTabs: true });
+  let tab = state.tab;
+  if (view.wide && tab === 'reports') tab = 'ask'; // on a laptop the reports are always on screen
+  const k = (label, v) => key2(label, v, { on: playing && tab === v, live: playing, cls: `cs-key-${v}` });
+  const keys = (view.wide ? '' : k('REPORTS', 'reports')) + k('MAP', 'map') + k('ASK NOVA', 'ask') + k('BRIEFING', 'briefing');
+  const code = `<div class="cs-guard">${key2('CODE', 'code', { on: playing && tab === 'code', live: playing, cls: 'cs-key-red' })}</div>`;
+  const link = style === 'scifi'
+    ? '<span class="cs-link"><span class="cs-o2-label">LINK</span><span class="cs-link-bars"><i class="on"></i><i class="on is-flick"></i><i></i><i></i><i></i></span></span>'
+    : '<span class="cs-link"><span class="cs-gauge"><i></i></span><span class="cs-o2-label">LINK</span></span>';
+  return `<div class="cs cs-deck deck-${style} ${view.wide ? 'is-wide' : ''} ${fxClass(view)}">
+    <div class="cs-screen"><div class="cs-scroll">${inner}</div><div class="cs-fx" aria-hidden="true"></div></div>
+    <div class="cs-bar">
+      <div class="cs-instr">
+        <span class="cs-lampset">${lamp('PWR', 'is-on')}${link}${lamp('ALARM', critical(view) ? 'is-alarm' : '')}</span>
+        <span class="cs-grille" aria-hidden="true"></span>
+        <span class="cs-brand">MISSION CONTROL · NIGHT SHIFT</span>
+        ${powerKey(playing)}
+      </div>
+      <div class="cs-keyrow">${keys}${code}</div>
+    </div>
+  </div>`;
+}
+
 export function consoleScreen(view, screenFn) {
+  if (view.shell === 'deck') return deckShell(view, screenFn);
   const inner = screenFn({ ...view, shell: null });
   if (view.shell === 'desk2') return desk2Shell(view, inner);
   if (view.shell === 'desk') return deskShell(view, inner);

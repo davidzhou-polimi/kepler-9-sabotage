@@ -282,3 +282,170 @@
   .cs-tele .meter { min-width: 0; }
   .cs-power { width: 40px; height: 40px; }
 }
+
+/* ---------- fourth round: one screen with windows, and the physical bar (deck, see js/console.js) ---------- */
+.cs-deck { display: flex; flex-direction: column; background: #0a0e15; }
+
+/* the screen: today's screens on the grid; the video effect lives here and nowhere else */
+.cs-screen {
+  position: relative; flex: 1; min-height: 0; overflow: hidden;
+  transform: translateZ(0); /* windows opened over the page (profile, quit) cover the screen, not the hardware */
+  background-color: var(--deep);
+  background-image:
+    linear-gradient(rgba(67, 217, 210, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(67, 217, 210, 0.055) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.emergency .cs-screen {
+  background-image:
+    linear-gradient(rgba(228, 91, 97, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(228, 91, 97, 0.08) 1px, transparent 1px);
+}
+.cs-deck .screen { min-height: 100%; }
+/* the glow of the glass as a text glow: a filter on the scrolling area would trap the windows opened over the page */
+.cs-deck.fx-crt .cs-scroll { filter: none; text-shadow: 0 0 3px rgba(67, 217, 210, 0.3); }
+.cs-deck.fx-crt .rep-sheet, .cs-deck.fx-crt .idcard, .cs-deck.fx-crt .alarm-strip { text-shadow: none; }
+/* the alarm frame of the last minute belongs to the screen; on the hardware the ALARM lamp lights up */
+.alarm:has(.cs-deck)::after { content: none; }
+.alarm .cs-deck .cs-screen::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 15;
+  box-shadow: inset 0 0 0 4px var(--red), inset 0 0 160px 24px rgba(228, 91, 97, 0.5);
+  animation: alarm-pulse 1.2s ease-in-out infinite;
+}
+
+/* the physical bar */
+.cs-bar { flex: none; position: relative; display: flex; align-items: center; gap: 18px; padding: 12px 22px 16px; }
+.cs-instr, .cs-keyrow { display: contents; }
+.cs-bar .cs-key2 { order: 1; }
+.cs-grille { order: 2; flex: 1; align-self: stretch; min-width: 24px; max-width: 220px; margin: 4px 0; }
+.cs-lampset { order: 3; display: flex; align-items: center; gap: 16px; }
+.cs-bar .cs-brand { order: 4; margin-left: auto; white-space: nowrap; }
+.cs-bar .cs-guard { order: 5; display: flex; padding: 0; gap: 0; border-width: 4px; }
+.cs-bar .cs-guard .cs-key2 { min-width: 100px; }
+.cs-bar .cs-power { order: 6; }
+.cs-link { display: inline-flex; align-items: center; gap: 6px; }
+
+/* retro: a tube in its bezel, a metal bar with screws, a slotted grille, a needle for the link */
+.deck-retro, .deck-color { background: linear-gradient(180deg, #1b2330, #10151d); }
+:is(.deck-retro, .deck-color) .cs-screen {
+  margin: 12px 12px 0; border-radius: 24px / 30px;
+  box-shadow: 0 0 0 3px #05080d, 0 0 0 9px #2a3444, 0 0 0 10px #4a586d;
+}
+:is(.deck-retro, .deck-color) .cs-bar {
+  margin-top: 12px; border-top: 2px solid #3d4a5e;
+  background:
+    radial-gradient(circle at 9px 9px, #0a0e14 0 2.5px, #6a7a90 3px 4px, transparent 4.5px),
+    radial-gradient(circle at calc(100% - 9px) 9px, #0a0e14 0 2.5px, #6a7a90 3px 4px, transparent 4.5px),
+    radial-gradient(circle at 9px calc(100% - 9px), #0a0e14 0 2.5px, #6a7a90 3px 4px, transparent 4.5px),
+    radial-gradient(circle at calc(100% - 9px) calc(100% - 9px), #0a0e14 0 2.5px, #6a7a90 3px 4px, transparent 4.5px),
+    linear-gradient(180deg, #2b3546, #1a212c);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.07);
+}
+:is(.deck-retro, .deck-color) .cs-grille {
+  border-radius: 3px; background: repeating-linear-gradient(90deg, #080b10 0 3px, #222b38 3px 8px);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.cs-gauge {
+  position: relative; flex: none; width: 44px; height: 24px; overflow: hidden; border-radius: 44px 44px 0 0;
+  background:
+    radial-gradient(circle at 50% 100%, #1a212c 0 6px, transparent 6.5px),
+    conic-gradient(from -90deg at 50% 100%, var(--red) 0 55deg, var(--amber) 55deg 100deg, #cfd8e2 100deg 180deg, transparent 180deg);
+  box-shadow: 0 0 0 2px #0a0e14, 0 0 0 3px #4a586d;
+}
+.cs-gauge i {
+  position: absolute; left: calc(50% - 1px); bottom: 0; width: 2px; height: 21px; background: #0a0e14;
+  transform-origin: 50% 100%; transform: rotate(-48deg); animation: cs-needle 2.6s ease-in-out infinite;
+}
+@keyframes cs-needle { 0%, 100% { transform: rotate(-52deg); } 30% { transform: rotate(-38deg); } 45% { transform: rotate(-58deg); } 70% { transform: rotate(-44deg); } }
+
+/* retro with coloured caps: light keys, amber ASK NOVA (the amber of the QUESTIONS marks), red CODE */
+.deck-color .cs-key2 { color: var(--ink); background: linear-gradient(180deg, #f1f4f8, #c4ced9); box-shadow: 0 5px 0 #6c7888, inset 0 1px 0 #fff; }
+.deck-color .cs-key2 .cs-led { background: #8d99a8; box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5); }
+.deck-color .cs-key2.is-on { color: var(--ink); transform: translateY(3px); box-shadow: 0 2px 0 #6c7888, inset 0 1px 0 #fff, 0 0 16px rgba(67, 217, 210, 0.7); }
+.deck-color .cs-key2.is-on .cs-led { background: var(--cyan-ink); box-shadow: 0 0 6px var(--cyan); }
+.deck-color .cs-key-ask { background: linear-gradient(180deg, #f8cf7a, #d99a26); box-shadow: 0 5px 0 #7c5612, inset 0 1px 0 #ffe7b0; }
+.deck-color .cs-key-ask.is-on { box-shadow: 0 2px 0 #7c5612, inset 0 1px 0 #ffe7b0, 0 0 16px rgba(242, 184, 75, 0.8); }
+.deck-color .cs-key-red { color: #fff; background: linear-gradient(180deg, #ee6b71, #b9383e); box-shadow: 0 5px 0 #5a1418, inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+.deck-color .cs-key-red .cs-led { background: #7c2126; }
+.deck-color .cs-key-red.is-on { color: #fff; box-shadow: 0 2px 0 #5a1418, inset 0 0 0 2px #fff, 0 0 16px rgba(228, 91, 97, 0.8); }
+.deck-color .cs-key-red.is-on .cs-led { background: #fff; box-shadow: 0 0 6px #fff; }
+.deck-color .cs-key2:disabled { color: rgba(11, 18, 32, 0.45); filter: brightness(0.62); transform: none; }
+
+/* sci-fi: no bezel, a dark slab with a light strip, flat backlit keys, the link as bars */
+.deck-scifi { background: #05080d; }
+.deck-scifi .cs-screen::before {
+  content: ''; position: absolute; inset: 6px; z-index: 16; pointer-events: none; --c: rgba(67, 217, 210, 0.75);
+  background:
+    linear-gradient(var(--c), var(--c)) top left / 18px 2px no-repeat, linear-gradient(var(--c), var(--c)) top left / 2px 18px no-repeat,
+    linear-gradient(var(--c), var(--c)) top right / 18px 2px no-repeat, linear-gradient(var(--c), var(--c)) top right / 2px 18px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom left / 18px 2px no-repeat, linear-gradient(var(--c), var(--c)) bottom left / 2px 18px no-repeat,
+    linear-gradient(var(--c), var(--c)) bottom right / 18px 2px no-repeat, linear-gradient(var(--c), var(--c)) bottom right / 2px 18px no-repeat;
+}
+.deck-scifi .cs-bar {
+  background: linear-gradient(180deg, #0d141e, #06090e);
+  border-top: 2px solid var(--cyan); box-shadow: 0 -2px 16px rgba(67, 217, 210, 0.35);
+}
+.alarm .deck-scifi .cs-bar { border-top-color: var(--red); box-shadow: 0 -2px 16px rgba(228, 91, 97, 0.5); }
+.deck-scifi .cs-key2 {
+  border-radius: 0; color: var(--cyan); background: rgba(67, 217, 210, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(67, 217, 210, 0.45);
+}
+.deck-scifi .cs-key2:active { transform: none; background: rgba(67, 217, 210, 0.25); }
+.deck-scifi .cs-key2 .cs-led { width: 100%; height: 2px; background: rgba(67, 217, 210, 0.25); box-shadow: none; }
+.deck-scifi .cs-key2.is-on { color: var(--deep); background: var(--cyan); box-shadow: 0 0 18px rgba(67, 217, 210, 0.6); }
+.deck-scifi .cs-key2.is-on .cs-led { background: var(--deep); box-shadow: none; }
+.deck-scifi .cs-key-red { color: var(--red); background: rgba(228, 91, 97, 0.1); box-shadow: inset 0 0 0 1px var(--red); }
+.deck-scifi .cs-key-red .cs-led { background: rgba(228, 91, 97, 0.4); }
+.deck-scifi .cs-key-red.is-on { color: var(--deep); background: var(--red); box-shadow: 0 0 18px rgba(228, 91, 97, 0.7); }
+.deck-scifi .cs-key2:disabled { color: rgba(67, 217, 210, 0.35); box-shadow: inset 0 0 0 1px rgba(67, 217, 210, 0.18); }
+.deck-scifi .cs-key-red:disabled { color: rgba(228, 91, 97, 0.45); box-shadow: inset 0 0 0 1px rgba(228, 91, 97, 0.3); filter: none; }
+.deck-scifi .cs-guard { border-width: 3px; border-image: repeating-linear-gradient(45deg, var(--red) 0 4px, transparent 4px 9px) 3; }
+.deck-scifi .cs-lamp i { border-radius: 0; width: 9px; height: 9px; }
+.deck-scifi .cs-grille {
+  background: radial-gradient(circle, rgba(67, 217, 210, 0.5) 0 1px, transparent 1.4px) 0 0 / 7px 7px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+}
+.deck-scifi .cs-power { background: rgba(67, 217, 210, 0.06); box-shadow: inset 0 0 0 1px rgba(67, 217, 210, 0.6), 0 0 12px rgba(67, 217, 210, 0.3); }
+.deck-scifi .cs-power:active { transform: none; background: rgba(67, 217, 210, 0.25); box-shadow: inset 0 0 0 1px rgba(67, 217, 210, 0.6); }
+.cs-link-bars { display: inline-flex; align-items: flex-end; gap: 3px; height: 16px; }
+.cs-link-bars i { width: 4px; background: rgba(231, 237, 244, 0.18); }
+.cs-link-bars i:nth-child(1) { height: 5px; } .cs-link-bars i:nth-child(2) { height: 8px; } .cs-link-bars i:nth-child(3) { height: 11px; }
+.cs-link-bars i:nth-child(4) { height: 14px; } .cs-link-bars i:nth-child(5) { height: 16px; }
+.cs-link-bars i.on { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.cs-link-bars i.is-flick { animation: blink 1.6s steps(1) infinite; }
+
+/* phone (the same switch as the screens inside: view.wide): the instruments in one strip, the keys in one row under it */
+.cs-deck:not(.is-wide) .cs-bar { flex-direction: column; align-items: stretch; gap: 8px; padding: 8px 10px calc(10px + env(safe-area-inset-bottom)); }
+.cs-deck:not(.is-wide) .cs-instr { display: flex; align-items: center; gap: 12px; min-height: 44px; }
+.cs-deck:not(.is-wide) .cs-keyrow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.cs-deck:not(.is-wide) .cs-brand { display: none; }
+.cs-deck:not(.is-wide) .cs-lampset { gap: 12px; }
+.cs-deck:not(.is-wide) .cs-grille { max-width: none; height: 26px; align-self: center; margin: 0; }
+.cs-deck:not(.is-wide) .cs-key2, .cs-deck:not(.is-wide) .cs-guard .cs-key2 { min-width: 0; width: 100%; padding: 7px 2px 6px; font-size: calc(var(--ds) * clamp(10px, 3.3cqi, 13px)); letter-spacing: 0.02em; }
+:is(.deck-retro, .deck-color):not(.is-wide) .cs-screen { margin: 6px 6px 0; border-radius: 14px / 18px; box-shadow: 0 0 0 2px #05080d, 0 0 0 5px #2a3444, 0 0 0 6px #4a586d; }
+:is(.deck-retro, .deck-color):not(.is-wide) .cs-bar { margin-top: 7px; padding-left: 16px; padding-right: 16px; }
+@container (max-width: 340px) {
+  .cs-instr, .cs-lampset { gap: 8px; }
+  .cs-bar .cs-lamp { gap: 4px; letter-spacing: 0.08em; }
+}
+@media (prefers-reduced-motion: reduce) { .cs-gauge i, .cs-link-bars i.is-flick { animation: none; } }
+
+/* the home inside the console: the screen is shorter than the page, so the title block gives up its air first */
+.cs-screen { container-type: size; }
+.cs-deck .home-title { padding-top: 18px; }
+.cs-deck .screen-home .menu { padding-bottom: 14px; }
+/* short screens (a 640px phone leaves the screen under 500px): smaller title, tighter status, so the buttons stay in view */
+@container (max-height: 560px) {
+  .cs-deck .home-title { padding-top: 0; }
+  .cs-deck .title { font-size: calc(var(--ds) * clamp(34px, 13cqi, 120px)); }
+  .cs-deck .title-sub { margin-top: 4px; font-size: calc(var(--ds) * clamp(16px, 4.2cqi, 36px)); }
+  .cs-deck .kicker { margin-bottom: 6px; }
+  .cs-deck .home-status { margin-top: 10px; }
+  .cs-deck .home-status .win-body { padding: 10px 12px; }
+  .cs-deck .home-status-log { margin-top: 4px; font-size: 13px; line-height: 1.45; }
+  .cs-deck .home-status-log p { margin-bottom: 0.3em; }
+  .cs-deck .screen-home .menu { margin: 10px 0 0; padding-bottom: 4px; }
+  .cs-deck .screen-home .btn { min-height: 40px; font-size: calc(var(--ds) * 20px); }
+}
+/* small laptops: the plate goes first, the keys and instruments stay */
+@container (max-width: 1180px) { .cs-deck.is-wide .cs-brand { display: none; } }

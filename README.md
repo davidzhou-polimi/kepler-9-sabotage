@@ -43,7 +43,7 @@ gh api repos/{owner}/kepler-9-sabotage/pages -X POST -f "source[branch]=main" -f
 
 The site appears at `https://<user>.github.io/kepler-9-sabotage/` after a minute or two. Without `gh`: create the repository on github.com, push, then Settings → Pages → Deploy from a branch → `main`, folder `/ (root)`. On a free account, Pages needs a public repository.
 
-Every later `git push` publishes the new version. Players who already opened the site get it on their next load (the service worker fetches the network first and falls back to its cache after 2.5 s or when offline). When files are added or renamed, update the list in `sw.js` and change `CACHE` (`nova-v3`, …).
+Every later `git push` publishes the new version. Players who already opened the site get it on their next load (the service worker fetches the network first and falls back to its cache after 2.5 s or when offline). When files are added or renamed, update the list in `sw.js` and change `CACHE` (`nova-v4`, …).
 
 ## Files
 
@@ -58,7 +58,8 @@ js/app.js           state, events, timer, saving, developer tools
 js/console.js       the app as Mission Control's console (proposals in mocks.html, not in the game yet)
 css/console.css     its styles
 tools/serve.py      local server that never lets the browser keep old files
-js/portraits.js     16×16 pixel portraits (placeholders)
+tools/portraits.py  redraws the group's portraits as true pixel art (needs Pillow, numpy, scipy)
+js/portraits.js     the crew portraits (img/crew/, made by tools/portraits.py from reference/portraits/)
 js/fonts.js         display font switch
 js/typing.js        NOVA typing effect
 sw.js               offline cache

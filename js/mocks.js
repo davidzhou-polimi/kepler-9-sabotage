@@ -1,7 +1,7 @@
 // mocks.html: real screens of the app, built with the same functions as the game, on a fixed sample case.
 // Boards: open proposals first (each direction with its own pick), then the font comparison (decided).
 import { generateCase } from './generator.js';
-import { screen, newState, crewCard, profileModal, reportsPanel } from './ui.js';
+import { screen, newState, crewCard, profileModal, reportsPanel, askPanel } from './ui.js';
 import { DISPLAY_FONTS } from './fonts.js';
 
 const SAMPLE = 'K9-7UQ8';
@@ -22,7 +22,7 @@ function laptop(view, { cls = '', big = false } = {}) {
   return `<div class="mock-wide-wrap ${big ? 'is-big' : ''}"><div class="mock-frame mock-wide ${cls}" data-font="${JERSEY}">${screen(v)}</div></div>`;
 }
 function column(html) {
-  return `<div class="mock-frame mock-column" data-font="${JERSEY}"><main class="screen">${html}</main></div>`;
+  return `<div class="mock-frame mock-column btns-b" data-font="${JERSEY}"><main class="screen">${html}</main></div>`;
 }
 // Page text: button names never break, and the last two words of a paragraph stay together.
 const tidy = (html) => html
@@ -30,9 +30,9 @@ const tidy = (html) => html
   .replace(/ ([^ <>]+)(<\/p>|$)/g, '&nbsp;$1$2');
 const cap = (label, html) => `<figure class="mock-fig">${html}<figcaption>${label}</figcaption></figure>`;
 
-function direction(board, d, chosen) {
+function direction(board, d, chosen, closed = false) {
   const isChosen = Boolean(chosen) && [].concat(chosen).includes(d.key);
-  const lock = chosen ? `disabled ${isChosen ? 'checked' : ''}` : '';
+  const lock = chosen || closed ? `disabled ${isChosen ? 'checked' : ''}` : '';
   return `<div class="dir ${isChosen ? 'is-chosen' : ''}" id="${board}-${d.key}">
     <label class="pick"><input type="${d.multi ? 'checkbox' : 'radio'}" name="${board}" value="${d.key}" ${lock}> <b>${d.title}</b>${d.rec ? ' <span class="rec">Consigliata</span>' : ''}${isChosen ? ' <span class="done">Scelta</span>' : ''}</label>
     <div class="dir-note">${tidy(d.note)}</div>
@@ -126,14 +126,15 @@ const CRITICAL = {
 function board(b) {
   return `<section class="board" id="${b.id}">
     <header class="board-head">
-      <h2>${b.title}${b.decided ? ` <span class="done">Deciso: ${b.decided}</span>` : ''}${b.rejected ? ' <span class="done done-no">Bocciata</span>' : ''}</h2>
+      <h2>${b.title}${b.decided ? ` <span class="done">Deciso: ${b.decided}</span>` : ''}${b.rejected ? ' <span class="done done-no">Bocciata</span>' : ''}${b.redo ? ' <span class="done done-redo">Da rifare</span>' : ''}${b.done ? ` <span class="done">Fatto: ${b.done}</span>` : ''}</h2>
       <p class="quote">${b.quote}</p>
       <p>${tidy(b.context)}</p>
     </header>
     ${b.decided && b.answer ? `<p class="answer">La tua scelta: <b>${b.answer}</b></p>` : ''}
     ${b.rejected ? `<p class="answer">La tua risposta: <b>${b.rejected}</b></p>` : ''}
+    ${b.redo ? `<p class="answer">La tua risposta: <b>${b.redo}</b></p>` : ''}
     ${b.common ? `<div class="dir-frames board-common">${b.common.join('')}</div>` : ''}
-    ${b.dirs.map((d) => direction(b.id, d, b.chosen)).join('')}
+    ${b.dirs.map((d) => direction(b.id, d, b.chosen, Boolean(b.rejected || b.redo))).join('')}
   </section>`;
 }
 
@@ -335,6 +336,7 @@ const desk2Frames = (p, all) => [
 ];
 const CONSOLE3 = {
   id: 'console3', title: 'La console fisica, con l\'interfaccia di oggi',
+  redo: '«l\'effetto video non va sulla parte fisica della console» · «Console A un po\' triste. Ha pochi elementi es. sulla barra fisica della console. non dico che debba avere molte funzioni ma boh» · «non ha senso che i riquadri stiano in monitor, sembra più schede, che finestre, l\'effetto che voglio è un po\' retro futuristico, sci-fi, magari non retro non lo so hahaha» · «"Send code (one attempt)" > non scrivere il "one attempt" nel pulsante, lo si specifica fuori» (questo è già nel gioco: il pulsante è SEND CODE, e accanto «One attempt.»)',
   quote: '«combina la B con quello che abbiamo ora, altrimenti la console non funziona: sopratutto su mobile va migliorata l\'interfaccia affinché sia ordinata (vedi barra console con i tasti, è un casino su mobile), il countdown non rende abbastanza, non si capisce che è il timer dell\'ossigeno, cosa che fa molto meglio il timer attuale» · «al posto di quit metterei icona power on» · «non è realistico che sulla parte fisica della console mostri quante domande possiamo fare.» · «l\'effetto video su tutto il viewport»',
   context: `In tutte e due le direzioni. La barra di oggi torna com'è (OXYGEN con il timer e la barra a tacche, QUESTIONS, CASE) ed è il display della telemetria in cima alla console: le domande rimaste stanno su uno schermo, non più sulle spie. I tasti hanno i nomi delle schede di oggi (REPORTS, MAP, ASK NOVA, BRIEFING, CODE) al posto di MODEL e COMMS, ognuno con una spia che si accende quando il canale è aperto; CODE resta rosso, a parte, sotto la protezione a strisce. Al posto di QUIT c'è il tasto di accensione, che apre la stessa conferma di oggi. Il vetro CRT copre tutto lo schermo, tasti compresi. Sul telefono il monitor ha la cornice sottile e nessuna etichetta sopra: il canale lo dice il tasto acceso. Sul laptop restano i tre monitor della B con le loro etichette e le spie PWR, LINK, ALARM. Senza una partita aperta (home, finale) la console è la stessa: il display aspetta i dati, i tasti sono spenti. Le due direzioni cambiano solo dove sta il tasto di accensione, e quindi quante righe di tasti ha il telefono.`,
   dirs: [
@@ -353,19 +355,122 @@ const CONSOLE3 = {
   ],
 };
 
+// ---------- one screen with windows, and the physical bar (fourth round) ----------
+
+const deck = (style, extra = {}) => ({ ...NOW3, shell: 'deck', fx: ['crt'], deck: style, remainingMs: 6 * MIN + 12000, ...extra });
+const deckFrames = (s, all) => [
+  cap('Telefono, rapporti', phone(deck(s, { state: d2state({ tab: 'reports' }) }), { cls: 'btns-b' })),
+  cap('Telefono, domande', phone(deck(s, { state: d2state({ tab: 'ask', draft: askDraft }) }), { cls: 'btns-b' })),
+  ...(all ? [cap('Telefono, codice', phone(deck(s, { state: d2state({ tab: 'code', codeInput: '127' }) }), { cls: 'btns-b' }))] : []),
+  cap('Telefono, ultimo minuto', phone(deck(s, { state: d2state({ tab: 'map' }), remainingMs: 42000 }), { cls: 'btns-b emergency alarm' })),
+  ...(all ? [cap('Telefono, profilo aperto', phone(deck(s, { state: d2state({ tab: 'reports', profile: 'mira' }) }), { cls: 'btns-b' }))] : []),
+  cap('Telefono, home', phone(deck(s, { state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 } }), { cls: 'btns-b' })),
+  cap('Laptop, indagine (ridotto)', laptop(deck(s, { state: d2state({ tab: 'ask', draft: askDraft, log: askLog }) }), { cls: 'btns-b', big: true })),
+  ...(all ? [cap('Laptop, home (ridotto)', laptop(deck(s, { state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 } }), { cls: 'btns-b', big: true }))] : []),
+];
+const CONSOLE4 = {
+  id: 'console4', title: 'Uno schermo con le finestre, e la barra fisica',
+  quote: '«non ha senso che i riquadri stiano in monitor, sembra più schede, che finestre, l\'effetto che voglio è un po\' retro futuristico, sci-fi, magari non retro non lo so hahaha» · «l\'effetto video non va sulla parte fisica della console» · «Console A un po\' triste. Ha pochi elementi es. sulla barra fisica della console. non dico che debba avere molte funzioni ma boh»',
+  context: `In tutte e tre le direzioni. Niente più monitor attorno ai riquadri: lo schermo è uno solo e mostra le schermate di oggi così come sono, con le finestre sulla griglia e la barra dell'ossigeno in cima (sul laptop le due colonne di oggi, i rapporti a sinistra). Il vetro CRT sta solo sullo schermo; la cornice rossa dell'ultimo minuto pure, e sulla barra fisica si accende la spia ALARM. La barra fisica ha più cose, e nessuna finge di essere un comando: i tasti con i nomi delle schede di oggi e la loro spia, CODE rosso sotto la protezione, il tasto di accensione al posto di QUIT, le spie PWR e ALARM, lo strumento LINK (basso e instabile: il collegamento è danneggiato, per questo le domande sono 2) e l'altoparlante del canale voce. Sul laptop c'è anche la targhetta MISSION CONTROL · NIGHT SHIFT. Le tre direzioni rispondono al tuo dubbio fra retro-futuristico e sci-fi non retro: cambiano la forma dello schermo e la barra, non le finestre, che hanno la loro tavola qui sotto.`,
+  dirs: [
+    {
+      key: 'retro', title: 'A · Retro-futuristica, tasti scuri',
+      note: `<p>Lo schermo è un tubo con gli angoli tondi dentro la sua cornice. La barra è di metallo con le viti, i tasti sono quelli grossi e scuri della console fisica che avevi scelto, l'altoparlante è una griglia a fessure e LINK è uno strumento a lancetta che trema nella zona rossa.</p>`,
+      frames: deckFrames('retro', false),
+    },
+    {
+      key: 'color', title: 'B · Retro-futuristica, tasti colorati', rec: true,
+      note: `<p>Come A, con i tasti chiari come sulle console degli anni Settanta: ASK NOVA è ambra, lo stesso ambra dei segni QUESTIONS in alto, CODE è rosso, gli altri bianchi. Il tasto acceso resta premuto, con la spia e un alone.</p>
+        <p>Perché: è la meno triste delle tre, e i colori dicono già cosa fanno i tasti. Costo: è la più lontana dalle carte del gruppo, che sono tutte ciano su nero.</p>`,
+      frames: deckFrames('color', true),
+    },
+    {
+      key: 'scifi', title: 'C · Sci-fi, non retro',
+      note: `<p>Niente cornice: lo schermo arriva ai bordi, con quattro staffe luminose agli angoli. La barra è una lastra scura con una linea di luce in cima; i tasti sono piatti e retroilluminati (quello acceso è pieno di ciano, come la scheda attiva di oggi), LINK è a barrette, l'altoparlante è una fila di fori.</p>
+        <p>Perché: è la più vicina alle carte del gruppo. Costo: è la meno «console fisica»; i tasti somigliano di nuovo a schede.</p>`,
+      frames: deckFrames('scifi', false),
+    },
+  ],
+};
+
+// ---------- the crew portraits as true pixels (done, to check) ----------
+
+const FACES = [['hana', 'Hana'], ['doyun', 'Doyun'], ['mira', 'Mira'], ['echo', 'ECHO-7']];
+const zoom = (src, pixel) => `<span class="pz"><img src="${src}" alt="" ${pixel ? 'class="is-pixel"' : ''}></span>`;
+const PORTRAITS = {
+  id: 'portraits', title: 'I ritratti dell\'equipaggio', done: 'pixel veri, bordi rifilati',
+  quote: '«usa i ritratti dei personaggi» · «controlla i ritratti, che non abbiamo linee nere ai bordi per ritagli fatti male, verifica se sono true pixel, non so se conosci come Xmas in the Hell sistema le sprite»',
+  context: `Sono nel gioco al posto dei segnaposto: nel profilo e nella firma dei rapporti. Li ho abbinati ai nomi dalle carte (Hana con lo chignon, Doyun con gli occhiali, Mira con la croce rossa, ECHO-7 il robot). Ho misurato: le righe scure ai bordi c'erano in tutti e quattro (a destra e in alto e in basso per Hana, in basso per Doyun, in alto e in basso per Mira, ai due lati per ECHO-7), larghe 1 o 2 pixel. E non erano pixel veri: i quadretti sono sfumati e di misure diverse, nessuna griglia regolare. Li ho rifatti con il metodo di Xmas in the Hell: griglia, mediana di ogni cella, una palette sola per i quattro con gli accenti (la croce rossa, gli occhi ciano, l'elastico dorato). Ora ogni ritratto è 76 × 95 celle esatte, 54 colori in tutto, senza righe ai bordi. Qui sotto, per ognuno: l'originale, quello a pixel veri, e i due visi ingranditi.`,
+  common: [
+    ...FACES.map(([n, label]) => cap(`${label}: originale, pixel veri, e i visi ingranditi`, `<div class="pcompare"><img src="reference/portraits/${n}.jpg" alt=""><img class="is-pixel" src="img/crew/${n}.png" alt="">${zoom(`reference/portraits/${n}.jpg`, false)}${zoom(`img/crew/${n}.png`, true)}</div>`)),
+    cap('Nel gioco: il profilo', phone({ ...NOW2, state: { ...base(), phase: 'play', tab: 'reports', profile: 'hana' }, remainingMs: 6 * MIN + 12000 }, { cls: 'btns-b' })),
+    cap('Nel gioco: le firme dei rapporti', phone({ ...NOW2, state: { ...base(), phase: 'play', tab: 'reports' }, remainingMs: 6 * MIN + 12000 }, { cls: 'btns-b', scroll: '170' })),
+  ],
+  dirs: [],
+};
+
+// ---------- the reports after the crew cards ----------
+
+const rep2Dir = (key, title, note, style, rec = false) => ({
+  key, title, rec, note,
+  frames: [
+    cap('Telefono', phone(deck('retro', { state: d2state({ tab: 'reports' }), reportStyle: style }), { cls: 'btns-b' })),
+    cap('Telefono, più sotto', phone(deck('retro', { state: d2state({ tab: 'reports' }), reportStyle: style }), { cls: 'btns-b', scroll: '330' })),
+    cap('Laptop: la colonna dei rapporti', column(reportsPanel(c, style))),
+  ],
+});
+const REPORTS2 = {
+  id: 'reports2', title: 'I rapporti come le carte dell\'equipaggio',
+  quote: '«lo stile dei report forse va allineato a come sono le carte dei membri?»',
+  context: `Sì, la tua idea regge, soprattutto ora che i ritratti sono gli stessi delle carte: chi ha in mano la carta di Mira riconosce il suo rapporto a colpo d'occhio. E c'è un motivo in più, misurato su queste prove: i fogli chiari di oggi sono il punto in cui le righe del vetro CRT si vedono di più. Ti porto tre modi di svilupparla. In tutti il nome è quello breve delle carte (MIRA, non MIRA COSTA; il nome intero resta nel profilo), con ruolo e ID nel riquadro come sulla carta, e la riga «PERSONNEL FILE» della carta è il punto da toccare per il profilo. Il testo dei rapporti non cambia.`,
+  dirs: [
+    rep2Dir('now', 'Oggi', '<p>Il rapporto come documento chiaro, con la firma in fondo: la tua scelta del 23 novembre.</p>', 'sheet'),
+    rep2Dir('crew', 'A · La carta con il rapporto dentro', `<p>Ogni rapporto è una carta dell'equipaggio: fondo scuro, linea ciano con gli angoli tagliati, «REPORT 01» in testa come «KEPLER-9» sulle carte. Prima il testo, poi chi l'ha scritto, disegnato come sulla carta.</p>
+      <p>Perché: è la tua idea tenendo l'ordine che avevi scelto, prima cosa dice e poi chi lo dice. Costo: si perde il foglio chiaro; il testo è chiaro su scuro come tutto il resto, quindi i rapporti spiccano meno.</p>`, 'crew', true),
+    rep2Dir('crewsign', 'B · Il foglio di oggi, firmato con la carta', `<p>Il testo resta sul foglio chiaro; solo la firma in fondo diventa una piccola carta dell'equipaggio.</p>
+      <p>Costo: è la più vicina a oggi, le righe del vetro restano sui fogli, e la carta scura dentro il foglio chiaro fa due stili nello stesso rapporto.</p>`, 'crewsign'),
+    rep2Dir('crewtop', 'C · Prima la carta, poi il testo', `<p>Come A, ma la persona sta in testa, come sulla carta stampata, e il testo sotto.</p>
+      <p>Da sapere: riapre la tua scelta del 23 novembre («sembra concentrarsi di più sui dati, che sul report in sé»): qui i dati tornano prima del testo. Lo propongo una volta sola, per il dato nuovo delle carte stampate sul tavolo.</p>`, 'crewtop'),
+  ],
+};
+
+// ---------- the time window of a question ----------
+
+const timeDir = (key, title, note, ui, rec = false) => ({
+  key, title, rec, note,
+  frames: [
+    cap('Telefono, Ask NOVA', phone(deck('retro', { state: d2state({ tab: 'ask', draft: askDraft }), timeUi: ui }), { cls: 'btns-b', scroll: '250' })),
+    cap('Laptop: la finestra Ask NOVA', column(askPanel({ ...base(), draft: { kind: 'motion', what: 'M', a: 20, b: 45 } }, c, 'tap', { holo: 3 }, null, ui))),
+  ],
+});
+const TIMEUI = {
+  id: 'timeui', title: 'Il selettore dell\'orario',
+  quote: '«il selettore del range è molto piatto rispetto alla grafica del resto»',
+  context: `Sono le due tendine del browser, l'unico pezzo dell'interfaccia non disegnato da noi. La finestra di tempo va da 02:00 a 03:00 a passi di 5 minuti: 13 orari. In tutte le direzioni la domanda sotto si aggiorna come oggi, e le etichette restano From e To.`,
+  dirs: [
+    timeDir('now', 'Oggi', '<p>Due tendine.</p>', 'select'),
+    timeDir('track', 'A · La linea del tempo', `<p>Tutta l'ora su una linea, con una tacca ogni 5 minuti; la finestra scelta è accesa fra i due cursori e si legge sopra, in grande. Si tocca un orario e il cursore più vicino ci va.</p>
+      <p>Perché: si vede quanto è larga la finestra, che è la cosa su cui si ragiona, e si sceglie toccando, come il luogo sulla mappa qui sopra. Costo: sul telefono le tacche sono larghe da 18 a 24 pixel (misurate da 320 a 390 di schermo), meno dei 44 di un pulsante; per questo si tocca «vicino» e non serve centrare la tacca.</p>`, 'track', true),
+    timeDir('step', 'B · Due display con − e +', `<p>Inizio e fine sono due display con le cifre grandi del timer, ognuno con un tasto − e un tasto +, 5 minuti a tocco.</p>
+      <p>Costo: per una finestra lontana servono molti tocchi (da 02:00 a 02:45 sono nove).</p>`, 'step'),
+    timeDir('box', 'C · Le tendine di oggi, ridisegnate', `<p>Lo stesso comando, disegnato come due display: cornice ciano con l'angolo tagliato, cifre grandi, la freccia nostra.</p>
+      <p>Costo: l'elenco che si apre resta quello del telefono o del browser, non lo possiamo disegnare.</p>`, 'box'),
+  ],
+};
+
 // ---------- windows after the group's game cards ----------
 
 const winFrames = (cls) => [
-  cap('Telefono, rapporti', phone(desk2('top', { state: d2state({ tab: 'reports' }) }), { cls: `btns-b ${cls}` })),
-  cap('Telefono, domande', phone(desk2('top', { state: d2state({ tab: 'ask', draft: askDraft }) }), { cls: `btns-b ${cls}` })),
-  cap('Telefono, briefing', phone(desk2('top', { state: d2state({ tab: 'briefing' }) }), { cls: `btns-b ${cls}` })),
-  cap('Telefono, home', phone(desk2('top', { state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 } }), { cls: `btns-b ${cls}` })),
-  cap('Laptop, indagine (ridotto)', laptop(desk2('top', { state: d2state({ tab: 'code', codeInput: '12' }) }), { cls: `btns-b ${cls}`, big: true })),
+  cap('Telefono, rapporti', phone(deck('retro', { state: d2state({ tab: 'reports' }) }), { cls: `btns-b ${cls}` })),
+  cap('Telefono, domande', phone(deck('retro', { state: d2state({ tab: 'ask', draft: askDraft }) }), { cls: `btns-b ${cls}` })),
+  cap('Telefono, briefing', phone(deck('retro', { state: d2state({ tab: 'briefing' }) }), { cls: `btns-b ${cls}` })),
+  cap('Telefono, home', phone(deck('retro', { state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 } }), { cls: `btns-b ${cls}` })),
+  cap('Laptop, indagine (ridotto)', laptop(deck('retro', { state: d2state({ tab: 'code', codeInput: '127' }) }), { cls: `btns-b ${cls}`, big: true })),
 ];
 const WINDOWS = {
   id: 'windows', title: 'Le finestre come le carte del gruppo',
   quote: '«possiamo ispirarci per le finestre? deve esserci coerenza tra il materiale del gruppo»',
-  context: `Sì. Dalle carte di Shravani ho preso ciò che fa da cornice: la linea ciano con gli angoli tagliati, il titolo in ciano senza barra piena (al posto dei tre quadratini da finestra di computer), il fondo quasi nero con la griglia fine, la linguetta dei riquadri «YOUR OBJECTIVE» e «MISSION PROTOCOL», le strisce in fondo. Dentro le finestre non cambia niente: rapporti, mappa, domande e codice restano quelli decisi. Le prove sono sulla console della tavola sopra (direzione A). Ho misurato anche il ciano: sulle carte è #3AD4F1, più azzurro; nell'app è #43D9D2, più verde. È l'ultima casella, e si può aggiungere a qualsiasi direzione.`,
+  context: `Sì. Dalle carte di Shravani ho preso ciò che fa da cornice: la linea ciano con gli angoli tagliati, il titolo in ciano senza barra piena (al posto dei tre quadratini da finestra di computer), il fondo quasi nero con la griglia fine, la linguetta dei riquadri «YOUR OBJECTIVE» e «MISSION PROTOCOL», le strisce in fondo. Dentro le finestre non cambia niente: rapporti, mappa, domande e codice restano quelli decisi. Le prove sono sullo schermo della tavola sopra (direzione A): senza i monitor attorno, le finestre stanno sulla griglia come oggi. Ho misurato anche il ciano: sulle carte è #3AD4F1, più azzurro; nell'app è #43D9D2, più verde. È l'ultima casella, e si può aggiungere a qualsiasi direzione.`,
   dirs: [
     { key: 'now', title: 'Oggi', note: '<p>Le finestre di oggi dentro la console, per confronto.</p>', frames: winFrames('').slice(0, 2) },
     {
@@ -458,6 +563,7 @@ const callView = (callUi, state, extra = {}) => ({ ...NOW2, c: callCase, callUi,
 const askCall = (callUi, draft) => phone(callView(callUi, { phase: 'play', tab: 'ask', draft }), { cls: 'btns-b', scroll: '120' });
 const CALLS = {
   id: 'calls', title: 'Domande a NOVA: la chiamata del Bridge',
+  rejected: '«la call > noi di mission control non sappiamo se una chiamata è avvenuta? non ha senso»',
   quote: '«The question builder always offers "Bridge console call" as a sensor type with a time window. [...] Never show the option only when a call exists: that would leak information.»',
   context: `Caso di prova ${CALL_SAMPLE}: Mira è sul Bridge e nel rapporto dice di aver avuto la chiamata con Mission Control dalle 02:50 alle 03:00 (primo riquadro qui sotto). In tutte le direzioni la chiamata si può chiedere sempre, in ogni caso, e la domanda è «Was there a call on the Bridge console between … and …?», ricavata da quella del movimento. Con la chiamata cambia anche il briefing (secondo riquadro): nella frase dei sensori «hatch openings and motion» diventa «hatch openings, motion and calls on the Bridge console», e la scheda SENSORS ha una terza voce, CONSOLE CALL. Finché non scegli, nel gioco le chiamate sono spente: nessun caso ne ha, quindi nessun rapporto ne parla.`,
   common: [
@@ -541,20 +647,22 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [CONSOLE3, WINDOWS, CALLS];
-const DECIDED = [CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const OPEN = [CONSOLE4, WINDOWS, REPORTS2, TIMEUI];
+const NOTES = [PORTRAITS];
+const DECIDED = [CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">
     <h1>NOVA // Mock</h1>
     <p>${tidy(`Schermate vere dell'app, caso di prova ${SAMPLE}, font Jersey 10. Ogni riquadro scorre. Prima le tavole aperte: in ognuna scegli una direzione con il pallino, e in fondo trovi la raccolta. Sotto, le tavole già decise, con tutte le prove.`)}</p>
-    <nav class="mock-nav">${OPEN.map((b) => `<a href="#${b.id}">${b.title}</a>`).join('')}<a href="#summary">Raccolta</a>${DECIDED.map((b) => `<a href="#${b.id}">${b.title} (${b.rejected ? 'bocciata' : 'deciso'})</a>`).join('')}<a href="#fonts">Font (deciso)</a></nav>
+    <nav class="mock-nav">${OPEN.map((b) => `<a href="#${b.id}">${b.title}</a>`).join('')}<a href="#summary">Raccolta</a>${NOTES.map((b) => `<a href="#${b.id}">${b.title} (fatto)</a>`).join('')}${DECIDED.map((b) => `<a href="#${b.id}">${b.title} (${b.rejected ? 'bocciata' : b.redo ? 'da rifare' : 'deciso'})</a>`).join('')}<a href="#fonts">Font (deciso)</a></nav>
   </div>
   ${OPEN.map(board).join('')}
   <section class="board" id="summary">
     <header class="board-head"><h2>Raccolta</h2></header>
     <pre class="summary" data-summary></pre>
   </section>
+  ${NOTES.map(board).join('')}
   ${DECIDED.map(board).join('')}
   ${fontsBoard}`;
 
@@ -565,7 +673,10 @@ root.addEventListener('click', (e) => {
   if (b.dataset.replay === 'boot') { cs.classList.remove('fx-boot'); void cs.offsetWidth; cs.classList.add('fx-boot'); }
   if (b.dataset.replay === 'static') { cs.classList.remove('cs-switching'); void cs.offsetWidth; cs.classList.add('cs-switching'); setTimeout(() => cs.classList.remove('cs-switching'), 400); }
 });
-root.querySelectorAll('[data-scroll]').forEach((f) => { f.scrollTop = f.dataset.scroll === 'bottom' ? f.scrollHeight : Number(f.dataset.scroll); });
+root.querySelectorAll('[data-scroll]').forEach((frame) => {
+  const f = frame.querySelector('.cs-screen > .cs-scroll, .cs-mon-main .cs-scroll') || frame;
+  f.scrollTop = frame.dataset.scroll === 'bottom' ? f.scrollHeight : Number(frame.dataset.scroll);
+});
 
 function summary() {
   const lines = OPEN.map((b) => {

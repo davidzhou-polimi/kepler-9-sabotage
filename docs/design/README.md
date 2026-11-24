@@ -25,3 +25,7 @@ Hologram map (C) and home (B) decided; captured from a clean copy of the commit 
 ## 2026-11-24-console
 
 Second freeze of the day. Decided: the physical console (B) and the CRT glass, always, over the whole viewport. Their boards carry the corrections asked with the choice. Open: the third console round (the physical console with today's status bar, keys in one row, the power button for QUIT), the windows after the group's game cards, and the Bridge console call.
+
+## 2026-11-24-deck
+
+Third freeze of the day. The third console round goes back with corrections (no monitors around the windows, the video effect off the hardware, a richer physical bar), and the Bridge console call is rejected: both boards carry the words. Open: the fourth round (one screen with today's windows and the physical bar, in three versions), the windows after the game cards, now on that screen, the reports after the crew cards, and the control for the time window of a question. Done: the crew portraits as true pixel art, with the comparison against the pictures received.

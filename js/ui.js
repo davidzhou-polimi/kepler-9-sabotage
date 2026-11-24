@@ -3,7 +3,7 @@
 
 import { CREW, PEOPLE, MOD_NAME, HATCH_NAME, HATCHES, MODULES, GRID, fmtTime } from './generator.js';
 import { BRIEFING, BRIEFING_PARTS, BRIEFING_SENSORS_CALL, ENDINGS, ANSWERS, PROFILES, renderReport, questionText, solutionText } from './texts.js';
-import { portraitSvg } from './portraits.js';
+import { portrait } from './portraits.js';
 import { consoleScreen } from './console.js';
 
 export const esc = (s) => String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -53,7 +53,7 @@ export function crewCard(c, p, { asButton = true } = {}) {
   const attrs = asButton ? `type="button" data-act="profile" data-p="${p}" aria-label="Profile of ${esc(P.name)}"` : '';
   return `<${tagName} class="idcard" ${attrs}>
     <div class="idcard-left">
-      <div class="idcard-photo">${portraitSvg(p)}</div>
+      <div class="idcard-photo">${portrait(p)}</div>
       <div class="idcard-name">${P.short.toUpperCase()}</div>
     </div>
     <div class="idcard-right">
@@ -81,6 +81,11 @@ export function reportBlock(c, p) {
 //   lead:  number, small portrait and name in one row above the text
 //   sheet: the report as a light document; who wrote it comes after the text, as a signature
 //   tag:   a small ID-card fragment (portrait + name bar) beside the text
+// After the group's printed crew cards (proposals, mocks only until one is chosen):
+//   crew:     the report on a crew card: dark, cyan frame with cut corners; the text first, then who wrote it as on
+//             the card (portrait, name, role, ID), with the card's PERSONNEL FILE line as the way to the profile
+//   crewsign: today's light sheet, signed with a small crew card
+//   crewtop:  the crew card first, as printed, then the text
 function reportAlt(c, p, style) {
   const P = PEOPLE[p];
   const n = String(c.order.indexOf(p) + 1).padStart(2, '0');
@@ -89,9 +94,19 @@ function reportAlt(c, p, style) {
   const meta = `${esc(P.role.toUpperCase()).replace(/ /g, '&nbsp;')}&nbsp;·&nbsp;ID&nbsp;${P.id}`;
   const who = `<span class="rep-who"><b class="rep-name">${esc(P.name.toUpperCase())}</b><span class="rep-meta">${meta}</span></span>`;
   const prof = `type="button" data-act="profile" data-p="${p}" aria-label="Profile of ${esc(P.name)}"`;
+  if (style === 'crew' || style === 'crewsign' || style === 'crewtop') {
+    const id = `<button class="crew-id" ${prof}>
+        <span class="crew-photo">${portrait(p)}</span>
+        <span class="crew-who"><b class="crew-name">${esc(P.short.toUpperCase())}</b><span class="crew-role">${esc(P.role)}</span><span class="crew-chip">ID ${P.id}</span></span>
+        <span class="crew-file">PERSONNEL FILE</span>
+      </button>`;
+    if (style === 'crewsign') return `<article class="rep rep-sheet"><div class="sheet-top">REPORT <b>${n}</b></div>${body}${id}</article>`;
+    const top = `<div class="crew-top"><span>REPORT ${n}</span><i></i><span class="crew-dot"></span></div>`;
+    return `<article class="rep rep-crew ${style === 'crewtop' ? 'is-top' : ''}">${top}${style === 'crewtop' ? id + body : body + id}</article>`;
+  }
   if (style === 'lead') {
     return `<article class="rep rep-lead">
-      <button class="rep-head" ${prof}><span class="rep-n">${n}</span><span class="rep-face">${portraitSvg(p)}</span>${who}</button>
+      <button class="rep-head" ${prof}><span class="rep-n">${n}</span><span class="rep-face">${portrait(p)}</span>${who}</button>
       ${body}
     </article>`;
   }
@@ -99,16 +114,19 @@ function reportAlt(c, p, style) {
     return `<article class="rep rep-sheet">
       <div class="sheet-top">REPORT <b>${n}</b></div>
       ${body}
-      <button class="sheet-sign" ${prof}><span class="rep-face">${portraitSvg(p)}</span>${who}</button>
+      <button class="sheet-sign" ${prof}><span class="rep-face">${portrait(p)}</span>${who}</button>
     </article>`;
   }
   return `<article class="rep rep-tag">
-    <button class="tag" ${prof}><span class="tag-photo">${portraitSvg(p)}</span><span class="tag-name">${esc(P.short.toUpperCase())}</span></button>
+    <button class="tag" ${prof}><span class="tag-photo">${portrait(p)}</span><span class="tag-name">${esc(P.short.toUpperCase())}</span></button>
     <div class="tag-main"><div class="rep-meta">REPORT&nbsp;<b>${n}</b> · ${meta}</div>${body}</div>
   </article>`;
 }
 
-const REPORT_HINT = { card: 'Tap a card for the profile.', lead: 'Tap a name for the profile.', sheet: 'Tap a signature for the profile.', tag: 'Tap a card for the profile.' };
+const REPORT_HINT = {
+  card: 'Tap a card for the profile.', lead: 'Tap a name for the profile.', sheet: 'Tap a signature for the profile.', tag: 'Tap a card for the profile.',
+  crew: 'Tap a card for the profile.', crewsign: 'Tap a signature for the profile.', crewtop: 'Tap a card for the profile.',
+};
 
 export function reportsPanel(c, style = 'card') {
   const block = (p) => (style === 'card' ? reportBlock(c, p) : reportAlt(c, p, style));
@@ -341,7 +359,11 @@ export function briefingPanel({ typed = true, style = 'now', start = false, call
 //   'map':    the console is drawn on the Bridge and tapped like a hatch
 //   'button': a CONSOLE CALL button under the map
 //   'bridge': tapping the Bridge offers MOTION or CONSOLE CALL
-export function askPanel(state, c, where = 'chips', detail = {}, callUi = null) {
+// timeUi (how the time window is chosen; proposals, mocks only until one is chosen; default: two select menus):
+//   'track': a time line from 02:00 to 03:00 with a mark every 5 minutes; the window is lit between its two ends
+//   'step':  two displays, each with a minus and a plus key
+//   'box':   today's two menus, drawn as console displays
+export function askPanel(state, c, where = 'chips', detail = {}, callUi = null, timeUi = 'select') {
   const used = state.log.length;
   const left = MAX_QUESTIONS - used;
   const d = state.draft;
@@ -391,12 +413,32 @@ export function askPanel(state, c, where = 'chips', detail = {}, callUi = null) 
     },
   }[where]();
 
+  const selA = `<select data-field="a">${GRID.slice(0, -1).map((v) => opt(v, d.a)).join('')}</select>`;
+  const selB = `<select data-field="b">${GRID.slice(1).map((v) => opt(v, d.b)).join('')}</select>`;
+  const stepper = (label, f, v) => `<div class="ts-box"><span class="ts-l">${label}</span>
+      <button type="button" class="ts-k" data-act="draft-step" data-f="${f}" data-d="-5" aria-label="${label}: 5 minutes earlier">&minus;</button>
+      <b class="ts-v">${fmtTime(v)}</b>
+      <button type="button" class="ts-k" data-act="draft-step" data-f="${f}" data-d="5" aria-label="${label}: 5 minutes later">+</button></div>`;
+  const timeField = {
+    select: () => `<div class="field field-time"><span class="label">TIME_</span>
+      <label>From ${selA}</label>
+      <label>To ${selB}</label>
+    </div>`,
+    box: () => `<div class="field field-time tb"><span class="label">TIME_</span>
+      <label class="tb-box"><span class="ts-l">From</span>${selA}</label>
+      <label class="tb-box"><span class="ts-l">To</span>${selB}</label>
+    </div>`,
+    step: () => `<div class="field field-time ts"><span class="label">TIME_</span>${stepper('From', 'a', d.a)}${stepper('To', 'b', d.b)}</div>`,
+    track: () => `<div class="field tt"><span class="label">TIME_</span>
+      <div class="tt-read"><span class="ts-l">From</span><b>${fmtTime(d.a)}</b><span class="ts-l">To</span><b>${fmtTime(d.b)}</b></div>
+      <div class="tt-track" role="group" aria-label="Time window">${GRID.map((v) => `<button type="button" class="tt-tick ${v >= d.a && v <= d.b ? 'is-in' : ''} ${v === d.a ? 'is-a' : ''} ${v === d.b ? 'is-b' : ''}" data-act="draft-time" data-v="${v}" aria-label="${fmtTime(v)}"><i></i>${v % 15 === 0 ? `<span>${fmtTime(v)}</span>` : ''}</button>`).join('')}</div>
+      <p class="hint map-hint">Tap a time to move the nearest end of the window.</p>
+    </div>`,
+  }[timeUi]();
+
   const builder = left > 0 ? `
     ${placeFields}
-    <div class="field field-time"><span class="label">TIME_</span>
-      <label>From <select data-field="a">${GRID.slice(0, -1).map((v) => opt(v, d.a)).join('')}</select></label>
-      <label>To <select data-field="b">${GRID.slice(1).map((v) => opt(v, d.b)).join('')}</select></label>
-    </div>
+    ${timeField}
     <div class="preview">&gt; ${!d.what ? (where === 'tap' ? 'Tap a hatch or a module.' : `Choose ${d.kind === 'hatch' ? 'a hatch' : 'a module'}.`) : d.b <= d.a ? 'The end of the window must come after the start.' : esc(questionText(q))}</div>
     <div class="actions">${btn(`SEND QUESTION`, 'send-question', { cls: 'btn-primary', disabled: !valid })}
       <span class="note">Uses 1 of ${MAX_QUESTIONS}. ${left} left.</span></div>`
@@ -427,7 +469,7 @@ export function codePanel(state) {
       </div>` : `
       <p>The number of the false report, followed by the saboteur's ID.</p>
       <input class="code-input" data-field="code" inputmode="numeric" autocomplete="off" maxlength="3" pattern="[0-9]*" placeholder="___" value="${esc(v)}" aria-label="Emergency code">
-      <div class="actions">${btn('SEND CODE (ONE ATTEMPT)', 'send-code', { cls: 'btn-primary', disabled: !ok })}</div>
+      <div class="actions">${btn('SEND CODE', 'send-code', { cls: 'btn-primary', disabled: !ok })}<span class="note">One attempt.</span></div>
       ${v && !ok ? '<p class="note">The code has 3 digits.</p>' : ''}`;
   return win('EMERGENCY CODE', body, { cls: 'win-code', tone: state.confirming ? 'amber' : '' });
 }
@@ -532,7 +574,7 @@ export function screenPlay(view) {
   const panel = {
     reports: () => reportsPanel(c, view.reportStyle || 'card'),
     map: () => mapPanel(state.mapSel, { detail: view.mapDetail || {}, console: view.callUi === 'map' }),
-    ask: () => askPanel(state, c, view.askWhere, view.mapDetail || {}, view.callUi || null),
+    ask: () => askPanel(state, c, view.askWhere, view.mapDetail || {}, view.callUi || null, view.timeUi || 'select'),
     code: () => codePanel(state),
     briefing: () => briefingPanel({ typed: Boolean(view.briefTyped), style: view.briefStyle || 'now', calls: Boolean(view.callUi) }),
   }[tab]();
@@ -544,7 +586,7 @@ export function screenPlay(view) {
     <div class="play ${wide ? 'play-wide' : ''}">
       ${wide ? `<div class="play-left">${reportsPanel(c, view.reportStyle || 'card')}</div>` : ''}
       <div class="play-right">
-        <nav class="tabs">${tabs.map(([k, label]) => `<button type="button" class="tab ${k === tab ? 'is-on' : ''}" data-act="tab" data-v="${k}">${label}</button>`).join('')}</nav>
+        ${view.noTabs ? '' : `<nav class="tabs">${tabs.map(([k, label]) => `<button type="button" class="tab ${k === tab ? 'is-on' : ''}" data-act="tab" data-v="${k}">${label}</button>`).join('')}</nav>`}
         ${panel}
       </div>
     </div>

@@ -35,6 +35,12 @@
     .mock-fig figcaption { margin-top: 8px; font: 500 12px var(--font-mono); letter-spacing: 0.06em; color: rgba(231, 237, 244, 0.65); }
     .dir.is-chosen { border-left-color: var(--cyan); }
     .done-no { background: var(--red); }
+    .done-redo { background: var(--amber); }
+    .pcompare { display: flex; gap: 10px; align-items: flex-start; }
+    .pcompare > img { display: block; width: 152px; height: 190px; object-fit: cover; }
+    .pcompare img.is-pixel { image-rendering: pixelated; }
+    .pz { position: relative; display: block; width: 264px; height: 190px; overflow: hidden; }
+    .pz img { position: absolute; width: 600px; height: 750px; left: -180px; top: -215px; max-width: none; object-fit: cover; }
     .answer { font-size: 15px; color: var(--amber); }
     .summary { font: 15px/1.7 var(--font-mono); background: var(--panel); border: 2px solid var(--line-strong); padding: 14px 18px; max-width: 760px; white-space: pre-wrap; }
 
