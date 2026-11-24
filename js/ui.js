@@ -571,8 +571,9 @@ function askTerm(state, mode, detail, intro = null) {
     const files = `<div class="atts">${intro.c.order.map((p, i) => `<button type="button" class="att" data-act="tab" data-v="reports">+ REPORT ${String(i + 1).padStart(2, '0')} · ${esc(PEOPLE[p].short.toUpperCase())}</button>`).join('')}</div>`;
     briefing = BRIEFING_PARTS.slice(0, Math.max(0, n) + 1).map((part, i) => row('nova', `${keyed(part)}${i === n && intro.stage < 8 && intro.stage >= 0 ? '<span class="tl-cur"></span>' : ''}`, part.id === 'reports' ? files : '')).join('');
     if (intro.stage < 0) {
+      // the request: her first line, then the words on the left and the button at the far right
       return win('NOVA ON KEPLER-9', `<div class="term">${briefing}
-        ${row('mc', '<span class="tl-cur"></span>', `<div class="actions"><span class="hc-tag">INCOMING TRANSMISSION</span>${btn('ACCEPT', 'new-game', { cls: 'btn-primary' })}</div>`, 'tl-draft')}</div>`, { cls: 'win-ask win-term' });
+        <div class="tl-accept"><span class="hc-tag">INCOMING TRANSMISSION</span>${btn('ACCEPT', 'new-game', { cls: 'btn-primary' })}</div></div>`, { cls: 'win-ask win-term' });
     }
     if (intro.stage < 8) return win('NOVA ON KEPLER-9', `<div class="term">${briefing}</div>`, { cls: 'win-ask win-term' });
   }
@@ -846,7 +847,8 @@ export function screenLive(view) {
   const has = (id) => stage >= at(id);
   const detail = view.mapDetail || {};
   const chat = askTerm(state, 'thread', detail, { stage, c });
-  if (stage < 0) return `<main class="screen screen-live ${wide ? 'live-wide' : ''}"><div class="live-col">${chat}</div></main>`;
+  // at the start NOVA's terminal stands alone in the middle of the empty console
+  if (stage < 0) return `<main class="screen screen-live live-request"><div class="live-col">${chat}</div></main>`;
   const leftQ = MAX_QUESTIONS - state.log.length;
   const on = Math.ceil(Math.max(0, remainingMs / OXYGEN_MS) * 20);
   const oxygen = has('oxygen') ? win('OXYGEN', `<div class="status-o2"><span class="timer" data-timer>${fmtClock(remainingMs)}</span>
@@ -854,7 +856,7 @@ export function screenLive(view) {
   const questions = has('link') ? win('QUESTIONS', `<div class="status-link"><span class="pips">${Array.from({ length: MAX_QUESTIONS }, (_, i) => `<i class="${i < leftQ ? 'on' : ''}"></i>`).join('')}</span>
       <span class="status-num">${leftQ}/${MAX_QUESTIONS}</span></div>`, { cls: 'win-meter win-questions' }) : '';
   const meters = oxygen || questions ? `<div class="live-meters">${oxygen}${questions}</div>` : '';
-  const notes = stage >= 1 ? win(`CASE ${esc(c.code)} // BRIEFING`, `<dl class="notes">${NOTES.filter(([id]) => has(id)).map(([id, label, text]) => `<div><dt>${label}</dt><dd>${text}${at(id) === stage ? '<span class="tl-cur"></span>' : ''}</dd></div>`).join('')}</dl>`, { cls: 'win-notes' }) : '';
+  const notes = stage >= 1 ? win(`CASE ${esc(c.code)}`, `<dl class="notes">${NOTES.filter(([id]) => has(id)).map(([id, label, text]) => `<div><dt>${label}</dt><dd>${text}${at(id) === stage ? '<span class="tl-cur"></span>' : ''}</dd></div>`).join('')}</dl>`, { cls: 'win-notes' }) : '';
   const reports = has('reports') ? reportsPanel(c, view.reportStyle || 'crewtop', { bare: true }) : '';
   const model = has('sensors') ? mapPanel(state.mapSel, { detail }) : '';
   const code = has('code') ? codePanel(state) : '';

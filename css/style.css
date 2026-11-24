@@ -1211,3 +1211,27 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .cs-deck .screen-live:not(.live-wide) > .live-meters { margin: -4px -2px 0; padding: 6px 2px 8px; }
 /* without the legend the readout follows the map directly */
 .win-map .holo + .mread { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+
+/* ---------- corrections to the storyboard, 2026-11-25 ---------- */
+/* the tab is only for the windows that are files on the console (a report, the case, a personnel file, the
+   station model): the conversation, the code, the meters and the dialogs are plain frames with cut corners */
+:is(.wins-b1, .wins-b2, .wins-b3) .win:is(.win-term, .win-code, .win-meter, .win-amber, .win-red) { --ws: 0px; }
+/* the reports are small windows one under the other, with air between them */
+.reports-wins { display: grid; gap: 12px; align-content: start; }
+.reports-wins > .rw-title { margin-bottom: -8px; }
+.reports-wins > .hint { margin: 0 2px -4px; }
+.reports-wins .win { margin-bottom: 0; }
+.win-report .win-body { padding: 10px 14px 12px; }
+.win-report .crew-id { grid-template-columns: 46px minmax(0, 1fr); gap: 3px 10px; padding: 0 0 9px; }
+.win-report .crew-name { font-size: calc(var(--ds) * 19px); }
+.win-report .crew-role { font-size: 10px; }
+.win-report .crew-chip { padding: 0 7px; font-size: calc(var(--ds) * 12px); }
+.win-report .crew-file { font-size: 9px; }
+.win-report .rep-body { padding-top: 9px; font-size: 15px; line-height: 1.45; }
+/* NOVA's request: alone in the middle of the screen; the words on the left, the button at the far right */
+.live-request { place-items: center; align-content: center; }
+.cs-deck .screen.live-request { height: 100%; }
+.live-request .live-col { width: min(560px, 100%); }
+.tl-accept { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 16px; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+/* the station model: air between the map, the divider and the readout of the place */
+.win-map .holo + .mread { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }

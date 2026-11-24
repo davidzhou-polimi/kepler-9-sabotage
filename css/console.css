@@ -210,12 +210,13 @@
   flex: none; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
   display: grid; place-items: center;
   background: radial-gradient(circle at 50% 30%, #2c3646, #121821);
-  box-shadow: 0 4px 0 #090c12, 0 0 0 2px #090c12, 0 0 0 3px rgba(67, 217, 210, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  box-shadow: 0 1px 0 #1b2230, 0 2px 0 #171d29, 0 3px 0 #131822, 0 4px 0 #0f141c, 0 4px 0 2px #05070a, 0 4px 0 3.5px rgba(67, 217, 210, 0.6), 0 9px 7px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  margin-bottom: 4px;
 }
 .cs-power svg { width: 24px; height: 24px; fill: none; stroke: var(--cyan); stroke-width: 2.4; stroke-linecap: round; filter: drop-shadow(0 0 5px rgba(67, 217, 210, 0.9)); }
 .cs-power:hover svg, .cs-power:focus-visible svg { stroke: var(--red); filter: drop-shadow(0 0 4px rgba(228, 91, 97, 0.8)); }
 .cs-power:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
-.cs-power:active { transform: translateY(3px); box-shadow: 0 1px 0 #090c12, 0 0 0 2px #090c12, 0 0 0 3px rgba(67, 217, 210, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.18); }
+.cs-power:active { transform: translateY(3px); box-shadow: 0 1px 0 #0f141c, 0 1px 0 2px #05070a, 0 1px 0 3.5px rgba(67, 217, 210, 0.6), 0 4px 5px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
 .cs-power:disabled { cursor: default; transform: none; }
 .cs-power:disabled svg { stroke: var(--cyan); filter: drop-shadow(0 0 5px rgba(67, 217, 210, 0.9)); }
 
@@ -540,21 +541,21 @@
 .cs-leds { align-items: flex-end; gap: 22px; padding: 0 8px; background: none; box-shadow: none; }
 .cs-led2 { gap: 9px; }
 .cs-led2 i {
-  --led: #6a7a90; --led-dark: #222a35; --led-side: #161c25; --hi: 0.4; --glow: transparent;
+  --led: #6a7a90; --led-dark: #222a35; --led-side: #161c25; --hi: 0.3; --glow: transparent;
   position: relative; z-index: 0; animation: none; box-shadow: none;
 }
 /* each LED shows its colour even when dark, as real ones do */
-.cs-led2:nth-child(1) i { --led: #3f9a95; --led-dark: #1b5551; --led-side: #123c39; }
-.cs-led2:nth-child(2) i { --led: #9a7630; --led-dark: #5a4316; --led-side: #3d2d0e; }
-.cs-led2:nth-child(3) i { --led: #9a4045; --led-dark: #5a2023; --led-side: #3d1517; }
-.cs-led2.is-on i { --led: #e6fffd; --led-dark: var(--cyan); --led-side: #17807b; --hi: 0.95; --glow: rgba(67, 217, 210, 0.75); }
+.cs-led2:nth-child(1) i { --led: #1f6f6b; --led-dark: #0f403d; --led-side: #0a2c2a; }
+.cs-led2:nth-child(2) i { --led: #7a5512; --led-dark: #46300a; --led-side: #2f2007; }
+.cs-led2:nth-child(3) i { --led: #7a1f25; --led-dark: #461114; --led-side: #2f0b0d; }
+.cs-led2.is-on i { --led: #2fd0c8; --led-dark: #129b94; --led-side: #0c6f6a; --hi: 0.55; --glow: rgba(67, 217, 210, 0.75); }
 .cs-led2.is-warn i { animation: cs-led-amber 1.6s steps(1) infinite; }
 .cs-led2.is-alarm i { animation: cs-led-red 0.5s steps(1) infinite; }
-@keyframes cs-led-amber { 0%, 49% { --led: #fff6dc; --led-dark: var(--amber); --led-side: #9a6a12; --hi: 0.95; --glow: rgba(242, 184, 75, 0.75); } 50%, 100% { --led: #9a7630; --led-dark: #5a4316; --led-side: #3d2d0e; --hi: 0.4; --glow: transparent; } }
-@keyframes cs-led-red { 0%, 49% { --led: #ffe3e4; --led-dark: var(--red); --led-side: #8a2328; --hi: 0.95; --glow: rgba(228, 91, 97, 0.8); } 50%, 100% { --led: #9a4045; --led-dark: #5a2023; --led-side: #3d1517; --hi: 0.4; --glow: transparent; } }
+@keyframes cs-led-amber { 0%, 49% { --led: #f0a81c; --led-dark: #c27f08; --led-side: #8a5a05; --hi: 0.55; --glow: rgba(242, 184, 75, 0.75); } 50%, 100% { --led: #7a5512; --led-dark: #46300a; --led-side: #2f2007; --hi: 0.3; --glow: transparent; } }
+@keyframes cs-led-red { 0%, 49% { --led: #e8323c; --led-dark: #b81d26; --led-side: #82131a; --hi: 0.55; --glow: rgba(228, 91, 97, 0.8); } 50%, 100% { --led: #7a1f25; --led-dark: #461114; --led-side: #2f0b0d; --hi: 0.3; --glow: transparent; } }
 @media (prefers-reduced-motion: reduce) {
-  .cs-led2.is-warn i { animation: none; --led: #fff6dc; --led-dark: var(--amber); --led-side: #9a6a12; --hi: 0.95; --glow: rgba(242, 184, 75, 0.75); }
-  .cs-led2.is-alarm i { animation: none; --led: #ffe3e4; --led-dark: var(--red); --led-side: #8a2328; --hi: 0.95; --glow: rgba(228, 91, 97, 0.8); }
+  .cs-led2.is-warn i { animation: none; --led: #f0a81c; --led-dark: #c27f08; --led-side: #8a5a05; --hi: 0.55; --glow: rgba(242, 184, 75, 0.75); }
+  .cs-led2.is-alarm i { animation: none; --led: #e8323c; --led-dark: #b81d26; --led-side: #82131a; --hi: 0.55; --glow: rgba(228, 91, 97, 0.8); }
 }
 /* a: a dome on its collar, seen from above: the collar is an ellipse on the panel, the body rises from it */
 .led-a .cs-led2 i {
