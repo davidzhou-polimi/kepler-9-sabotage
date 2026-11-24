@@ -128,11 +128,12 @@ const REPORT_HINT = {
   crew: 'Tap a card for the profile.', crewsign: 'Tap a signature for the profile.', crewtop: 'Tap a card for the profile.',
 };
 
-export function reportsPanel(c, style = 'card') {
+// bare (proposal, mocks): no window around the reports; the cards stand on the screen under the title
+export function reportsPanel(c, style = 'card', { bare = false } = {}) {
   const block = (p) => (style === 'card' ? reportBlock(c, p) : reportAlt(c, p, style));
   return win('CREW REPORTS', `
     <p class="hint">${REPORT_HINT[style]}</p>
-    <div class="reports reports-${style}">${c.order.map(block).join('')}</div>`, { cls: 'win-reports' });
+    <div class="reports reports-${style}">${c.order.map(block).join('')}</div>`, { cls: `win-reports ${bare ? 'win-bare' : ''}` });
 }
 
 export function profileModal(c, p) {
@@ -227,6 +228,24 @@ export function mapSvg(sel, { act = 'map-sel', only = null, cls = '', detail = {
     ${nums}
   </svg>`;
   if (!detail.holo) return svg;
+  // hologram, second round (proposals, mocks): rooms as volumes of light (four walls that fade upwards and a rim),
+  // names standing upright above each room so they read straight, a ring for the projector.
+  //   4: the same view as today; 5: the model turned three quarters, like a scale model
+  if (detail.holo >= 4) {
+    const pc = (v, of) => `${(v / of * 100).toFixed(3)}%`;
+    const box = (m) => {
+      const [x, y, w, h] = ROOMS[m];
+      return `<div class="h-box ${m === 'L' ? 'is-off' : ''} ${sel === m ? 'is-sel' : ''}" style="left:${pc(x, 360)};top:${pc(y, 270)};width:${pc(w, 360)};height:${pc(h, 270)}">
+        <i class="h-w h-n"></i><i class="h-w h-s"></i><i class="h-w h-e"></i><i class="h-w h-wst"></i><i class="h-top"></i>
+        <b class="h-label">${esc(MOD_NAME[m].toUpperCase())}${m === 'L' ? '<small>SENSORS OFFLINE</small>' : ''}</b>
+      </div>`;
+    };
+    return `<div class="holo holo-3 holo-x holo-${detail.holo}">
+      <div class="holo-stage">${svg}<div class="h-boxes" aria-hidden="true">${['C', 'B', 'N', 'K', 'M', 'L'].map(box).join('')}</div></div>
+      <div class="holo-beam" aria-hidden="true"></div>
+      <div class="holo-scan" aria-hidden="true"></div>
+    </div>`;
+  }
   // hologram: the same map, tilted in 3D; walls are outline copies raised in layers (not tappable)
   const wall = (z) => `<svg class="map holo-layer ${z === 30 ? 'holo-rim' : ''}" style="--z:${z}px" viewBox="0 0 360 270" shape-rendering="crispEdges" aria-hidden="true">
     ${['C', 'B', 'N', 'K', 'M', 'L'].map((m) => { const [x, y, w, h] = ROOMS[m]; return `<rect x="${x}" y="${y}" width="${w}" height="${h}" class="${m === 'L' ? 'is-off' : ''}"/>`; }).join('')}
@@ -363,6 +382,7 @@ export function briefingPanel({ typed = true, style = 'now', start = false, call
 //   'track': a time line from 02:00 to 03:00 with a mark every 5 minutes; the window is lit between its two ends
 //   'step':  two displays, each with a minus and a plus key
 //   'box':   today's two menus, drawn as console displays
+//   'fixed10', 'fixed15': the time line with a window of fixed length (10 or 15 minutes) that is only moved
 export function askPanel(state, c, where = 'chips', detail = {}, callUi = null, timeUi = 'select') {
   const used = state.log.length;
   const left = MAX_QUESTIONS - used;
@@ -419,7 +439,14 @@ export function askPanel(state, c, where = 'chips', detail = {}, callUi = null, 
       <button type="button" class="ts-k" data-act="draft-step" data-f="${f}" data-d="-5" aria-label="${label}: 5 minutes earlier">&minus;</button>
       <b class="ts-v">${fmtTime(v)}</b>
       <button type="button" class="ts-k" data-act="draft-step" data-f="${f}" data-d="5" aria-label="${label}: 5 minutes later">+</button></div>`;
-  const timeField = {
+  const fixed = timeUi.startsWith('fixed') ? Number(timeUi.slice(5)) : 0;
+  const fixedTrack = () => `<div class="field tt tt-fixed"><span class="label">TIME_</span>
+      <div class="tt-read"><span class="ts-l">From</span><b>${fmtTime(d.a)}</b><span class="ts-l">To</span><b>${fmtTime(d.b)}</b><span class="tt-len">${fixed} MIN</span></div>
+      <div class="tt-track" role="group" aria-label="Time window">${GRID.map((v) => `<button type="button" class="tt-tick ${v >= d.a && v <= d.b ? 'is-in' : ''} ${v === d.a ? 'is-a' : ''} ${v === d.b ? 'is-b' : ''}" data-act="draft-time" data-v="${v}" aria-label="${fmtTime(v)}"><i></i>${v % 15 === 0 ? `<span>${fmtTime(v)}</span>` : ''}</button>`).join('')}
+        <span class="tt-win" style="left:${((d.a / 5 + 0.5) / 13 * 100).toFixed(3)}%;width:${((d.b - d.a) / 5 / 13 * 100).toFixed(3)}%" aria-hidden="true"><i></i></span></div>
+      <p class="hint map-hint">Drag the window, or tap a time to move it there.</p>
+    </div>`;
+  const timeField = fixed ? fixedTrack() : {
     select: () => `<div class="field field-time"><span class="label">TIME_</span>
       <label>From ${selA}</label>
       <label>To ${selB}</label>
@@ -572,7 +599,7 @@ export function screenPlay(view) {
   let tab = state.tab;
   if (wide && tab === 'reports') tab = 'ask';
   const panel = {
-    reports: () => reportsPanel(c, view.reportStyle || 'card'),
+    reports: () => reportsPanel(c, view.reportStyle || 'card', { bare: Boolean(view.reportsBare) }),
     map: () => mapPanel(state.mapSel, { detail: view.mapDetail || {}, console: view.callUi === 'map' }),
     ask: () => askPanel(state, c, view.askWhere, view.mapDetail || {}, view.callUi || null, view.timeUi || 'select'),
     code: () => codePanel(state),
@@ -584,7 +611,7 @@ export function screenPlay(view) {
     ${statusBar(view)}
     ${critical ? `<div class="alarm-strip" role="alert">${warningIcon()}<span>OXYGEN CRITICAL // LESS&nbsp;THAN&nbsp;ONE&nbsp;MINUTE</span></div>` : ''}
     <div class="play ${wide ? 'play-wide' : ''}">
-      ${wide ? `<div class="play-left">${reportsPanel(c, view.reportStyle || 'card')}</div>` : ''}
+      ${wide ? `<div class="play-left">${reportsPanel(c, view.reportStyle || 'card', { bare: Boolean(view.reportsBare) })}</div>` : ''}
       <div class="play-right">
         ${view.noTabs ? '' : `<nav class="tabs">${tabs.map(([k, label]) => `<button type="button" class="tab ${k === tab ? 'is-on' : ''}" data-act="tab" data-v="${k}">${label}</button>`).join('')}</nav>`}
         ${panel}

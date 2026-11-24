@@ -369,7 +369,7 @@ const deckFrames = (s, all) => [
   ...(all ? [cap('Laptop, home (ridotto)', laptop(deck(s, { state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 } }), { cls: 'btns-b', big: true }))] : []),
 ];
 const CONSOLE4 = {
-  id: 'console4', title: 'Uno schermo con le finestre, e la barra fisica',
+  id: 'console4', title: 'Uno schermo con le finestre, e la barra fisica', decided: 'A, retro-futuristica, tasti scuri', chosen: 'retro', answer: 'A · Retro-futuristica, tasti scuri',
   quote: '«non ha senso che i riquadri stiano in monitor, sembra più schede, che finestre, l\'effetto che voglio è un po\' retro futuristico, sci-fi, magari non retro non lo so hahaha» · «l\'effetto video non va sulla parte fisica della console» · «Console A un po\' triste. Ha pochi elementi es. sulla barra fisica della console. non dico che debba avere molte funzioni ma boh»',
   context: `In tutte e tre le direzioni. Niente più monitor attorno ai riquadri: lo schermo è uno solo e mostra le schermate di oggi così come sono, con le finestre sulla griglia e la barra dell'ossigeno in cima (sul laptop le due colonne di oggi, i rapporti a sinistra). Il vetro CRT sta solo sullo schermo; la cornice rossa dell'ultimo minuto pure, e sulla barra fisica si accende la spia ALARM. La barra fisica ha più cose, e nessuna finge di essere un comando: i tasti con i nomi delle schede di oggi e la loro spia, CODE rosso sotto la protezione, il tasto di accensione al posto di QUIT, le spie PWR e ALARM, lo strumento LINK (basso e instabile: il collegamento è danneggiato, per questo le domande sono 2) e l'altoparlante del canale voce. Sul laptop c'è anche la targhetta MISSION CONTROL · NIGHT SHIFT. Le tre direzioni rispondono al tuo dubbio fra retro-futuristico e sci-fi non retro: cambiano la forma dello schermo e la barra, non le finestre, che hanno la loro tavola qui sotto.`,
   dirs: [
@@ -420,7 +420,7 @@ const rep2Dir = (key, title, note, style, rec = false) => ({
   ],
 });
 const REPORTS2 = {
-  id: 'reports2', title: 'I rapporti come le carte dell\'equipaggio',
+  id: 'reports2', title: 'I rapporti come le carte dell\'equipaggio', decided: 'C, prima la carta, poi il testo', chosen: 'crewtop', answer: 'C · Prima la carta, poi il testo',
   quote: '«lo stile dei report forse va allineato a come sono le carte dei membri?»',
   context: `Sì, la tua idea regge, soprattutto ora che i ritratti sono gli stessi delle carte: chi ha in mano la carta di Mira riconosce il suo rapporto a colpo d'occhio. E c'è un motivo in più, misurato su queste prove: i fogli chiari di oggi sono il punto in cui le righe del vetro CRT si vedono di più. Ti porto tre modi di svilupparla. In tutti il nome è quello breve delle carte (MIRA, non MIRA COSTA; il nome intero resta nel profilo), con ruolo e ID nel riquadro come sulla carta, e la riga «PERSONNEL FILE» della carta è il punto da toccare per il profilo. Il testo dei rapporti non cambia.`,
   dirs: [
@@ -444,7 +444,8 @@ const timeDir = (key, title, note, ui, rec = false) => ({
   ],
 });
 const TIMEUI = {
-  id: 'timeui', title: 'Il selettore dell\'orario',
+  id: 'timeui', title: 'Il selettore dell\'orario', decided: 'A, la linea del tempo', chosen: 'track',
+  answer: 'A · La linea del tempo · «ma se io nel selettore seleziono dalle 2 alle 3, non è sempre meglio di fare un range piccolo? sennò serve un design che invita a selezionare un range, es. uno slider che ha già la durata impostata e non modificabile, e tu trascini solo.» (continua nella tavola «La finestra di tempo»)',
   quote: '«il selettore del range è molto piatto rispetto alla grafica del resto»',
   context: `Sono le due tendine del browser, l'unico pezzo dell'interfaccia non disegnato da noi. La finestra di tempo va da 02:00 a 03:00 a passi di 5 minuti: 13 orari. In tutte le direzioni la domanda sotto si aggiorna come oggi, e le etichette restano From e To.`,
   dirs: [
@@ -468,7 +469,8 @@ const winFrames = (cls) => [
   cap('Laptop, indagine (ridotto)', laptop(deck('retro', { state: d2state({ tab: 'code', codeInput: '127' }) }), { cls: `btns-b ${cls}`, big: true })),
 ];
 const WINDOWS = {
-  id: 'windows', title: 'Le finestre come le carte del gruppo',
+  id: 'windows', title: 'Le finestre come le carte del gruppo', decided: 'B, il titolo nella linguetta', chosen: 'B',
+  answer: 'B · Il titolo nella linguetta · «delle finestre con linguetta, non mi piace la linea sotto il titolo, vedi se riesci a decorare le finestre più simili a come sono le carte» (continua nella tavola «Le finestre con la linguetta, decorate come le carte»)',
   quote: '«possiamo ispirarci per le finestre? deve esserci coerenza tra il materiale del gruppo»',
   context: `Sì. Dalle carte di Shravani ho preso ciò che fa da cornice: la linea ciano con gli angoli tagliati, il titolo in ciano senza barra piena (al posto dei tre quadratini da finestra di computer), il fondo quasi nero con la griglia fine, la linguetta dei riquadri «YOUR OBJECTIVE» e «MISSION PROTOCOL», le strisce in fondo. Dentro le finestre non cambia niente: rapporti, mappa, domande e codice restano quelli decisi. Le prove sono sullo schermo della tavola sopra (direzione A): senza i monitor attorno, le finestre stanno sulla griglia come oggi. Ho misurato anche il ciano: sulle carte è #3AD4F1, più azzurro; nell'app è #43D9D2, più verde. È l'ultima casella, e si può aggiungere a qualsiasi direzione.`,
   dirs: [
@@ -496,6 +498,97 @@ const WINDOWS = {
       note: '<p>#3AD4F1 al posto di #43D9D2 in tutta l\'app: titoli, timer, tasti, mappa, pulsanti. Qui sulla direzione B.</p>',
       frames: winFrames('wins-b cyan-cards').slice(0, 2).concat(winFrames('wins-b cyan-cards').slice(4)),
     },
+  ],
+};
+
+// ---------- everything chosen so far, together ----------
+
+// console A (retro, dark keys), reports C (the card first), the time line; windows: the tab, in the versions below
+const chosen = (extra = {}) => deck('retro', { reportStyle: 'crewtop', timeUi: 'track', ...extra });
+const BASE = 'btns-b wins-b1';
+const win2Frames = (cls, all, extra = {}) => [
+  cap('Telefono, rapporti', phone(chosen({ state: d2state({ tab: 'reports' }), ...extra }), { cls: `btns-b ${cls}` })),
+  cap('Telefono, rapporti più sotto', phone(chosen({ state: d2state({ tab: 'reports' }), ...extra }), { cls: `btns-b ${cls}`, scroll: '400' })),
+  ...(all ? [
+    cap('Telefono, domande', phone(chosen({ state: d2state({ tab: 'ask', draft: askDraft }) }), { cls: `btns-b ${cls}`, scroll: '200' })),
+    cap('Telefono, briefing', phone(chosen({ state: d2state({ tab: 'briefing' }) }), { cls: `btns-b ${cls}` })),
+    cap('Telefono, codice', phone(chosen({ state: d2state({ tab: 'code', codeInput: '127' }) }), { cls: `btns-b ${cls}` })),
+    cap('Telefono, home', phone(chosen({ state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 } }), { cls: `btns-b ${cls}` })),
+  ] : []),
+  cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'ask', draft: askDraft, log: askLog }), ...extra }), { cls: `btns-b ${cls}`, big: true })),
+];
+const WINDOWS2 = {
+  id: 'windows2', title: 'Le finestre con la linguetta, decorate come le carte',
+  quote: '«delle finestre con linguetta, non mi piace la linea sotto il titolo, vedi se riesci a decorare le finestre più simili a come sono le carte» · «le schede report, come appaiono? perché le finestre che hai messo non ci sono più no?»',
+  context: `Qui c'è tutto il già scelto insieme: la console A, i rapporti con la carta in testa (C), la linea del tempo, e le finestre con la linguetta. Quindi si vede anche come stanno le schede dei rapporti dentro le finestre nuove: le finestre di prima non ci sono più. In tutte le direzioni la linea sotto il titolo è tolta. Per le decorazioni ho guardato le due carte che mi hai mandato: quella di Hana e quella della missione. L'ultima casella riguarda solo i rapporti: una carta dentro una finestra fa due cornici una nell'altra, e si può togliere quella di fuori.`,
+  dirs: [
+    {
+      key: 'b1', title: 'A · La linguetta, senza la linea',
+      note: '<p>La finestra che avevi scelto, con il titolo nella linguetta e nient\'altro.</p>',
+      frames: win2Frames('wins-b1', false),
+    },
+    {
+      key: 'b2', title: 'B · Come la carta dell\'equipaggio', rec: true,
+      note: `<p>Dalla carta di Hana: la doppia cornice (una linea sottile fuori, quella piena dentro), il gradino in alto a sinistra ripetuto al contrario in basso a destra, le due linee corte dentro la cornice, il punto di «ONLINE» a destra, le crocette.</p>
+        <p>Perché: i rapporti sono già carte dell'equipaggio, e così finestra e carta parlano la stessa lingua. Costo: la doppia cornice toglie 6 pixel per lato.</p>`,
+      frames: win2Frames('wins-b2', true),
+    },
+    {
+      key: 'b3', title: 'C · Come la carta della missione',
+      note: `<p>La stessa doppia cornice con i gradini, e i segni della carta della missione: la scacchiera di «MISSION PROTOCOL» a destra del titolo, le strisce sotto l'angolo in basso a sinistra, la stella in basso a destra.</p>
+        <p>Costo: è la più carica; le strisce stanno sotto ogni finestra.</p>`,
+      frames: win2Frames('wins-b3', false),
+    },
+    {
+      key: 'bare', multi: true, title: 'I rapporti senza finestra attorno',
+      note: '<p>Le carte dei rapporti stanno direttamente sullo schermo, sotto il titolo CREW REPORTS, senza la cornice della finestra. Vale con qualsiasi direzione; qui sulla B. Costo: i rapporti sono l\'unica parte senza finestra.</p>',
+      frames: win2Frames('wins-b2', false, { reportsBare: true }),
+    },
+  ],
+};
+
+// ---------- the time window: free or of fixed length ----------
+
+const timeWinDir = (key, title, note, ui, draft, rec = false) => ({
+  key, title, rec, note,
+  frames: [
+    cap('Telefono, Ask NOVA', phone(chosen({ state: d2state({ tab: 'ask', draft }), timeUi: ui }), { cls: BASE, scroll: '250' })),
+    cap('Laptop: la finestra Ask NOVA', `<div class="${BASE}">${column(askPanel({ ...base(), draft }, c, 'tap', { holo: 3 }, null, ui))}</div>`),
+  ],
+});
+const TIMEWIN = {
+  id: 'timewin', title: 'La finestra di tempo: libera o a durata fissa',
+  quote: '«ma se io nel selettore seleziono dalle 2 alle 3, non è sempre meglio di fare un range piccolo? sennò serve un design che invita a selezionare un range, es. uno slider che ha già la durata impostata e non modificabile, e tu trascini solo.»',
+  context: `Hai ragione, e l'ho misurato su 3000 casi. La domanda «il portello accusato si è aperto fra le 02:00 e le 03:00?» risolve il caso da sola in 3000 casi su 3000. Una finestra stretta non dà mai di più, e messa nel punto sbagliato dà «no» in tutti e due i casi possibili. Quindi oggi scegliere l'orario è una scelta finta: chi ci pensa chiede tutta l'ora. Con la tua finestra a durata fissa ogni caso resta risolvibile (3000 su 3000 a 5, 10, 15, 20 e 30 minuti, con una domanda e con due), ma diventa necessaria l'ora che il rapporto dichiara («At around 02:55 I heard…»). Due costi, uguali per ogni durata. Primo: una finestra messa male risponde «no», e quel «no» sembra una prova: la squadra può concludere che chi accusa mente e sbagliare il codice. Secondo: è una regola in più da dire, una frase nel briefing e una riga nel materiale del gruppo.`,
+  dirs: [
+    timeWinDir('free', 'Oggi · Finestra libera', '<p>La linea del tempo che hai scelto, con i due cursori liberi. Qui con tutta l\'ora, come nel tuo esempio.</p>', 'track', { kind: 'hatch', what: 'M-K', a: 0, b: 60 }),
+    timeWinDir('fixed10', 'A · 10 minuti, si sposta soltanto', `<p>La finestra è lunga 10 minuti e non si allarga: si trascina, o si tocca un orario e ci va. 11 posizioni; per ogni caso 3 contengono l'ora giusta.</p>
+      <p>Perché 10: l'ora dichiarata nel rapporto cade a metà di una finestra (per «around 02:55», da 02:50 a 03:00), quindi chi legge bene il rapporto la mette giusta al primo colpo.</p>`, 'fixed10', { kind: 'hatch', what: 'M-K', a: 50, b: 60 }, true),
+    timeWinDir('fixed15', 'B · 15 minuti, si sposta soltanto', `<p>Come A, più larga: 10 posizioni, 4 contengono l'ora giusta.</p>
+      <p>Costo: perdona di più chi non ha letto l'ora, quindi l'ora conta meno; e l'ora dichiarata non sta mai a metà.</p>`, 'fixed15', { kind: 'hatch', what: 'M-K', a: 45, b: 60 }),
+  ],
+};
+
+// ---------- the hologram, second round ----------
+
+const holoDir2 = (key, title, note, n, rec = false) => ({
+  key, title, rec, note,
+  frames: [
+    cap('Telefono, scheda MAP', phone(chosen({ state: d2state({ tab: 'map', mapSel: 'K' }), mapDetail: { holo: n } }), { cls: BASE })),
+    cap('Telefono, Ask NOVA', phone(chosen({ state: d2state({ tab: 'ask', draft: askDraft }), mapDetail: { holo: n } }), { cls: BASE })),
+    cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'map', mapSel: 'M-K' }), mapDetail: { holo: n } }), { cls: BASE, big: true })),
+  ],
+});
+const HOLO2 = {
+  id: 'holo2', title: 'L\'ologramma della mappa, seconda prova',
+  quote: '«l\'ologramma della mappa è migliorabile»',
+  context: `Non mi hai detto in cosa, quindi ti dico cosa ci vedo io di debole, e le prove correggono quello. I nomi dei moduli sono inclinati con il pavimento e tagliati dalle righe delle pareti: si leggono male. Le pareti sono cinque contorni impilati, che sembrano pile di fogli più che stanze. Il proiettore è una barretta piatta. Se intendevi altro, dimmelo e rifaccio su quello. La mappa resta la stessa (stessi moduli, portelli e sensori, stesse zone da toccare).`,
+  dirs: [
+    holoDir2('now', 'Oggi', '<p>L\'ologramma proiettato che avevi scelto.</p>', 3),
+    holoDir2('h4', 'A · Pareti di luce, nomi dritti', `<p>Ogni modulo è un volume: quattro pareti di luce che sfumano verso l'alto e un bordo in cima. I nomi stanno in piedi sopra i moduli, rivolti a chi guarda. Il proiettore è un anello.</p>
+      <p>Perché: i nomi si leggono dritti e le stanze sembrano stanze, senza cambiare il punto di vista a cui si tocca già bene.</p>`, 4, true),
+    holoDir2('h5', 'B · Il modello di tre quarti', `<p>Come A, ma il modello è girato di tre quarti e ruota piano, come un plastico.</p>
+      <p>Costo: girato occupa più spazio, quindi è più piccolo (sul telefono i portelli da toccare si rimpiccioliscono di circa un quinto).</p>`, 5),
   ],
 };
 
@@ -647,9 +740,9 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [CONSOLE4, WINDOWS, REPORTS2, TIMEUI];
+const OPEN = [WINDOWS2, TIMEWIN, HOLO2];
 const NOTES = [PORTRAITS];
-const DECIDED = [CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const DECIDED = [CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">

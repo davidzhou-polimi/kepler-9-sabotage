@@ -29,3 +29,7 @@ Second freeze of the day. Decided: the physical console (B) and the CRT glass, a
 ## 2026-11-24-deck
 
 Third freeze of the day. The third console round goes back with corrections (no monitors around the windows, the video effect off the hardware, a richer physical bar), and the Bridge console call is rejected: both boards carry the words. Open: the fourth round (one screen with today's windows and the physical bar, in three versions), the windows after the game cards, now on that screen, the reports after the crew cards, and the control for the time window of a question. Done: the crew portraits as true pixel art, with the comparison against the pictures received.
+
+## 2026-11-24-choices
+
+Fourth freeze of the day. Decided: the console with the tube and the dark keys (A), the windows with the title in a tab (B), the reports as crew cards with the card first (C), the time line for the time window (A). Open: how the tab windows are decorated after the two cards received (and whether the reports keep a window around them), with everything chosen shown together; the time window free or of fixed length, with the measurement on 3000 cases; the hologram, second round.
