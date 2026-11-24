@@ -249,7 +249,7 @@ button { font: inherit; color: inherit; }
 .play-wide .play-right { position: sticky; top: 86px; }
 
 /* reports */
-.reports { display: grid; gap: 18px; }
+.reports { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; } /* the column never grows past the window (it did on 320px phones) */
 .report-text { margin-top: 10px; padding-left: 12px; border-left: 2px solid var(--line); }
 .report-text.is-machine { font-family: var(--font-mono); font-size: 14px; letter-spacing: 0.02em; }
 .report-num { font-family: var(--font-mono); color: var(--cyan); font-weight: 600; }
@@ -417,6 +417,9 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .rep-name { font-family: var(--fd), 'IBM Plex Mono', monospace; font-weight: 400; font-size: calc(var(--ds) * 17px); line-height: 1.1; letter-spacing: 0.03em; }
 .rep-meta { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: rgba(231, 237, 244, 0.65); }
 .rep-meta b { color: var(--cyan); font-weight: 600; }
+/* role and ID stay on one line: on narrow phones the letters close up instead of running out of the signature */
+@container (max-width: 380px) { .rep-meta { letter-spacing: 0.04em; } }
+@container (max-width: 340px) { .rep-meta { font-size: 10px; letter-spacing: 0; } .sheet-sign { gap: 8px; padding: 8px 6px; } }
 .rep button { font: inherit; color: inherit; cursor: pointer; }
 .rep button:hover .rep-name, .rep button:focus-visible .rep-name { color: var(--cyan); }
 .rep button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
@@ -639,7 +642,11 @@ select:focus-visible { outline: 2px solid var(--cyan); }
   background: linear-gradient(to top, rgba(67, 217, 210, 0.22), rgba(67, 217, 210, 0));
   clip-path: polygon(40% 100%, 60% 100%, 100% 0, 0 0);
 }
-.holo-3::after { content: ''; position: absolute; left: 38%; right: 38%; bottom: 8px; height: 6px; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+.holo-3::after { content: ''; position: absolute; left: 38%; right: 38%; bottom: 24px; height: 6px; background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+/* the projector sits right under the map and the text after it starts below the projector
+   (measured 2026-11-24: with the bar at 8px and the -44px margin, the hint and the legend were drawn over it) */
+.holo-3 { margin-bottom: -18px; }
+.holo-3 .holo-beam { bottom: 24px; height: calc(70% - 24px); }
 
 /* ---------- home grey texts (proposals, mocks) ---------- */
 .home-top-bright { color: rgba(231, 237, 244, 0.92); font-size: 12px; }
@@ -745,4 +752,82 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------- windows after the group's game cards (proposals, mocks) ---------- */
+/* a: the cards' frame (cyan line, cut corners), the title in cyan with a line and a dot, as on the crew cards
+   b: the title in a raised tab, as the "YOUR OBJECTIVE" panel of the mission card
+   c: the whole card: double frame, and a footer with the stripes and "KEPLER-9 OPERATIONS" */
+.cyan-cards { --cyan: #3AD4F1; } /* the cyan measured on the cards; the app's is #43D9D2 */
+:is(.wins-a, .wins-b, .wins-c) .win {
+  --wf: var(--cyan); --wt: 2px; --ch: 12px; --chi: calc(var(--ch) - 0.586 * var(--wt));
+  --wfill:
+    linear-gradient(rgba(67, 217, 210, 0.05) 1px, transparent 1px) 0 0 / 16px 16px,
+    linear-gradient(90deg, rgba(67, 217, 210, 0.05) 1px, transparent 1px) 0 0 / 16px 16px,
+    #070b12;
+  position: relative; isolation: isolate; border: 0; background: none; box-shadow: none;
+}
+:is(.wins-a, .wins-b, .wins-c) .win-red { --wf: var(--red); }
+:is(.wins-a, .wins-b, .wins-c) .win-amber { --wf: var(--amber); }
+:is(.wins-a, .wins-b, .wins-c) .win::before, :is(.wins-a, .wins-b, .wins-c) .win::after {
+  content: ''; position: absolute; z-index: -1; pointer-events: none;
+}
+:is(.wins-a, .wins-b, .wins-c) .win-bar { background: none; border-bottom: 0; }
+:is(.wins-a, .wins-b, .wins-c) .win-title { color: var(--wf); }
+
+/* a */
+.wins-a .win::before {
+  inset: 0; background: var(--wf);
+  clip-path: polygon(var(--ch) 0, calc(100% - var(--ch)) 0, 100% var(--ch), 100% calc(100% - var(--ch)), calc(100% - var(--ch)) 100%, var(--ch) 100%, 0 calc(100% - var(--ch)), 0 var(--ch));
+}
+.wins-a .win::after {
+  inset: var(--wt); background: var(--wfill);
+  clip-path: polygon(var(--chi) 0, calc(100% - var(--chi)) 0, 100% var(--chi), 100% calc(100% - var(--chi)), calc(100% - var(--chi)) 100%, var(--chi) 100%, 0 calc(100% - var(--chi)), 0 var(--chi));
+}
+:is(.wins-a, .wins-c) .win-bar { padding: 12px 16px 0; gap: 12px; }
+:is(.wins-a, .wins-c) .win-ctl { flex: 1; align-items: center; gap: 10px; }
+:is(.wins-a, .wins-c) .win-ctl::before { content: ''; flex: 1; height: 2px; background: var(--wf); opacity: 0.55; }
+:is(.wins-a, .wins-c) .ctl { display: none; }
+:is(.wins-a, .wins-c) .ctl-close { display: block; width: 10px; height: 10px; border: 0; border-radius: 50%; background: var(--wf); }
+:is(.wins-a, .wins-c) .ctl-close::before, :is(.wins-a, .wins-c) .ctl-close::after { content: none; }
+
+/* b */
+.wins-b .win { --tab: 214px; --ws: 14px; --tabi: calc(var(--tab) - 1.414 * var(--wt)); }
+.wins-b .screen-solution .win { --tab: 300px; }
+.wins-b .win::before {
+  inset: 0; background: var(--wf);
+  clip-path: polygon(var(--ch) 0, var(--tab) 0, calc(var(--tab) + var(--ws)) var(--ws), calc(100% - var(--ch)) var(--ws), 100% calc(var(--ws) + var(--ch)), 100% calc(100% - var(--ch)), calc(100% - var(--ch)) 100%, var(--ch) 100%, 0 calc(100% - var(--ch)), 0 var(--ch));
+}
+.wins-b .win::after {
+  inset: var(--wt); background: var(--wfill);
+  clip-path: polygon(var(--chi) 0, var(--tabi) 0, calc(var(--tabi) + var(--ws)) var(--ws), calc(100% - var(--chi)) var(--ws), 100% calc(var(--ws) + var(--chi)), 100% calc(100% - var(--chi)), calc(100% - var(--chi)) 100%, var(--chi) 100%, 0 calc(100% - var(--chi)), 0 var(--chi));
+}
+.wins-b .win-bar { padding: 9px 16px 0; }
+.wins-b .win-title { padding: 0 14px 4px 0; border-bottom: 2px solid var(--wf); white-space: nowrap; }
+.wins-b .win-ctl { display: none; }
+
+/* c */
+.wins-c .win { --ch: 15px; padding: 7px; }
+.wins-c .win-bar::before, .wins-c .win-bar::after { content: ''; position: absolute; z-index: -1; pointer-events: none; }
+.wins-c .win::before {
+  inset: 0; background: var(--wf); opacity: 0.45;
+  clip-path: polygon(var(--ch) 0, calc(100% - var(--ch)) 0, 100% var(--ch), 100% calc(100% - var(--ch)), calc(100% - var(--ch)) 100%, var(--ch) 100%, 0 calc(100% - var(--ch)), 0 var(--ch));
+}
+.wins-c .win-bar::before {
+  --c: calc(var(--ch) - 0.586px); inset: 1px; background: #05080d;
+  clip-path: polygon(var(--c) 0, calc(100% - var(--c)) 0, 100% var(--c), 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, var(--c) 100%, 0 calc(100% - var(--c)), 0 var(--c));
+}
+.wins-c .win-bar::after {
+  --c: calc(var(--ch) - 2.93px); inset: 5px; background: var(--wf);
+  clip-path: polygon(var(--c) 0, calc(100% - var(--c)) 0, 100% var(--c), 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, var(--c) 100%, 0 calc(100% - var(--c)), 0 var(--c));
+}
+.wins-c .win::after {
+  --c: calc(var(--ch) - 4.1px); inset: 7px; background: var(--wfill);
+  clip-path: polygon(var(--c) 0, calc(100% - var(--c)) 0, 100% var(--c), 100% calc(100% - var(--c)), calc(100% - var(--c)) 100%, var(--c) 100%, 0 calc(100% - var(--c)), 0 var(--c));
+}
+.wins-c .win-body::after {
+  content: 'KEPLER-9 OPERATIONS \2726'; display: block; margin: 16px -14px -14px; padding: 9px 16px 10px;
+  text-align: right; font: 600 10px var(--font-mono); letter-spacing: 0.16em; color: var(--wf);
+  border-top: 1px solid var(--line);
+  background: repeating-linear-gradient(-55deg, var(--wf) 0 7px, transparent 7px 13px) left 16px center / 64px 9px no-repeat;
 }

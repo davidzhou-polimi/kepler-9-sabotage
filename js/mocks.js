@@ -31,9 +31,10 @@ const tidy = (html) => html
 const cap = (label, html) => `<figure class="mock-fig">${html}<figcaption>${label}</figcaption></figure>`;
 
 function direction(board, d, chosen) {
-  const lock = chosen ? `disabled ${[].concat(chosen).includes(d.key) ? 'checked' : ''}` : '';
-  return `<div class="dir ${chosen === d.key ? 'is-chosen' : ''}" id="${board}-${d.key}">
-    <label class="pick"><input type="${d.multi ? 'checkbox' : 'radio'}" name="${board}" value="${d.key}" ${lock}> <b>${d.title}</b>${d.rec ? ' <span class="rec">Consigliata</span>' : ''}${chosen === d.key ? ' <span class="done">Scelta</span>' : ''}</label>
+  const isChosen = Boolean(chosen) && [].concat(chosen).includes(d.key);
+  const lock = chosen ? `disabled ${isChosen ? 'checked' : ''}` : '';
+  return `<div class="dir ${isChosen ? 'is-chosen' : ''}" id="${board}-${d.key}">
+    <label class="pick"><input type="${d.multi ? 'checkbox' : 'radio'}" name="${board}" value="${d.key}" ${lock}> <b>${d.title}</b>${d.rec ? ' <span class="rec">Consigliata</span>' : ''}${isChosen ? ' <span class="done">Scelta</span>' : ''}</label>
     <div class="dir-note">${tidy(d.note)}</div>
     <div class="dir-frames">${d.frames.join('')}</div>
   </div>`;
@@ -287,7 +288,8 @@ const shellFrames = (shell, fx = ['crt']) => [
   cap('Telefono, ultimo minuto', phone({ ...NOW3, shell, fx, state: { ...base(), phase: 'play', tab: 'map' }, remainingMs: 42000 }, { cls: 'btns-b emergency alarm' })),
 ];
 const CONSOLE2 = {
-  id: 'console', title: 'Tutta la webapp è la console di Mission Control',
+  id: 'console', title: 'Tutta la webapp è la console di Mission Control', decided: 'B, la console fisica', chosen: 'desk',
+  answer: 'B · La console fisica · «combina la B con quello che abbiamo ora, altrimenti la console non funziona: sopratutto su mobile va migliorata l\'interfaccia affinché sia ordinata (vedi barra console con i tasti, è un casino su mobile), il countdown non rende abbastanza, non si capisce che è il timer dell\'ossigeno, cosa che fa molto meglio il timer attuale» · «al posto di quit metterei icona power on» · «non è realistico che sulla parte fisica della console mostri quante domande possiamo fare.» Le correzioni sono nella tavola «La console fisica, con l\'interfaccia di oggi».',
   quote: '«io per console intendo TUTTA LA WEBAPP da trattare come console della mission control» · sul telefono: «ma scusa ti ho detto che è LA console di mission control»',
   context: `In tutte e tre le direzioni lo schermo intero è la console, sul laptop e sul telefono (la stessa console, non un altro apparecchio). Il contenuto resta quello già deciso (rapporti come documento, ologramma, domande dalla mappa, briefing); cambia ciò che lo contiene. Le parti hanno i nomi della proposta di prima: COMMS è il canale con NOVA, STATION MODEL l'ologramma dall'archivio, REPORTS i rapporti inoltrati da NOVA, EMERGENCY UPLINK il codice, e in alto MC-OS, il sistema della console (nome nuovo, da approvare). Tutte con il vetro CRT acceso; gli altri effetti hanno la loro tavola sotto.`,
   dirs: [
@@ -302,7 +304,8 @@ const fxFrames = (fx, freeze, replay) => [
   cap('Telefono, il momento fermo', phone({ ...NOW3, shell: 'desk', fx: ['crt', fx], fxFreeze: freeze, state: { ...base(), phase: fx === 'link' ? 'play' : 'play', tab: fx === 'link' ? 'briefing' : 'ask', log: [{ q: { kind: 'motion', what: 'K', a: 40, b: 55 }, ans: 'yes' }] }, remainingMs: 6 * MIN + 12000 }, { cls: 'btns-b' })),
 ];
 const CONSOLE2_FX = {
-  id: 'console-fx2', title: 'Effetti video su tutto lo schermo',
+  id: 'console-fx2', title: 'Effetti video su tutto lo schermo', decided: 'il vetro CRT, sempre', chosen: ['crt'],
+  answer: 'Il vetro CRT, sempre · «l\'effetto video su tutto il viewport»',
   quote: 'sugli effetti video: «mock»',
   context: 'Gli effetti stanno su tutto lo schermo della console, non sulle finestre. Si possono scegliere più di uno (le caselle). Le prove sono sulla console fisica (B della tavola sopra) ma valgono per tutte e tre. Il laptop si muove dal vivo («Riguarda» rifà l\'accensione o il cambio di canale); il telefono mostra il momento fermo. Con «riduci movimento» attivo nel sistema, accensione, scariche e disturbi non si muovono.',
   dirs: [
@@ -310,6 +313,84 @@ const CONSOLE2_FX = {
     { key: 'boot', multi: true, rec: true, title: 'L\'accensione', note: '<p>Quando si apre la pagina la console si accende: una riga di luce al centro che si apre su tutto lo schermo.</p>', frames: fxFrames('boot', 'boot', 'boot') },
     { key: 'static', multi: true, title: 'La scarica al cambio di canale', note: '<p>Ogni volta che si cambia canale (un tasto della console) passa una scarica di statico per un terzo di secondo.</p><p>Costo: si cambia canale spesso, sul telefono a ogni tasto.</p>', frames: fxFrames('static', 'static', 'static') },
     { key: 'link', multi: true, rec: true, title: 'Il collegamento danneggiato di NOVA', note: '<p>I messaggi e le risposte di NOVA ogni tanto si disturbano: uno scatto di lato, i colori separati per un attimo. Solo NOVA, il resto della console è stabile.</p><p>Perché: racconta il guasto del collegamento senza parole, e non tocca i rapporti da leggere.</p>', frames: fxFrames('link', 'link', null) },
+  ],
+};
+
+// ---------- the physical console with today's interface (third round) ----------
+
+const desk2 = (deskPower, extra = {}) => ({ ...NOW3, shell: 'desk2', fx: ['crt'], deskPower, remainingMs: 6 * MIN + 12000, ...extra });
+const d2state = (s) => ({ ...base(), phase: 'play', ...s });
+const askDraft = { kind: 'hatch', what: 'M-K', a: 45, b: 60 };
+const askLog = [{ q: { kind: 'motion', what: 'K', a: 40, b: 55 }, ans: 'yes' }];
+const desk2Frames = (p, all) => [
+  cap('Telefono, rapporti', phone(desk2(p, { state: d2state({ tab: 'reports' }) }), { cls: 'btns-b' })),
+  cap('Telefono, domande', phone(desk2(p, { state: d2state({ tab: 'ask', draft: askDraft }) }), { cls: 'btns-b' })),
+  ...(all ? [cap('Telefono, briefing', phone(desk2(p, { state: d2state({ tab: 'briefing' }) }), { cls: 'btns-b' }))] : []),
+  ...(all ? [cap('Telefono, codice', phone(desk2(p, { state: d2state({ tab: 'code', codeInput: '12' }) }), { cls: 'btns-b' }))] : []),
+  cap('Telefono, ultimo minuto', phone(desk2(p, { state: d2state({ tab: 'map' }), remainingMs: 42000 }), { cls: 'btns-b emergency alarm' })),
+  ...(all ? [cap('Telefono, conferma dopo il tasto di accensione', phone(desk2(p, { state: d2state({ tab: 'reports' }), quitOpen: true }), { cls: 'btns-b' }))] : []),
+  cap('Telefono, home', phone(desk2(p, { state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 } }), { cls: 'btns-b' })),
+  cap('Laptop, indagine (ridotto)', laptop(desk2(p, { state: d2state({ tab: 'ask', draft: askDraft, log: askLog }) }), { cls: 'btns-b', big: true })),
+  ...(all ? [cap('Laptop, home (ridotto)', laptop(desk2(p, { state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 } }), { cls: 'btns-b', big: true }))] : []),
+];
+const CONSOLE3 = {
+  id: 'console3', title: 'La console fisica, con l\'interfaccia di oggi',
+  quote: '«combina la B con quello che abbiamo ora, altrimenti la console non funziona: sopratutto su mobile va migliorata l\'interfaccia affinché sia ordinata (vedi barra console con i tasti, è un casino su mobile), il countdown non rende abbastanza, non si capisce che è il timer dell\'ossigeno, cosa che fa molto meglio il timer attuale» · «al posto di quit metterei icona power on» · «non è realistico che sulla parte fisica della console mostri quante domande possiamo fare.» · «l\'effetto video su tutto il viewport»',
+  context: `In tutte e due le direzioni. La barra di oggi torna com'è (OXYGEN con il timer e la barra a tacche, QUESTIONS, CASE) ed è il display della telemetria in cima alla console: le domande rimaste stanno su uno schermo, non più sulle spie. I tasti hanno i nomi delle schede di oggi (REPORTS, MAP, ASK NOVA, BRIEFING, CODE) al posto di MODEL e COMMS, ognuno con una spia che si accende quando il canale è aperto; CODE resta rosso, a parte, sotto la protezione a strisce. Al posto di QUIT c'è il tasto di accensione, che apre la stessa conferma di oggi. Il vetro CRT copre tutto lo schermo, tasti compresi. Sul telefono il monitor ha la cornice sottile e nessuna etichetta sopra: il canale lo dice il tasto acceso. Sul laptop restano i tre monitor della B con le loro etichette e le spie PWR, LINK, ALARM. Senza una partita aperta (home, finale) la console è la stessa: il display aspetta i dati, i tasti sono spenti. Le due direzioni cambiano solo dove sta il tasto di accensione, e quindi quante righe di tasti ha il telefono.`,
+  dirs: [
+    {
+      key: 'top', title: 'A · Accensione in alto, i tasti in una riga', rec: true,
+      note: `<p>Il tasto di accensione sta accanto al display, in alto a destra, dove oggi c'è QUIT. In basso, sul telefono, una riga sola di cinque tasti uguali.</p>
+        <p>Perché: è la più ordinata e lascia più spazio al monitor, e il tasto che chiude la partita sta lontano da quelli che si premono di continuo. Costo: sul telefono la barra a tacche dell'ossigeno è più corta di oggi, per fare posto al tasto.</p>`,
+      frames: desk2Frames('top', true),
+    },
+    {
+      key: 'panel', title: 'B · Tutto sul pannello dei tasti',
+      note: `<p>Il tasto di accensione sta sul pannello in basso con gli altri. Sul telefono i tasti diventano due righe da tre, più grandi, e il display in alto è largo quanto lo schermo, come la barra di oggi.</p>
+        <p>Costo: il pannello è alto il doppio e toglie spazio al monitor; l'accensione sta accanto a CODE.</p>`,
+      frames: desk2Frames('panel', false),
+    },
+  ],
+};
+
+// ---------- windows after the group's game cards ----------
+
+const winFrames = (cls) => [
+  cap('Telefono, rapporti', phone(desk2('top', { state: d2state({ tab: 'reports' }) }), { cls: `btns-b ${cls}` })),
+  cap('Telefono, domande', phone(desk2('top', { state: d2state({ tab: 'ask', draft: askDraft }) }), { cls: `btns-b ${cls}` })),
+  cap('Telefono, briefing', phone(desk2('top', { state: d2state({ tab: 'briefing' }) }), { cls: `btns-b ${cls}` })),
+  cap('Telefono, home', phone(desk2('top', { state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 } }), { cls: `btns-b ${cls}` })),
+  cap('Laptop, indagine (ridotto)', laptop(desk2('top', { state: d2state({ tab: 'code', codeInput: '12' }) }), { cls: `btns-b ${cls}`, big: true })),
+];
+const WINDOWS = {
+  id: 'windows', title: 'Le finestre come le carte del gruppo',
+  quote: '«possiamo ispirarci per le finestre? deve esserci coerenza tra il materiale del gruppo»',
+  context: `Sì. Dalle carte di Shravani ho preso ciò che fa da cornice: la linea ciano con gli angoli tagliati, il titolo in ciano senza barra piena (al posto dei tre quadratini da finestra di computer), il fondo quasi nero con la griglia fine, la linguetta dei riquadri «YOUR OBJECTIVE» e «MISSION PROTOCOL», le strisce in fondo. Dentro le finestre non cambia niente: rapporti, mappa, domande e codice restano quelli decisi. Le prove sono sulla console della tavola sopra (direzione A). Ho misurato anche il ciano: sulle carte è #3AD4F1, più azzurro; nell'app è #43D9D2, più verde. È l'ultima casella, e si può aggiungere a qualsiasi direzione.`,
+  dirs: [
+    { key: 'now', title: 'Oggi', note: '<p>Le finestre di oggi dentro la console, per confronto.</p>', frames: winFrames('').slice(0, 2) },
+    {
+      key: 'A', title: 'A · La cornice delle carte',
+      note: `<p>La finestra tiene la sua forma. Cambiano la cornice (linea ciano, quattro angoli tagliati) e l'intestazione: il titolo in ciano, poi una linea e un punto, come «KEPLER-9 ● ONLINE» sulle carte dell'equipaggio.</p>
+        <p>Costo: è la più vicina a oggi, la carta si riconosce soprattutto dagli angoli.</p>`,
+      frames: winFrames('wins-a'),
+    },
+    {
+      key: 'B', title: 'B · Il titolo nella linguetta', rec: true,
+      note: `<p>Il titolo sta in una linguetta rialzata, sottolineato, e la cornice scende di un gradino accanto: è il riquadro «YOUR OBJECTIVE» della carta della missione.</p>
+        <p>Perché: la linguetta è il segno più riconoscibile delle carte, e la finestra è più bassa di oggi, perché il titolo non ha più una barra sua.</p>`,
+      frames: winFrames('wins-b'),
+    },
+    {
+      key: 'C', title: 'C · La carta intera',
+      note: `<p>Ogni finestra è una carta: doppia cornice, intestazione come in A, e in fondo le strisce con «KEPLER-9 OPERATIONS», il testo della carta della missione.</p>
+        <p>Costo: la doppia cornice toglie 7 pixel per lato e ogni finestra ha una riga in più in fondo; sul telefono si sente.</p>`,
+      frames: winFrames('wins-c'),
+    },
+    {
+      key: 'cyan', multi: true, title: 'Il ciano delle carte',
+      note: '<p>#3AD4F1 al posto di #43D9D2 in tutta l\'app: titoli, timer, tasti, mappa, pulsanti. Qui sulla direzione B.</p>',
+      frames: winFrames('wins-b cyan-cards').slice(0, 2).concat(winFrames('wins-b cyan-cards').slice(4)),
+    },
   ],
 };
 
@@ -373,15 +454,15 @@ const MAPQ = {
 const CALL_SAMPLE = 'K9-X5GM';
 const callCase = generateCase(CALL_SAMPLE, { calls: true });
 const baseCall = () => ({ ...newState(), code: CALL_SAMPLE });
-const callView = (callUi, state, extra = {}) => ({ ...NOW, c: callCase, callUi, state: { ...baseCall(), ...state }, remainingMs: 6 * MIN + 5000, ...extra });
+const callView = (callUi, state, extra = {}) => ({ ...NOW2, c: callCase, callUi, state: { ...baseCall(), ...state }, remainingMs: 6 * MIN + 5000, ...extra });
 const askCall = (callUi, draft) => phone(callView(callUi, { phase: 'play', tab: 'ask', draft }), { cls: 'btns-b', scroll: '120' });
 const CALLS = {
   id: 'calls', title: 'Domande a NOVA: la chiamata del Bridge',
   quote: '«The question builder always offers "Bridge console call" as a sensor type with a time window. [...] Never show the option only when a call exists: that would leak information.»',
   context: `Caso di prova ${CALL_SAMPLE}: Mira è sul Bridge e nel rapporto dice di aver avuto la chiamata con Mission Control dalle 02:50 alle 03:00 (primo riquadro qui sotto). In tutte le direzioni la chiamata si può chiedere sempre, in ogni caso, e la domanda è «Was there a call on the Bridge console between … and …?», ricavata da quella del movimento. Con la chiamata cambia anche il briefing (secondo riquadro): nella frase dei sensori «hatch openings and motion» diventa «hatch openings, motion and calls on the Bridge console», e la scheda SENSORS ha una terza voce, CONSOLE CALL. Finché non scegli, nel gioco le chiamate sono spente: nessun caso ne ha, quindi nessun rapporto ne parla.`,
   common: [
-    cap('Il rapporto con la chiamata (scheda REPORTS)', phone(callView('map', { phase: 'play', tab: 'reports' }), { cls: 'btns-b', scroll: '560' })),
-    cap('Briefing, scheda SENSORS', phone(callView('map', { phase: 'briefing' }, { static: true }), { cls: 'btns-b', scroll: '700' })),
+    cap('Il rapporto con la chiamata (scheda REPORTS)', phone(callView('map', { phase: 'play', tab: 'reports' }), { cls: 'btns-b', scroll: '110' })),
+    cap('Scheda BRIEFING, riquadro SENSORS', phone(callView('map', { phase: 'play', tab: 'briefing' }), { cls: 'btns-b', scroll: '520' })),
   ],
   dirs: [
     {
@@ -460,8 +541,8 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [CONSOLE2, CONSOLE2_FX, CALLS];
-const DECIDED = [CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const OPEN = [CONSOLE3, WINDOWS, CALLS];
+const DECIDED = [CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">

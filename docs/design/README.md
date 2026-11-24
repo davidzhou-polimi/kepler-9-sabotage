@@ -5,7 +5,7 @@
 Freeze a new round after each decision:
 
 ```bash
-python3 -m http.server 8765
+python3 tools/serve.py 8765
 ```
 
 ```bash
@@ -21,3 +21,7 @@ First freeze, taken at the end of the day: the boards decided earlier in the day
 ## 2026-11-24
 
 Hologram map (C) and home (B) decided; captured from a clean copy of the commit that brings them into the game, so the boards show only decided work.
+
+## 2026-11-24-console
+
+Second freeze of the day. Decided: the physical console (B) and the CRT glass, always, over the whole viewport. Their boards carry the corrections asked with the choice. Open: the third console round (the physical console with today's status bar, keys in one row, the power button for QUIT), the windows after the group's game cards, and the Bridge console call.

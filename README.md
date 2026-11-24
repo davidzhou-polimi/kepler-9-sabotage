@@ -7,10 +7,10 @@ The web app at the centre of the Kepler-9 detective game (cards + app). Static s
 ES modules don't load from `file://`, so serve the folder:
 
 ```bash
-python3 -m http.server 8000
+python3 tools/serve.py 8000
 ```
 
-Then open <http://localhost:8000>. Other pages:
+Then open <http://localhost:8000>. It is `python3 -m http.server` with one difference: it tells the browser not to keep the files. With the plain server a browser can go on using an older copy of one module after it changed, and `mocks.html` then stays blank until a forced reload. Other pages:
 
 | URL | What |
 |---|---|
@@ -55,6 +55,9 @@ js/generator.js     case generator (port of reference/gen.py) and NOVA's answers
 js/texts.js         every in-game text: briefing, report voices, profiles, endings, solution
 js/ui.js            screens as pure functions (state -> HTML), shared by the game and the mocks
 js/app.js           state, events, timer, saving, developer tools
+js/console.js       the app as Mission Control's console (proposals in mocks.html, not in the game yet)
+css/console.css     its styles
+tools/serve.py      local server that never lets the browser keep old files
 js/portraits.js     16×16 pixel portraits (placeholders)
 js/fonts.js         display font switch
 js/typing.js        NOVA typing effect

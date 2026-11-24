@@ -182,3 +182,103 @@
   .cs-side .cs-lamp:first-child { display: none; }
   .cs-guard { padding: 4px 6px 6px; }
 }
+
+/* ---------- third round: the physical console with today's interface (desk2, see js/console.js) ---------- */
+.cs-desk2 { display: flex; flex-direction: column; background: linear-gradient(180deg, #121925, #0b1018); }
+
+/* top strip: the telemetry display (today's status bar) and, beside it, the power button */
+.cs-top {
+  flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+  background: linear-gradient(180deg, #2b3546, #1c2430); border-bottom: 2px solid #07090d;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.07);
+}
+.cs-tele {
+  flex: 1; min-width: 0; padding: 8px 14px; border-radius: 4px; background: #04070c;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 0 1px #3d4a5e;
+}
+.cs-tele .status { position: static; margin: 0; padding: 0; border: 0; background: none; backdrop-filter: none; }
+.alarm .cs-tele {
+  background: repeating-linear-gradient(-45deg, rgba(228, 91, 97, 0.2) 0 10px, transparent 10px 20px), #1e0a10;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 0 1px var(--red);
+}
+.status.is-idle .timer { color: rgba(67, 217, 210, 0.4); }
+.status.is-idle .label { color: rgba(231, 237, 244, 0.45); }
+.status.is-idle .pips i { border-color: rgba(242, 184, 75, 0.4); }
+.status.is-idle .meter i { border-color: rgba(67, 217, 210, 0.25); }
+
+.cs-power {
+  flex: none; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 30%, #2c3646, #121821);
+  box-shadow: 0 4px 0 #090c12, 0 0 0 2px #090c12, 0 0 0 3px rgba(67, 217, 210, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+.cs-power svg { width: 22px; height: auto; fill: var(--cyan); filter: drop-shadow(0 0 5px rgba(67, 217, 210, 0.9)); }
+.cs-power:hover svg, .cs-power:focus-visible svg { fill: var(--red); filter: drop-shadow(0 0 4px rgba(228, 91, 97, 0.8)); }
+.cs-power:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+.cs-power:active { transform: translateY(3px); box-shadow: 0 1px 0 #090c12, 0 0 0 2px #090c12, 0 0 0 3px rgba(67, 217, 210, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.18); }
+.cs-power:disabled { cursor: default; transform: none; }
+.cs-power:disabled svg { fill: var(--cyan); filter: drop-shadow(0 0 5px rgba(67, 217, 210, 0.9)); }
+
+.cs-desk2 > .alarm-strip { flex: none; margin: 10px 16px 0; }
+.cs-desk2 .cs-monitors { padding: 12px 16px 10px; }
+.cs-desk2 .cs-mon-glass { border-width: 10px; }
+
+/* key panel: today's tabs as keys with a lamp each, the red CODE key apart under its guard */
+.cs-desk2 .cs-deskpanel { margin: 0; flex-wrap: nowrap; align-items: stretch; gap: 14px; padding: 12px 16px 16px; }
+.cs-desk2 .cs-keys, .cs-desk2 .cs-side { flex: none; flex-wrap: nowrap; align-items: stretch; gap: 10px; }
+.cs-desk2 .cs-side { align-items: center; gap: 16px; }
+.cs-lamps { flex: 1; display: flex; align-items: center; justify-content: center; gap: 22px; }
+.cs-key2 {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  min-width: 108px; min-height: 52px; padding: 7px 8px 6px; line-height: 1; white-space: nowrap;
+}
+.cs-led { flex: none; width: 16px; height: 4px; background: #0d1219; box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8); }
+.cs-key2.is-on .cs-led { background: var(--cyan); box-shadow: 0 0 7px var(--cyan); }
+.cs-key-red .cs-led { background: #7c2126; }
+.cs-key-red.is-on .cs-led { background: #fff; box-shadow: 0 0 7px #fff; }
+.cs-key2:disabled { cursor: default; color: rgba(231, 237, 244, 0.38); transform: none; }
+.cs-key-red:disabled { color: rgba(255, 255, 255, 0.55); filter: saturate(0.45) brightness(0.7); }
+.cs-desk2 .cs-guard { display: flex; padding: 0; gap: 0; border-width: 4px; }
+.cs-desk2 .cs-guard .cs-key2 { min-width: 100px; }
+
+/* the CRT glass over the whole viewport, hardware included */
+.cs-crt { display: none; }
+.cs-desk2.fx-crt > .cs-crt {
+  display: block; position: absolute; inset: 0; z-index: 60; pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, transparent 62%, rgba(0, 0, 0, 0.42) 100%),
+    repeating-linear-gradient(180deg, transparent 0 2px, rgba(0, 0, 0, 0.2) 2px 3px);
+  box-shadow: inset 0 0 140px rgba(67, 217, 210, 0.1);
+}
+
+/* phone: one monitor with a thin bezel, the keys in one row (or two rows of three with the power button) */
+@container (max-width: 999px) {
+  .cs-top { gap: 8px; padding: 6px 8px; }
+  .cs-tele { padding: 6px 10px; }
+  .cs-tele .status { gap: 4px 14px; }
+  .cs-desk2 > .alarm-strip { margin: 6px 8px 0; }
+  .cs-desk2 .cs-monitors { padding: 8px 8px 6px; }
+  .cs-desk2 .cs-mon-glass { border-width: 6px; border-radius: 8px; box-shadow: 0 0 0 1px #3a475c, inset 0 0 40px rgba(0, 0, 0, 0.8); }
+  .cs-desk2 .cs-mon .cs-scroll { padding: 8px 6px; }
+  .cs-desk2 .cs-mon-main .screen { padding: 4px 2px 16px; }
+  .cs-desk2 .cs-deskpanel {
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px;
+    padding: 8px 8px calc(10px + env(safe-area-inset-bottom));
+  }
+  .cs-desk2.pw-panel .cs-deskpanel { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .cs-desk2 .cs-keys, .cs-desk2 .cs-side { display: contents; }
+  .cs-lamps { display: none; }
+  .cs-desk2 .cs-key2, .cs-desk2 .cs-guard .cs-key2 { min-width: 0; width: 100%; padding: 7px 2px 6px; font-size: calc(var(--ds) * clamp(10px, 3.3cqi, 13px)); letter-spacing: 0.02em; }
+  .cs-desk2.pw-panel .cs-key2 { font-size: calc(var(--ds) * 14px); }
+  .cs-desk2.pw-panel .cs-power { justify-self: center; align-self: center; }
+}
+/* the narrowest phones: the timer keeps its size, the gaps and the power button give way */
+@container (max-width: 340px) {
+  .cs-top { gap: 6px; padding: 6px; }
+  .cs-tele { padding: 6px 8px; }
+  .cs-tele .status { gap: 4px 8px; }
+  .cs-tele .status-o2, .cs-tele .status-link { gap: 6px; }
+  .cs-tele .timer { min-width: 0; }
+  .cs-tele .meter { min-width: 0; }
+  .cs-power { width: 40px; height: 40px; }
+}

@@ -32,7 +32,7 @@ export function fmtClock(ms) {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
-function warningIcon() {
+export function warningIcon() {
   // pixel warning triangle
   const rows = [
     '.......kk.......', '......kkkk......', '......k..k......', '.....kk..kk.....', '.....k.kk.k.....',

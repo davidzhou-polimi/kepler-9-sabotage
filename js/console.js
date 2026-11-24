@@ -1,9 +1,10 @@
 // Mission Control console: the whole web app as the console of Mission Control (proposals, mocks only until chosen).
 // view.shell: 'monitor' the browser window is one console CRT; 'desk' the physical console (monitors + key panel);
 //             'dash' the console software fills the screen, every panel visible at once on a laptop.
+//             'desk2' third round: the desk combined with today's interface (see below)
 // view.fx: whole-screen video effects, a list: 'crt' (glass, always), 'boot' (power-on), 'static' (channel change),
 //          'link' (NOVA's damaged link). In mocks a frame can be frozen on a moment with view.fxFreeze.
-import { esc, fmtClock, statusBar, reportsPanel, mapPanel, askPanel, briefingPanel, codePanel, profileModal, quitModal, MAX_QUESTIONS, OXYGEN_MS } from './ui.js';
+import { esc, fmtClock, warningIcon, statusBar, reportsPanel, mapPanel, askPanel, briefingPanel, codePanel, profileModal, quitModal, MAX_QUESTIONS, OXYGEN_MS } from './ui.js';
 
 const lamp = (label, cls = '') => `<span class="cs-lamp ${cls}"><i></i>${label}</span>`;
 const sysLine = (c) => `<div class="cs-sys"><span>MC-OS // MISSION CONTROL</span><span>KEPLER-9 LINK${c ? ` · CASE ${esc(c.code)}` : ''}</span></div>`;
@@ -109,8 +110,78 @@ function dashShell(view, inner) {
     </div><div class="cs-fx" aria-hidden="true"></div></div>${modals(view)}</div>`;
 }
 
+// ---------- third round: the physical console with today's interface ----------
+// Chosen 2026-11-24: the physical console (desk) with the CRT glass, corrected:
+// - today's status bar (OXYGEN with its timer and meter, QUESTIONS, CASE) is the console's telemetry display:
+//   the countdown reads as the oxygen timer, and the questions left are on a screen, not on the hardware;
+// - the keys are today's tabs, in one tidy row on a phone; the CODE key stays red, apart, under its guard;
+// - QUIT is the power button;
+// - the CRT glass covers the whole viewport, hardware included.
+// view.deskPower: 'top' the power button beside the telemetry display (where QUIT is today);
+//                 'panel' on the key panel (two rows of three on a phone).
+
+const pixels = (rows) => rows.map((row, y) => [...row].map((ch, x) => (ch === 'k' ? `<rect x="${x}" y="${y}" width="1.02" height="1.02"/>` : '')).join('')).join('');
+const POWER = [
+  '.....k.....', '.....k.....', '..kk.k.kk..', '.k...k...k.', 'k....k....k', 'k....k....k',
+  'k.........k', 'k.........k', 'k.........k', '.k.......k.', '..kk...kk..', '....kkk....',
+];
+const powerKey = (live) => `<button type="button" class="cs-power" ${live ? 'data-act="quit"' : 'disabled'} aria-label="Quit game">
+    <svg viewBox="0 0 11 12" shape-rendering="crispEdges" aria-hidden="true">${pixels(POWER)}</svg></button>`;
+const key2 = (label, v, { on = false, live = true, cls = '' } = {}) =>
+  `<button type="button" class="cs-key cs-key2 ${on ? 'is-on' : ''} ${cls}" ${live ? `data-act="tab" data-v="${v}"` : 'disabled'}><i class="cs-led" aria-hidden="true"></i><span>${label}</span></button>`;
+// no case open: the same display, waiting for telemetry
+const idleStatus = (view) => `<div class="status is-idle">
+    <div class="status-o2"><span class="label">OXYGEN</span><span class="timer">--:--</span><span class="meter">${'<i></i>'.repeat(20)}</span></div>
+    <div class="status-link"><span class="label">QUESTIONS</span><span class="pips">${'<i></i>'.repeat(MAX_QUESTIONS)}</span></div>
+    <div class="status-case">CASE ${view.state.phase !== 'home' && view.c ? esc(view.c.code) : '----'}</div>
+  </div>`;
+const monitor2 = (label, html, cls = '') => `<section class="cs-mon ${cls}">${label ? `<div class="cs-mon-label">${label}</div>` : ''}
+    <div class="cs-mon-glass"><div class="cs-scroll">${html}</div></div></section>`;
+
+function desk2Shell(view, inner) {
+  const { state, c } = view;
+  const playing = state.phase === 'play';
+  const powerTop = view.deskPower !== 'panel';
+  let tab = state.tab;
+  if (view.wide && (tab === 'reports' || tab === 'map')) tab = 'ask'; // on a laptop reports and map have their own monitors
+  const content = {
+    reports: () => reportsPanel(c, view.reportStyle || 'card'),
+    map: () => mapPanel(state.mapSel, { detail: view.mapDetail || {}, console: view.callUi === 'map' }),
+    ask: () => askPanel(state, c, view.askWhere, view.mapDetail || {}, view.callUi || null),
+    briefing: () => briefingPanel({ typed: Boolean(view.briefTyped), style: view.briefStyle || 'now', calls: Boolean(view.callUi) }),
+    code: () => codePanel(state),
+  };
+  let monitors;
+  if (!playing) monitors = `<div class="cs-monitors cs-monitors-one">${monitor2('', inner, 'cs-mon-main')}</div>`;
+  else if (view.wide) {
+    monitors = `<div class="cs-monitors">
+      ${monitor2('MON 1 // REPORTS · RELAYED BY NOVA', content.reports())}
+      ${monitor2('MON 2 // STATION MODEL · ARCHIVE', content.map())}
+      ${monitor2(tab === 'code' ? 'MON 3 // EMERGENCY UPLINK' : 'MON 3 // COMMS · KEPLER-9', content[tab]())}
+    </div>`;
+  } else monitors = `<div class="cs-monitors cs-monitors-one">${monitor2('', content[tab](), 'cs-mon-main')}</div>`;
+  const k = (label, v) => key2(label, v, { on: playing && tab === v, live: playing });
+  const keys = view.wide
+    ? k('BRIEFING', 'briefing') + k('ASK NOVA', 'ask')
+    : k('REPORTS', 'reports') + k('MAP', 'map') + k('ASK NOVA', 'ask') + k('BRIEFING', 'briefing');
+  const code = `<div class="cs-guard">${key2('CODE', 'code', { on: playing && tab === 'code', live: playing, cls: 'cs-key-red' })}</div>`;
+  return `<div class="cs cs-desk2 ${powerTop ? 'pw-top' : 'pw-panel'} ${fxClass(view)}">
+    <div class="cs-top"><div class="cs-tele">${playing ? statusBar({ ...view, quit: false }) : idleStatus(view)}</div>${powerTop ? powerKey(playing) : ''}</div>
+    ${playing && critical(view) ? `<div class="alarm-strip" role="alert">${warningIcon()}<span>OXYGEN CRITICAL // LESS&nbsp;THAN&nbsp;ONE&nbsp;MINUTE</span></div>` : ''}
+    ${monitors}
+    <div class="cs-deskpanel">
+      <div class="cs-keys">${keys}</div>
+      <div class="cs-lamps">${lamps(view)}</div>
+      <div class="cs-side">${code}${powerTop ? '' : powerKey(playing)}</div>
+    </div>
+    ${playing ? modals(view) : ''}
+    <div class="cs-crt" aria-hidden="true"></div>
+  </div>`;
+}
+
 export function consoleScreen(view, screenFn) {
   const inner = screenFn({ ...view, shell: null });
+  if (view.shell === 'desk2') return desk2Shell(view, inner);
   if (view.shell === 'desk') return deskShell(view, inner);
   if (view.shell === 'dash') return dashShell(view, inner);
   return monitorShell(view, inner);
