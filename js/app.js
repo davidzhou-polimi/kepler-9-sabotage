@@ -231,7 +231,7 @@ function renderDev() {
   devEl.innerHTML = `
     <header class="dev-bar"><b>DEV</b><button type="button" data-dev="fold">${devEl.classList.contains('is-folded') ? '+' : '–'}</button></header>
     <div class="dev-body">
-      ${c ? `<p>CASE <b>${esc(c.code)}</b> · shape ${esc(c.style)}${c.witness ? '+witness' : ''}${c.visit ? '+visit' : ''}</p>
+      ${c ? `<p>CASE <b>${esc(c.code)}</b> · shape ${esc(c.style)}${c.witness ? '+witness' : ''}${c.passage ? '+passage' : ''}${c.visit ? '+visit' : ''}</p>
         <p class="dev-sol">${state.devShow ? `Saboteur <b>${esc(PEOPLE[c.sab].short)}</b> (report ${c.order.indexOf(c.sab) + 1}), left ${String(c.t)}′ · suspects ${c.suspects.map((p) => esc(PEOPLE[p].short)).join(' / ')} · code <b>${c.emergencyCode}</b>` : '<i>Solution hidden</i>'}</p>
         <div class="dev-row"><button type="button" data-dev="show">${state.devShow ? 'Hide' : 'Show'} solution</button>
         <button type="button" data-dev="skip">Skip briefing</button></div>
