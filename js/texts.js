@@ -1,7 +1,7 @@
 // All in-game text. English, in character.
 // The false report is drawn from the same pools as the true ones: style never gives the liar away.
 
-import { CREW, PEOPLE, MOD_NAME, HATCH_NAME, HATCH_OF, fmtTime, prng } from './generator.js';
+import { CREW, PEOPLE, ECHO_ROLE, MOD_NAME, HATCH_NAME, HATCH_OF, fmtTime, prng } from './generator.js';
 
 // ---------- NOVA ----------
 
@@ -28,18 +28,26 @@ export const BRIEFING_PARTS = [
   { id: 'oxygen', label: 'OXYGEN_', text: BRIEFING[7], keys: ['10 minutes'] },
 ];
 
+// The sensors sentence when the Bridge console call is in the game (update 1, section 3).
+export const BRIEFING_SENSORS_CALL = {
+  id: 'sensors', label: 'SENSORS_',
+  text: 'The Life Support sensors were cut from inside. I can answer yes/no questions on every other sensor: hatch openings, motion and calls on the Bridge console. Hatches record when they open, never who opened them. No sensor records names.',
+  keys: ['hatch openings', 'motion', 'calls on the Bridge console', 'never who opened them'],
+};
+
+// Update 1, section 4: system style; the consequence, without naming who survives.
 export const ENDINGS = {
   right: {
     title: 'Code accepted',
-    lines: ['Code accepted. Access revoked.', 'Restarting the oxygen recycler…', 'Oxygen levels rising.', 'The crew will make it, Mission Control.'],
+    lines: ['EMERGENCY CODE ACCEPTED.', 'Access revoked.', 'Restarting the oxygen recycler…', 'Oxygen levels rising.', 'The crew will make it, Mission Control.', 'MISSION STATUS: SUCCESS.'],
   },
   wrong: {
     title: 'Code rejected',
-    lines: ['Code rejected.', 'The recycler cannot restart.', 'Only Life Support still has air.', 'I\'m sorry, Mission Control.'],
+    lines: ['EMERGENCY CODE REJECTED.', 'Restart sequence not authorised.', 'Oxygen recycler: OFFLINE.', 'Life Support is now the only module with breathable air.', 'MISSION STATUS: FAILED.'],
   },
   timeout: {
     title: 'Oxygen depleted',
-    lines: ['Oxygen depleted.', 'Only Life Support still has air.'],
+    lines: ['TIME LIMIT EXCEEDED.', 'Oxygen depleted in every module except Life Support.', 'MISSION STATUS: FAILED.'],
   },
 };
 
@@ -71,113 +79,161 @@ export const PROFILES = {
     'Remembers every birthday, and notices when someone hasn\'t slept.',
   ],
   echo: [
-    'Maintenance android, active on Kepler-9 for six years: longer than anyone aboard.',
+    `${ECHO_ROLE}, active on Kepler-9 for six years: longer than anyone aboard.`,
     'Handles inventory, cleaning and repairs in spaces too tight for people.',
-    'Reports in machine log format, always in capitals.',
+    'Reports in machine log format.',
     'Never off duty.',
   ],
 };
 
 // ---------- report voices ----------
+// Update 1, section 2. Role and tone live here, never in the case logic: every report carries its
+// character's cue whether it is true or false. Reference: the group's Case 01, "The Engineer's Alibi".
+// A report is built from parts: opening (where, doing what), the Bridge call if any, the observation, a closing
+// line. True and false reports of a character draw from the same pools, so the false one has the same voice,
+// length and structure. Reports never quote sensor data: a crew member says what they did, saw or heard.
 
-// What each person was doing in each starting module (a clause: "Medbay, all night, doing the medicine inventory").
+// What each person was doing in each starting module.
 const ACT = {
-  hana: { B: 'on the night watch', N: 'going through the pump logs', M: 'reviewing the crew medical files', C: 'auditing the cargo manifest' },
-  doyun: { B: 'fixing the navigation console', N: 'on the coolant pumps', M: 'repairing the body scanner', C: 'sorting spare parts' },
+  hana: { B: 'overseeing station operations', N: 'reviewing the recycler maintenance logs', M: 'reviewing the crew medical files', C: 'auditing the cargo manifest' },
+  doyun: { B: 'recalibrating the navigation console', N: 'checking the oxygen recycler\'s auxiliary pumps', M: 'repairing the body scanner', C: 'sorting spare parts for the recycler' },
   mira: { B: 'covering the night watch', N: 'taking the radiation readings', M: 'doing the medicine inventory', C: 'unpacking the medical supplies' },
-  echo: { B: 'SYSTEMS DIAGNOSTICS', N: 'PUMP MAINTENANCE', M: 'STERILISATION CYCLE', C: 'INVENTORY SCAN' },
+  echo: { B: 'Bridge systems diagnostics', N: 'Engine Room pump maintenance', M: 'Medbay sterilisation cycle', C: 'Cargo Bay inventory scan' },
 };
 
 // How a person names a hatch they heard (always the module's hatch on the Corridor).
 const HEARD = { B: 'the Bridge\'s corridor hatch', N: 'the Engine Room hatch', M: 'the Medbay hatch' };
 
-// Placeholders: {Mod} bare module name, {mod} with article, {inMod} "on the Bridge" / "in the Medbay", {act}, {Act}, {time}, {target}, {who}, {dst}, {host}.
-// ECHO-7 uses upper-case variants: {MOD} {TASK} {HATCH} {WHO} {DST} {HOST}.
+// Placeholders: {inMod} "on the Bridge" / "in the Medbay", {mod} "the Medbay", {act}, {time}, {target} the hatch heard,
+// {inTarget} where it leads, {who}, {dst}, {host}, {ca} {cb} the call. ECHO-7: {task}, {hatch} (NOVA's hatch name),
+// {Dst} bare module name, {WHO} {HOST} full name with ID.
 const VOICES = {
+  // Captain: confident, composed, complete decisive sentences; procedures and responsibility; doesn't over-justify.
   hana: {
+    open: [
+      'I was {inMod} throughout the shift, {act}.',
+      'I spent the whole shift {inMod}, {act}.',
+      'From 02:00 until the lockdown I was {inMod}, {act}.',
+    ],
     quiet: [
-      '{Mod}, all night, {act}. Nobody came in, nobody went out. Nothing to report until the alarm.',
-      'I held {mod} from 02:00 until the lockdown, {act}. The hatch stayed shut. Nothing unusual.',
-      '{Mod}. {Act}, from the start of the shift until the alarm. I didn\'t leave, and no one came in.',
+      'No one came in, and I heard nothing out of the ordinary.',
+      'It was an uneventful shift: no one came in, and nothing unusual reached me.',
+      'Nothing out of the ordinary happened until the alarm.',
     ],
     heard: [
-      '{Mod}, all night, {act}. Around {time} I heard {target} open. Nobody had any reason to be moving at that hour.',
-      'I stayed {inMod} until the lockdown, {act}. One thing you should know: around {time}, {target} opened. I heard it clearly.',
-      '{Mod}. {Act}, all night. I didn\'t leave. Around {time} I heard {target}. Check it.',
+      'At around {time} I heard {target} open. Nobody was scheduled to move at that hour.',
+      'At around {time} I clearly heard {target} open. That was not on any schedule.',
+      'At around {time} I heard {target} open, and I noted the time.',
     ],
     visitor: [
-      '{Mod}, all night, {act}. Around {time} {who} came in and stayed with me until the lockdown.',
-      'I was {inMod} the whole night, {act}. {who} joined me around {time} and was still there at 03:00.',
+      'At around {time} {who} joined me, and stayed until the lockdown.',
+      '{who} joined me at around {time} and was still with me at the lockdown.',
     ],
+    close: [
+      'I followed the standard procedures. There was no reason for me to leave {mod}.',
+      'I followed procedure throughout. There was no reason for me to leave my post.',
+      'My responsibility was {mod}, and I stayed at my post.',
+    ],
+    call: 'From {ca} to {cb} I held the scheduled call with Mission Control.',
     moved: [
-      'I started the night {inMod}, {act}. Around {time} I went to {dst} to see {host}, and stayed there until the lockdown.',
-      '{Mod} until around {time}, {act}. Then I went to {dst} to join {host}. I was there when the alarm went off.',
+      'I started the shift {inMod}, {act}. At around {time} I went to {dst} to assist {host}, and I stayed there until the lockdown. I followed the standard procedures.',
+      'I was {inMod} until around {time}, {act}. Then I went to {dst} to assist {host}, and I remained there until the lockdown. Nothing else to report.',
     ],
   },
+  // Engineer: direct, practical, slightly blunt; technical words; a bit defensive; points elsewhere.
   doyun: {
+    open: [
+      'I was {inMod}, {act}.',
+      'I was {inMod} the whole shift, {act}.',
+      'I spent the night {inMod}, {act}.',
+    ],
     quiet: [
-      '{Mod}. {Act}. I didn\'t leave. The hatch stayed sealed, nobody came in. That\'s it.',
-      'I was {inMod} the whole shift, {act}. Nothing happened in here until the alarm. Can we get on with this?',
-      '{Mod}, 02:00 to 03:00, {act}. Didn\'t leave, didn\'t see anyone. Quiet.',
+      'Nothing unusual on my end; the machinery was running normally.',
+      'Quiet night. Nobody came in, and I didn\'t hear anything.',
+      'Nothing on my end. Nobody came by, and I didn\'t hear a thing.',
     ],
     heard: [
-      '{Mod}. {Act}. I didn\'t leave. Around {time} I heard {target} slam. Ask whoever was in there.',
-      'I was {inMod} all night, {act}. Around {time}, {target} cycled. You can\'t miss that sound: the seals hiss.',
-      '{Mod}, all night, {act}. Around {time} I heard {target} open. None of my business, but somebody moved.',
+      'Around {time} I heard {target} slam. If you want to know what happened, you should probably ask whoever was {inTarget}.',
+      'Around {time}, {target} opened. You can\'t miss that sound: the seals hiss. Ask whoever was {inTarget}.',
+      'Around {time} I heard {target} open. Not my business, but you should ask whoever was {inTarget}.',
     ],
     visitor: [
-      '{Mod}. {Act}. Around {time} {who} showed up and stayed until the lockdown. Otherwise, nothing.',
-      'I was {inMod} all night, {act}. {who} came in around {time} and didn\'t leave again. Ask {who}.',
+      'Around {time} {who} showed up and stayed until the lockdown.',
+      '{who} came in around {time} and didn\'t leave again.',
     ],
+    close: [
+      'My work\'s in order. That\'s all I\'ve got.',
+      'I had a job to do, and I did it.',
+      'That\'s it. Can we get on with this?',
+    ],
+    call: 'From {ca} to {cb} I was on the scheduled call with Mission Control. Routine.',
     moved: [
-      'Started {inMod}, {act}. Around {time} I went over to {dst} to give {host} a hand. Stayed there until the alarm.',
-      '{Mod} until around {time}, {act}. Then {dst}, with {host}. Didn\'t move after that.',
+      'I started {inMod}, {act}. Around {time} I went over to {dst} to give {host} a hand. Stayed there until the alarm. That\'s it.',
+      'I was {inMod} until around {time}, {act}. Then {dst}, to help {host} out. Didn\'t move after that. My work\'s in order.',
     ],
   },
+  // Medical Officer: calm, warm, reassuring, conversational; worried about the crew; never confrontational.
   mira: {
+    open: [
+      'I was {inMod} all night, {act}.',
+      'I spent the night {inMod}, {act}.',
+      'I stayed {inMod} the whole night, {act}.',
+    ],
     quiet: [
-      'I was {inMod} all night, {act}. It was a quiet night in here: nobody came in, and I didn\'t go out. I hope everyone is all right.',
-      '{Mod}, the whole night, {act}. Nothing happened in here until the alarm. Please tell me the others are safe.',
-      'I stayed {inMod}, {act}. The hatch didn\'t open once. It was so quiet I almost dozed off. Is everyone okay?',
+      'It was a quiet night, thankfully. Nobody came in, and I didn\'t hear anything.',
+      'It was so quiet; nobody came by, and I didn\'t hear a sound.',
+      'Nothing happened on my side, thankfully. I didn\'t hear anything at all.',
     ],
     heard: [
-      'I was {inMod} all night, {act}. Around {time} I heard {target} open. I thought someone might be feeling unwell, and I nearly went to check.',
-      '{Mod}, the whole night, {act}. Around {time} I heard {target}. At that hour, it worried me. I hope it was nothing.',
-      'I didn\'t leave {mod}, {act}. Around {time} I heard {target} open and close. I wish I\'d gone to look.',
+      'Around {time} I heard {target} open. I thought someone might be feeling unwell, and I nearly went to check.',
+      'Around {time} I heard {target} open. I\'m sure there\'s a good reason; maybe someone couldn\'t sleep.',
+      'Around {time} I heard {target} open, and I wondered if someone needed me.',
     ],
     visitor: [
-      'I was {inMod} all night, {act}. Around {time} {who} came by and stayed with me until the alarm. I was glad of the company.',
-      '{Mod}, all night, {act}. {who} came in around {time} and kept me company until the lockdown.',
+      'Around {time} {who} came by and kept me company until the alarm. I was glad of it.',
+      '{who} came in around {time} and stayed with me until the lockdown.',
     ],
+    close: [
+      'I just hope everyone is safe.',
+      'Please tell me the others are all right.',
+      'I hope everyone is okay.',
+    ],
+    call: 'From {ca} to {cb} I had the scheduled call with Mission Control; it was nice to hear a friendly voice.',
     moved: [
-      'I started the night {inMod}, {act}. Around {time} I went to {dst} to keep {host} company, and stayed there until the alarm.',
-      'I was {inMod}, {act}, until around {time}. Then I went over to {dst} to see how {host} was doing. I stayed there.',
+      'I started the night {inMod}, {act}. Around {time} I went over to {dst} to see how {host} was doing, and I stayed there. I just hope everyone is safe.',
+      'I was {inMod} until around {time}, {act}. Then I went to {dst} to keep {host} company, and I stayed until the alarm. I hope everyone is okay.',
     ],
   },
+  // Android: precise, neutral, structured; short task/time/status lines; no emotions, no speculation.
   echo: {
+    open: [
+      'Scheduled task: {task}. Time interval: 02:00–03:00. Task status: COMPLETED.',
+      'Location: {Mod}. Scheduled task: {task}. Time interval: 02:00–03:00. Task status: COMPLETED.',
+    ],
     quiet: [
-      '02:00–03:00: {MOD}. TASK: {TASK}. HATCHES: CLOSED. ENTRIES: 0. EXITS: 0.',
-      'LOG 02:00–03:00. LOCATION: {MOD}. TASK: {TASK}. NO ENTRIES. NO EXITS. NO ANOMALIES UNTIL ALARM.',
+      'Observations: none.',
+      'Unscheduled events observed: none.',
     ],
     heard: [
-      '02:00–03:00: {MOD}. TASK: {TASK}. HATCHES: CLOSED. ~{time}: ACOUSTIC EVENT. SOURCE: {HATCH} HATCH.',
-      'LOG 02:00–03:00. LOCATION: {MOD}. TASK: {TASK}. ~{time}: HATCH CYCLE DETECTED. SOURCE: {HATCH}. LOCAL HATCH: CLOSED.',
+      'Observation: {hatch} hatch heard opening, approx. {time}.',
+      'Unscheduled event: {hatch} hatch heard opening, approx. {time}.',
     ],
     visitor: [
-      '02:00–03:00: {MOD}. TASK: {TASK}. ~{time}: {WHO} ENTERED. {WHO} PRESENT UNTIL LOCKDOWN.',
-      'LOG 02:00–03:00. LOCATION: {MOD}. TASK: {TASK}. ENTRIES: 1 (~{time}, {WHO}). EXITS: 0.',
+      'Visitor: {WHO}, from approx. {time} until lockdown.',
+      'Unscheduled event: {WHO} entered, approx. {time}. Present until lockdown.',
     ],
+    close: ['End of statement.'],
+    call: 'Scheduled call: Mission Control. Time interval: {ca}–{cb}. Call status: COMPLETED.',
     moved: [
-      '02:00–~{time}: {MOD}. TASK: {TASK}. ~{time}: RELOCATED TO {DST} TO ASSIST {HOST}. ~{time}–03:00: {DST}.',
-      'LOG 02:00–03:00. LOCATION: {MOD}, TASK: {TASK}. ~{time}: TRANSFER TO {DST}. REASON: ASSIST {HOST}. REMAINED IN {DST} UNTIL LOCKDOWN.',
+      'Scheduled task: {task}. Time interval: 02:00–{time}. Task status: INTERRUPTED. Reassignment: assist {HOST}, {Dst}, from approx. {time} until lockdown. End of statement.',
+      'Location: {Mod}. Scheduled task: {task}. Task status: INTERRUPTED, approx. {time}. Relocation: {Dst}, to assist {HOST}. Remained until lockdown. End of statement.',
     ],
   },
 };
 
 const the = (m) => `the ${MOD_NAME[m]}`;
 const inMod = (m) => `${m === 'B' ? 'on' : 'in'} the ${MOD_NAME[m]}`;
-const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-const machineName = (p) => `${PEOPLE[p].name.toUpperCase()} (ID ${PEOPLE[p].id})`;
+const fullName = (p) => `${PEOPLE[p].name} (ID ${PEOPLE[p].id})`;
 
 function fill(tpl, v) {
   return tpl.replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k] : m));
@@ -186,23 +242,25 @@ function fill(tpl, v) {
 /** The text of one crew member's report in a case. */
 export function renderReport(c, p) {
   const r = c.reports[p];
-  const type = r.kind === 'moved' ? 'moved' : r.obs.type;
-  const pool = VOICES[p][type];
+  const V = VOICES[p];
   const rand = prng(`${c.code}:${c.variant}:${p}`);
-  const tpl = pool[Math.floor(rand() * pool.length)];
-  const act = ACT[p][r.mod];
+  const one = (pool) => pool[Math.floor(rand() * pool.length)];
   const time = r.kind === 'moved' ? r.u : r.obs.t ?? r.obs.u;
   const who = r.obs && r.obs.who;
-  const host = r.host;
-  return fill(tpl, {
-    Mod: MOD_NAME[r.mod], mod: the(r.mod), inMod: inMod(r.mod), act, Act: cap(act),
+  const heard = r.obs && r.obs.type === 'heard' ? r.obs.mod : null;
+  const vars = {
+    mod: the(r.mod), Mod: MOD_NAME[r.mod], inMod: inMod(r.mod), act: ACT[p][r.mod], task: ACT.echo[r.mod],
     time: time === undefined ? '' : fmtTime(time),
-    target: r.obs && r.obs.type === 'heard' ? HEARD[r.obs.mod] : '',
-    who: who ? PEOPLE[who].short : '', dst: r.dst ? the(r.dst) : '', host: host ? PEOPLE[host].short : '',
-    MOD: MOD_NAME[r.mod].toUpperCase(), TASK: ACT.echo[r.mod],
-    HATCH: r.obs && r.obs.type === 'heard' ? HATCH_NAME[HATCH_OF[r.obs.mod]].toUpperCase() : '',
-    WHO: who ? machineName(who) : '', DST: r.dst ? MOD_NAME[r.dst].toUpperCase() : '', HOST: host ? machineName(host) : '',
-  });
+    target: heard ? HEARD[heard] : '', inTarget: heard ? inMod(heard) : '', hatch: heard ? HATCH_NAME[HATCH_OF[heard]] : '',
+    who: who ? PEOPLE[who].short : '', WHO: who ? fullName(who) : '',
+    dst: r.dst ? the(r.dst) : '', Dst: r.dst ? MOD_NAME[r.dst] : '',
+    host: r.host ? PEOPLE[r.host].short : '', HOST: r.host ? fullName(r.host) : '',
+    ca: r.call ? fmtTime(r.call.a) : '', cb: r.call ? fmtTime(r.call.b) : '',
+  };
+  let parts;
+  if (r.kind === 'moved') parts = [one(V.moved)];
+  else parts = [one(V.open), r.call ? V.call : null, one(V[r.obs.type]), one(V.close)].filter(Boolean);
+  return parts.map((s) => fill(s, vars)).join(' ');
 }
 
 // ---------- questions ----------
@@ -210,7 +268,8 @@ export function renderReport(c, p) {
 export function questionText(q) {
   const span = `between ${fmtTime(q.a)} and ${fmtTime(q.b)}`;
   if (q.kind === 'hatch') return `Did the ${HATCH_NAME[q.what]} hatch open ${span}?`;
-  return `Was there motion in the ${MOD_NAME[q.what]} ${span}?`;
+  if (q.kind === 'call') return `Was there a call on the Bridge console ${span}?`;
+  return `Was there motion ${inMod(q.what)} ${span}?`;
 }
 
 // ---------- solution ----------
@@ -219,45 +278,29 @@ const n = (c, p) => c.order.indexOf(p) + 1;
 const nm = (p) => PEOPLE[p].short;
 const tag = (c, p) => `${nm(p)} (report ${n(c, p)})`;
 
-/** Plain-facts solution, generated from the case. Returns { happened[], reports[], question{}, code }. */
+/**
+ * Update 1, section 5: facts only. Who was in Life Support, their route (a reconstruction: the Life Support
+ * sensors were offline, and hatches never say who opened them), how Voran Industries got them, the 2 reports
+ * that couldn't both be true, one decisive question with its answer, the code.
+ * Returns { happened[], reports[], question{}, code }.
+ */
 export function solutionText(c) {
   const s = c.sab, S = nm(s), m = c.start[s];
-  const happened = [];
-  happened.push(`${S} was in Life Support at 03:00.`);
-  happened.push(`${S} stayed ${inMod(m)} until ${fmtTime(c.t)}, then opened the ${HATCH_NAME[HATCH_OF[m]]} hatch, crossed the Corridor and entered Life Support through the Life Support–Corridor hatch at ${fmtTime(c.t + 1)}. Inside, ${S} disconnected the sensors by hand and, at 03:00, sabotaged the recycler.`);
-  happened.push(PEOPLE[s].human
-    ? 'Voran Industries paid them to make the recycler test fail.'
-    : 'Voran Industries hacked ECHO-7 from outside the station to make the recycler test fail.');
-  const sr = c.reports[s];
-  if (sr.obs.type === 'heard') {
-    happened.push(`${S}'s report was invented: ${HEARD[sr.obs.mod]} did not open around ${fmtTime(sr.obs.t)}.`);
-  }
-  if (c.witness) {
-    happened.push(`${nm(c.witness.who)} told the truth: ${HEARD[c.witness.mod]} really opened at ${fmtTime(c.witness.t)}.`);
-  }
-  if (c.visit) {
-    happened.push(`${nm(c.visit.who)} really did move to ${the(c.visit.dst)} at ${fmtTime(c.visit.u)}, and stayed there with ${nm(c.reports[c.visit.who].host)}: an innocent trip.`);
-  }
+  const happened = [
+    `${S} was in Life Support at 03:00.`,
+    `Reconstructed route (the Life Support sensors were offline): ${S} stayed ${inMod(m)} until around ${fmtTime(c.t)}, then crossed the Corridor into Life Support.`,
+    PEOPLE[s].human
+      ? 'Voran Industries paid them to make the recycler test fail.'
+      : 'Voran Industries hacked ECHO-7 from outside the station to make the recycler test fail.',
+  ];
 
-  const reports = [];
-  const [a, b] = c.suspects.slice().sort((x, y) => n(c, x) - n(c, y));
-  const accuser = c.suspects.find((p) => c.reports[p].kind === 'stayed' && c.reports[p].obs.type === 'heard');
-  if (accuser) {
-    const other = c.suspects.find((p) => p !== accuser);
-    const target = c.reports[accuser].obs;
-    reports.push(`Reports ${n(c, a)} and ${n(c, b)} couldn't both be true. ${tag(c, accuser)} says ${HEARD[target.mod]} opened around ${fmtTime(target.t)}; ${tag(c, other)} says nobody went in or out of ${the(target.mod)} all night.`);
-  } else {
-    reports.push(`No two reports clashed head-on, but only reports ${n(c, a)} and ${n(c, b)} (${nm(a)} and ${nm(b)}) could hide a trip to Life Support.`);
-  }
-  const bridge = CREW.find((p) => c.start[p] === 'B');
-  for (const p of CREW) {
-    if (c.suspects.includes(p)) continue;
-    const why = c.exclusions[p];
-    if (why.type === 'cargo') reports.push(`${tag(c, p)} was in the Cargo Bay. The only way out is through the Bridge, where ${nm(bridge)} was.`);
-    else if (why.type === 'moved') reports.push(`${tag(c, p)} moved to ${the(c.reports[p].dst)}, and ${nm(c.reports[p].host)} confirms it.`);
-    else if (why.type === 'hosted') reports.push(`${tag(c, p)} had company from around ${fmtTime(c.reports[why.guest].u)}: ${nm(why.guest)} would have seen ${nm(p)} leave.`);
-    else reports.push(`If ${tag(c, p)} were lying, reports ${[why.a, why.b].filter(Boolean).map((x) => n(c, x)).sort().join(' and ')} would still contradict each other.`);
-  }
+  const A = c.accuser, D = c.denier;
+  const [first, second] = [A, D].sort((x, y) => n(c, x) - n(c, y));
+  const heard = c.reports[A].obs;
+  const reports = [
+    `Reports ${n(c, first)} and ${n(c, second)} couldn't both be true. ${tag(c, A)} heard ${HEARD[heard.mod]} open around ${fmtTime(heard.t)}; ${tag(c, D)} was ${inMod(c.start[D])} and reported a quiet night.`,
+    `The false one was report ${n(c, s)}.`,
+  ];
 
   const { q, answers } = c.decisive;
   const other = c.suspects.find((p) => p !== s);

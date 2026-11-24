@@ -58,6 +58,7 @@ function view() {
     briefStyle: 'txmix', briefTyped: true, // chosen 2026-11-23: NOVA's messages + rule cards
     mapDetail: { holo: 3 }, // chosen 2026-11-24: projected hologram (tilted, raised walls, beam, slow sway)
     homeStyle: 'window', // chosen 2026-11-24: the home status in a NOVA window
+    callUi: null, // Bridge console call: off until the question builder is chosen (mocks.html, board "calls"); see CALLS_IN_GAME
     quit: state.phase === 'play', quitOpen: state.quitOpen,
     saved: state.resume ? { code: state.code, phase: state.resume, remainingMs: remaining() } : null,
   };
@@ -120,6 +121,7 @@ function newGame(code) {
   theCase = generateCase(state.code);
   // Decided 2026-11-23 (changes the brief): the oxygen runs from NOVA's first message. There is no
   // separate briefing screen: the investigation opens on the BRIEFING tab with the timer running.
+  // Confirmed 2026-11-24 against update 1, which asked for a START MISSION button.
   state.phase = 'play';
   state.tab = 'briefing';
   resumeTimer();
@@ -156,10 +158,13 @@ const ACTIONS = {
   'draft-what': (el) => { state.draft.what = el.dataset.v; render.keepScroll = true; render(); },
   // the place tapped on the map decides the sensor: a hatch asks about openings, a module about motion
   'draft-place': (el) => {
-    state.draft.what = el.dataset.id;
-    state.draft.kind = HATCH_NAME[el.dataset.id] ? 'hatch' : 'motion';
+    const id = el.dataset.id;
+    state.draft.what = id === 'console' ? 'B' : id;
+    state.draft.kind = id === 'console' ? 'call' : HATCH_NAME[id] ? 'hatch' : 'motion';
     render.keepScroll = true; render();
   },
+  'draft-call': () => { state.draft.kind = 'call'; state.draft.what = 'B'; render.keepScroll = true; render(); },
+  'draft-sensor': (el) => { state.draft.kind = el.dataset.v; render.keepScroll = true; render(); },
   'send-question': () => {
     if (state.log.length >= MAX_QUESTIONS) return;
     const d = state.draft;

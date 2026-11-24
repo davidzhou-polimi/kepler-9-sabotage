@@ -503,6 +503,17 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .map-pick .room.is-sel rect:first-child { fill: rgba(67, 217, 210, 0.28); stroke: var(--cyan); stroke-width: 3; }
 .map-hint { margin: 6px 0 0; }
 
+/* ---------- Bridge console call (proposals, mocks) ---------- */
+.map .console rect:first-child { fill: var(--deep); stroke: var(--cyan); stroke-width: 2; }
+.map .console .console-screen { fill: rgba(67, 217, 210, 0.45); }
+.map .console .console-foot { fill: var(--cyan); }
+.map .console .hit { fill: transparent; }
+.map .console[data-act] { cursor: pointer; }
+.map-pick .console.is-sel rect:first-child, .map .console:focus-visible rect:first-child { fill: var(--cyan); stroke: var(--star); }
+.map-pick .console.is-sel .console-screen { fill: var(--deep); }
+.lg-console { border: 2px solid var(--cyan); background: linear-gradient(var(--cyan), var(--cyan)) center / 6px 3px no-repeat; }
+.call-pick { margin-top: 8px; }
+
 /* ---------- buttons that read as buttons (proposals, mocks) ---------- */
 /* a: primary filled, the others boxed */
 .btns-a .btn { border: 2px solid var(--line-strong); }

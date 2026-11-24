@@ -131,6 +131,7 @@ function board(b) {
     </header>
     ${b.decided && b.answer ? `<p class="answer">La tua scelta: <b>${b.answer}</b></p>` : ''}
     ${b.rejected ? `<p class="answer">La tua risposta: <b>${b.rejected}</b></p>` : ''}
+    ${b.common ? `<div class="dir-frames board-common">${b.common.join('')}</div>` : ''}
     ${b.dirs.map((d) => direction(b.id, d, b.chosen)).join('')}
   </section>`;
 }
@@ -242,6 +243,7 @@ const HOME = {
   ],
 };
 
+
 // ---------- Mission Control console ----------
 
 // the app as decided now, dressed as a console: cls = 'console bg-* fx-*'
@@ -272,6 +274,7 @@ const CONSOLE_FX = {
     { key: 'S', title: 'Forte', note: '<p>Come il medio, più un rumore che vibra su ogni vetro e una banda di disturbo che scorre sul canale di NOVA: il collegamento danneggiato si vede.</p><p>Costo: si muove sempre qualcosa sullo schermo; il disturbo passa anche sopra il testo delle domande.</p>', frames: consoleFrames('console bg-bezel fx-strong') },
   ],
 };
+
 
 // ---------- the whole app as the console (second round) ----------
 
@@ -364,6 +367,53 @@ const MAPQ = {
   ],
 };
 
+// ---------- Bridge console call ----------
+
+// a case where the Bridge occupant (Mira) is a suspect and mentions the call: 02:50–03:00
+const CALL_SAMPLE = 'K9-X5GM';
+const callCase = generateCase(CALL_SAMPLE, { calls: true });
+const baseCall = () => ({ ...newState(), code: CALL_SAMPLE });
+const callView = (callUi, state, extra = {}) => ({ ...NOW, c: callCase, callUi, state: { ...baseCall(), ...state }, remainingMs: 6 * MIN + 5000, ...extra });
+const askCall = (callUi, draft) => phone(callView(callUi, { phase: 'play', tab: 'ask', draft }), { cls: 'btns-b', scroll: '120' });
+const CALLS = {
+  id: 'calls', title: 'Domande a NOVA: la chiamata del Bridge',
+  quote: '«The question builder always offers "Bridge console call" as a sensor type with a time window. [...] Never show the option only when a call exists: that would leak information.»',
+  context: `Caso di prova ${CALL_SAMPLE}: Mira è sul Bridge e nel rapporto dice di aver avuto la chiamata con Mission Control dalle 02:50 alle 03:00 (primo riquadro qui sotto). In tutte le direzioni la chiamata si può chiedere sempre, in ogni caso, e la domanda è «Was there a call on the Bridge console between … and …?», ricavata da quella del movimento. Con la chiamata cambia anche il briefing (secondo riquadro): nella frase dei sensori «hatch openings and motion» diventa «hatch openings, motion and calls on the Bridge console», e la scheda SENSORS ha una terza voce, CONSOLE CALL. Finché non scegli, nel gioco le chiamate sono spente: nessun caso ne ha, quindi nessun rapporto ne parla.`,
+  common: [
+    cap('Il rapporto con la chiamata (scheda REPORTS)', phone(callView('map', { phase: 'play', tab: 'reports' }), { cls: 'btns-b', scroll: '560' })),
+    cap('Briefing, scheda SENSORS', phone(callView('map', { phase: 'briefing' }, { static: true }), { cls: 'btns-b', scroll: '700' })),
+  ],
+  dirs: [
+    {
+      key: 'A', title: 'A · La console sulla mappa', rec: true,
+      note: `<p>Sul Bridge c'è la console, disegnata come un terzo sensore: si tocca come un portello. La scheda MAP la mostra, con la sua voce nella legenda e la sua riga quando la tocchi.</p>
+        <p>Perché: segue la scelta già fatta per le domande, «si tocca il luogo, il sensore segue». Costo: un bersaglio in più dentro il Bridge, piccolo sul telefono; la zona da toccare è più grande del disegno, come per i portelli.</p>`,
+      frames: [
+        cap('Ask NOVA, console toccata', askCall('map', { kind: 'call', what: 'B', a: 45, b: 60 })),
+        cap('Scheda MAP, console toccata', phone(callView('map', { phase: 'play', tab: 'map', mapSel: 'console' }), { cls: 'btns-b' })),
+      ],
+    },
+    {
+      key: 'B', title: 'B · Un pulsante sotto la mappa',
+      note: `<p>Sotto la mappa, un pulsante BRIDGE CONSOLE CALL. La mappa resta com'è.</p>
+        <p>Perché: si vede sempre, nessuno lo manca. Costo: è l'unico sensore che non si tocca sulla mappa.</p>`,
+      frames: [
+        cap('Ask NOVA, niente scelto', askCall('button', { kind: 'hatch', what: null, a: 0, b: 60 })),
+        cap('Ask NOVA, chiamata scelta', askCall('button', { kind: 'call', what: 'B', a: 45, b: 60 })),
+      ],
+    },
+    {
+      key: 'C', title: 'C · Il Bridge chiede quale sensore',
+      note: `<p>Toccando il Bridge compare la scelta MOTION / CONSOLE CALL; la riga sotto la mappa dice che sul Bridge si può chiedere anche delle chiamate.</p>
+        <p>Costo: la chiamata si scopre solo toccando il Bridge.</p>`,
+      frames: [
+        cap('Ask NOVA, Bridge toccato', askCall('bridge', { kind: 'motion', what: 'B', a: 45, b: 60 })),
+        cap('Ask NOVA, chiamata scelta', askCall('bridge', { kind: 'call', what: 'B', a: 45, b: 60 })),
+      ],
+    },
+  ],
+};
+
 // ---------- fonts (decided) ----------
 
 const STATES = [
@@ -410,7 +460,7 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [CONSOLE2, CONSOLE2_FX];
+const OPEN = [CONSOLE2, CONSOLE2_FX, CALLS];
 const DECIDED = [CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `

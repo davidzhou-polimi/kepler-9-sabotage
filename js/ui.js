@@ -2,7 +2,7 @@
 // view = { state, c (case), wide, remainingMs, dev }
 
 import { CREW, PEOPLE, MOD_NAME, HATCH_NAME, HATCHES, MODULES, GRID, fmtTime } from './generator.js';
-import { BRIEFING, BRIEFING_PARTS, ENDINGS, ANSWERS, PROFILES, renderReport, questionText, solutionText } from './texts.js';
+import { BRIEFING, BRIEFING_PARTS, BRIEFING_SENSORS_CALL, ENDINGS, ANSWERS, PROFILES, renderReport, questionText, solutionText } from './texts.js';
 import { portraitSvg } from './portraits.js';
 import { consoleScreen } from './console.js';
 
@@ -162,7 +162,8 @@ export const hatchLegend = () => `<ol class="hatch-legend">${HATCHES.map((h) => 
 // opts.act: action of a tap; opts.only: 'hatch' or 'room' keeps only those tappable (the others are dimmed)
 // opts.detail: { interior, numbers, holo: 1 | 2 | 3 } (holo: hologram proposals, mocks only until one is chosen)
 //   1 tilted hologram, 2 + walls in layers, 3 + projector beam and a slow sway
-export function mapSvg(sel, { act = 'map-sel', only = null, cls = '', detail = {} } = {}) {
+// opts.console: the Bridge console, a third sensor (calls); proposal A of the "calls" board, mocks only until chosen
+export function mapSvg(sel, { act = 'map-sel', only = null, cls = '', detail = {}, console: withConsole = false } = {}) {
   const tap = (kind, id, label) => (only && only !== kind ? 'class-dim' : `data-act="${act}" data-id="${id}" tabindex="0" role="button" aria-label="${label}"`);
   const room = (m) => {
     const [x, y, w, h] = ROOMS[m];
@@ -187,6 +188,13 @@ export function mapSvg(sel, { act = 'map-sel', only = null, cls = '', detail = {
       <rect x="${x - 20}" y="${y - 20}" width="40" height="40" class="hit"/>
     </g>`;
   };
+  const consoleEl = () => {
+    const t = tap('console', 'console', 'Bridge console');
+    return `<g class="console ${sel === 'console' ? 'is-sel' : ''} ${t === 'class-dim' ? 'is-dim' : ''}" ${t === 'class-dim' ? '' : t}>
+      <rect x="150" y="48" width="22" height="14"/><rect x="153" y="51" width="16" height="8" class="console-screen"/><rect x="157" y="62" width="8" height="4" class="console-foot"/>
+      <rect x="147" y="38" width="34" height="34" class="hit"/>
+    </g>`;
+  };
   const conn = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="conn"/>`;
   const hull = detail.interior ? '<rect x="4" y="6" width="352" height="258" class="d-hull"/>' : '';
   const deco = detail.interior ? `<g class="deco">${Object.values(DECO).join('')}</g>` : '';
@@ -197,6 +205,7 @@ export function mapSvg(sel, { act = 'map-sel', only = null, cls = '', detail = {
     ${['C', 'B', 'N', 'K', 'M', 'L'].map(room).join('')}
     ${deco}
     ${HATCHES.map(hatch).join('')}
+    ${withConsole ? consoleEl() : ''}
     ${nums}
   </svg>`;
   if (!detail.holo) return svg;
@@ -213,17 +222,18 @@ export function mapSvg(sel, { act = 'map-sel', only = null, cls = '', detail = {
 
 function mapInfo(sel) {
   if (!sel) return '> Tap a module or a hatch.';
+  if (sel === 'console') return '> BRIDGE CONSOLE: logs calls with Mission Control, with the time.';
   if (sel === 'L') return '> LIFE SUPPORT: motion sensor offline. Disconnected by hand, from inside.';
   if (sel === 'L-K') return '> LIFE SUPPORT–CORRIDOR HATCH: log offline. Disconnected from inside Life Support.';
   if (HATCH_NAME[sel]) return `> ${HATCH_NAME[sel].toUpperCase()} HATCH: logs every opening, with the time. Never who opened it.`;
   return `> ${MOD_NAME[sel].toUpperCase()}: motion sensor online. Logs whether anything moved, never who.`;
 }
 
-export function mapPanel(sel, { title = 'STATION MAP', detail = {} } = {}) {
+export function mapPanel(sel, { title = 'STATION MAP', detail = {}, console: withConsole = false } = {}) {
   return win(title, `
-    ${mapSvg(sel, { detail })}
+    ${mapSvg(sel, { detail, console: withConsole })}
     ${detail.numbers ? hatchLegend() : ''}
-    <div class="legend"><span><i class="lg lg-hatch"></i>Hatch</span><span><i class="lg lg-sensor"></i>Motion sensor</span><span><i class="lg lg-off"></i>Offline</span></div>
+    <div class="legend"><span><i class="lg lg-hatch"></i>Hatch</span><span><i class="lg lg-sensor"></i>Motion sensor</span>${withConsole ? '<span><i class="lg lg-console"></i>Console</span>' : ''}<span><i class="lg lg-off"></i>Offline</span></div>
     ${log([esc(mapInfo(sel))], 'map-info')}`, { cls: 'win-map' });
 }
 
@@ -252,14 +262,14 @@ const keyed = (part) => {
   // "Kepler-9" never breaks at its hyphen, and the last two words of a part stay together
   return s.replace(/Kepler-9/g, '<span class="nw">Kepler-9</span>').replace(/ (\S+)$/, '&nbsp;$1');
 };
-const BP = Object.fromEntries(BRIEFING_PARTS.map((p) => [p.id, p]));
+const BPARTS = Object.fromEntries(BRIEFING_PARTS.map((p) => [p.id, p]));
 
 // small visuals for the rules
 const linkVisual = () => `<div class="viz viz-link"><span><i class="pip"></i>Q1</span><span><i class="pip"></i>Q2</span><span><i class="pip pip-code"></i>CODE</span></div>`;
 const codeVisual = () => `<div class="viz viz-code"><span class="box">#</span><span class="box">#</span><span class="box">#</span>
   <span class="viz-cap"><b>REPORT</b> <b>ID</b></span></div>`;
 const oxygenVisual = () => `<div class="viz viz-o2"><span class="o2">10:00</span><span class="meter">${'<i class="on"></i>'.repeat(20)}</span></div>`;
-const sensorVisual = () => `<div class="viz viz-sensors"><span><i class="lg lg-hatch"></i>HATCH OPENING</span><span><i class="lg lg-sensor"></i>MOTION</span></div>`;
+const sensorVisual = (calls) => () => `<div class="viz viz-sensors"><span><i class="lg lg-hatch"></i>HATCH OPENING</span><span><i class="lg lg-sensor"></i>MOTION</span>${calls ? '<span><i class="lg lg-console"></i>CONSOLE CALL</span>' : ''}</div>`;
 
 const whoNova = `<span class="who who-nova">${novaIcon()}<b>NOVA</b><span>STATION AI</span></span>`;
 const whoMc = `<span class="who who-mc"><b>MISSION CONTROL</b><span>NIGHT SHIFT</span>${mcIcon()}</span>`;
@@ -271,7 +281,9 @@ const whoMc = `<span class="who who-mc"><b>MISSION CONTROL</b><span>NIGHT SHIFT<
 //   'mix':  NOVA tells what happened; the rules become four cards; Mission Control starts
 //   'txmix' chosen 2026-11-23 (A + C): NOVA tells what happened in A's messages, the rules are C's cards,
 //           no start button: the oxygen runs from NOVA's first message
-export function briefingPanel({ typed = true, style = 'now', start = false } = {}) {
+// calls: the Bridge console call is in the game (the sensors sentence and card name it)
+export function briefingPanel({ typed = true, style = 'now', start = false, calls = false } = {}) {
+  const BP = calls ? { ...BPARTS, sensors: BRIEFING_SENSORS_CALL } : BPARTS;
   if (style === 'txmix') {
     const msg = (ids) => `<div class="msg msg-nova"><div class="bubble">${ids.map((id) => `<p>${keyed(BP[id])}</p>`).join('')}</div></div>`;
     const card = (title, id, viz) => `<div class="rule"><h3 class="sub">${title}</h3>${viz()}<p>${keyed(BP[id])}</p></div>`;
@@ -281,7 +293,7 @@ export function briefingPanel({ typed = true, style = 'now', start = false } = {
         <div class="tx-voice ${typed ? 'type-me' : ''}" data-type-key="briefing">${msg(['hello', 'situation'])}${msg(['saboteur', 'reports'])}</div>
       </div>
       <div class="rules">
-        ${card('SENSORS', 'sensors', sensorVisual)}${card('QUESTIONS', 'link', linkVisual)}
+        ${card('SENSORS', 'sensors', sensorVisual(calls))}${card('QUESTIONS', 'link', linkVisual)}
         ${card('EMERGENCY CODE', 'code', codeVisual)}${card('OXYGEN', 'oxygen', oxygenVisual)}
       </div>`, { cls: 'win-briefing win-mix' });
   }
@@ -309,7 +321,7 @@ export function briefingPanel({ typed = true, style = 'now', start = false } = {
       ${whoNova}
       <div class="log nova mix-voice ${typed ? 'type-me' : ''}">${['hello', 'situation', 'saboteur', 'reports'].map((id) => `<p>&gt; ${keyed(BP[id])}</p>`).join('')}</div>
       <div class="rules">
-        ${card('SENSORS', 'sensors', sensorVisual)}${card('QUESTIONS', 'link', linkVisual)}
+        ${card('SENSORS', 'sensors', sensorVisual(calls))}${card('QUESTIONS', 'link', linkVisual)}
         ${card('EMERGENCY CODE', 'code', codeVisual)}${card('OXYGEN', 'oxygen', oxygenVisual)}
       </div>
       ${start ? `<div class="mc-strip">${whoMc}${btn('START MISSION', 'start-mission', { cls: 'btn-primary' })}</div>` : ''}`,
@@ -325,7 +337,11 @@ export function briefingPanel({ typed = true, style = 'now', start = false } = {
 //   'map':  sensor toggle + map, only the places of that sensor tappable
 //   'both': sensor toggle + map + list, kept in sync
 //   'tap':  no toggle: tap a hatch to ask if it opened, a module to ask about motion
-export function askPanel(state, c, where = 'chips', detail = {}) {
+// callUi (the Bridge console call, proposals of the "calls" board, mocks only until one is chosen; null = no calls):
+//   'map':    the console is drawn on the Bridge and tapped like a hatch
+//   'button': a CONSOLE CALL button under the map
+//   'bridge': tapping the Bridge offers MOTION or CONSOLE CALL
+export function askPanel(state, c, where = 'chips', detail = {}, callUi = null) {
   const used = state.log.length;
   const left = MAX_QUESTIONS - used;
   const d = state.draft;
@@ -333,6 +349,7 @@ export function askPanel(state, c, where = 'chips', detail = {}) {
   const opt = (v, sel) => `<option value="${v}" ${v === sel ? 'selected' : ''}>${fmtTime(v)}</option>`;
   const valid = d.b > d.a && Boolean(d.what);
   const q = { kind: d.kind, what: d.what, a: d.a, b: d.b };
+  const isCall = d.kind === 'call';
 
   const kindField = `
     <div class="field"><span class="label">SENSOR_</span>
@@ -345,9 +362,10 @@ export function askPanel(state, c, where = 'chips', detail = {}) {
     <div class="field"><span class="label">WHERE_</span>
       <div class="chips">${choices.map(([v, label]) => `<button type="button" class="chip ${v === d.what ? 'is-on' : ''} ${v === 'L' || v === 'L-K' ? 'is-off' : ''}" data-act="draft-what" data-v="${v}">${esc(label)}</button>`).join('')}</div>
     </div>`;
+  const mapSel = isCall && callUi === 'map' ? 'console' : isCall && callUi === 'button' ? null : d.what;
   const mapField = (only, hint) => `
     <div class="field"><span class="label">WHERE_</span>
-      ${mapSvg(d.what, { act: where === 'tap' ? 'draft-place' : 'draft-what', only, cls: 'map-pick', detail })}
+      ${mapSvg(mapSel, { act: where === 'tap' ? 'draft-place' : 'draft-what', only, cls: 'map-pick', detail, console: callUi === 'map' })}
       ${detail.numbers ? hatchLegend() : ''}
       ${hint ? `<p class="hint map-hint">${hint}</p>` : ''}
     </div>`;
@@ -355,7 +373,22 @@ export function askPanel(state, c, where = 'chips', detail = {}) {
     chips: () => kindField + chipsField,
     map: () => kindField + mapField(d.kind === 'hatch' ? 'hatch' : 'room'),
     both: () => kindField + mapField(d.kind === 'hatch' ? 'hatch' : 'room') + chipsField.replace('<span class="label">WHERE_</span>', ''),
-    tap: () => mapField(null, 'Tap a hatch to ask if it opened, or a module to ask about motion.'),
+    tap: () => {
+      if (callUi === 'map') return mapField(null, 'Tap a hatch to ask if it opened, a module to ask about motion, or the Bridge console to ask about calls.');
+      const base = mapField(null, callUi === 'bridge'
+        ? 'Tap a hatch to ask if it opened, or a module to ask about motion. On the Bridge, you can also ask about calls.'
+        : 'Tap a hatch to ask if it opened, or a module to ask about motion.');
+      if (callUi === 'button') {
+        return `${base}<div class="field call-pick"><button type="button" class="chip ${isCall ? 'is-on' : ''}" data-act="draft-call">BRIDGE CONSOLE CALL</button></div>`;
+      }
+      if (callUi === 'bridge' && d.what === 'B') {
+        return `${base}<div class="field"><span class="label">SENSOR_</span><div class="seg">
+          ${btn('MOTION', 'draft-sensor', { cls: !isCall ? 'is-on' : '', attrs: 'data-v="motion"' })}
+          ${btn('CONSOLE CALL', 'draft-sensor', { cls: isCall ? 'is-on' : '', attrs: 'data-v="call"' })}
+        </div></div>`;
+      }
+      return base;
+    },
   }[where]();
 
   const builder = left > 0 ? `
@@ -448,7 +481,7 @@ export function screenBriefing(view) {
   return `<main class="screen screen-briefing">
     ${caseBar(c)}
     <div class="brief-grid">
-      ${briefingPanel({ style, start: startInside, typed: !view.static })}
+      ${briefingPanel({ style, start: startInside, typed: !view.static, calls: Boolean(view.callUi) })}
       ${mapPanel(view.state.mapSel)}
     </div>
     ${startInside ? '' : `<div class="menu">${btn('START MISSION', 'start-mission', { cls: 'btn-primary' })}</div>`}
@@ -498,10 +531,10 @@ export function screenPlay(view) {
   if (wide && tab === 'reports') tab = 'ask';
   const panel = {
     reports: () => reportsPanel(c, view.reportStyle || 'card'),
-    map: () => mapPanel(state.mapSel, { detail: view.mapDetail || {} }),
-    ask: () => askPanel(state, c, view.askWhere, view.mapDetail || {}),
+    map: () => mapPanel(state.mapSel, { detail: view.mapDetail || {}, console: view.callUi === 'map' }),
+    ask: () => askPanel(state, c, view.askWhere, view.mapDetail || {}, view.callUi || null),
     code: () => codePanel(state),
-    briefing: () => briefingPanel({ typed: Boolean(view.briefTyped), style: view.briefStyle || 'now' }),
+    briefing: () => briefingPanel({ typed: Boolean(view.briefTyped), style: view.briefStyle || 'now', calls: Boolean(view.callUi) }),
   }[tab]();
   const tabs = TABS.filter(([k]) => !(wide && k === 'reports'));
   const critical = view.remainingMs <= 60000;
