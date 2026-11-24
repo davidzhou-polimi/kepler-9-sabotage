@@ -198,9 +198,16 @@ function deckShell(view, screenFn) {
   const inner = screenFn({ ...view, shell: null, quit: false, noTabs: true });
   let tab = state.tab;
   if (view.wide && tab === 'reports') tab = 'ask'; // on a laptop the reports are always on screen
-  const k = (label, v) => key2(label, v, { on: playing && tab === v, live: playing, cls: `cs-key-${v}` });
-  const keys = (view.wide ? '' : k('REPORTS', 'reports')) + k('MAP', 'map') + k('NOVA', 'ask') + k('BRIEFING', 'briefing');
-  const code = `<div class="cs-guard">${key2('CODE', 'code', { on: playing && tab === 'code', live: playing, cls: 'cs-key-red' })}</div>`;
+  // the console that fills up (view.flow 'live'): a key works once NOVA has brought what it opens; on a laptop
+  // NOVA and the reports are always on screen, so the keys change only the middle column
+  const filling = view.flow === 'live';
+  const stage = view.stage ?? 8;
+  const avail = filling ? { ask: stage >= 0, briefing: stage >= 1, reports: stage >= 3, map: stage >= 4, code: stage >= 6 } : null;
+  if (filling && view.wide && tab !== 'map' && tab !== 'code') tab = 'briefing';
+  const k = (label, v) => key2(label, v, { on: playing && tab === v && (!avail || avail[v]), live: avail ? playing && avail[v] : playing, cls: `cs-key-${v}` });
+  const keys = filling && view.wide ? k('BRIEFING', 'briefing') + k('MAP', 'map')
+    : (view.wide ? '' : k('REPORTS', 'reports')) + k('MAP', 'map') + k('NOVA', 'ask') + k('BRIEFING', 'briefing');
+  const code = `<div class="cs-guard">${key2('CODE', 'code', { on: playing && tab === 'code', live: avail ? playing && avail.code : playing, cls: 'cs-key-red' })}</div>`;
   const link = style === 'scifi'
     ? '<span class="cs-link"><span class="cs-o2-label">LINK</span><span class="cs-link-bars"><i class="on"></i><i class="on is-flick"></i><i></i><i></i><i></i></span></span>'
     : '<span class="cs-link"><span class="cs-gauge"><i></i></span><span class="cs-o2-label">LINK</span></span>';

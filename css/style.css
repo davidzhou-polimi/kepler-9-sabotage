@@ -1084,7 +1084,8 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .win-term .win-body { background: rgba(2, 5, 9, 0.55); }
 .term { font-family: var(--font-mono); font-size: 14px; line-height: 1.55; }
 .tl { display: grid; grid-template-columns: 3.3em minmax(0, 1fr); gap: 0 8px; padding: 5px 0; }
-.tl-who { font-weight: 600; letter-spacing: 0.06em; }
+/* the names end on the same column, so every ">" stands in the same place and the messages start aligned */
+.tl-who { font-weight: 600; letter-spacing: 0.06em; text-align: right; white-space: nowrap; }
 .tl-who::after { content: '>'; margin-left: 1px; opacity: 0.7; }
 .tl-nova .tl-who { color: var(--cyan); }
 .tl-mc .tl-who { color: var(--amber); }
@@ -1131,3 +1132,82 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 /* the model without its projector (inside NOVA's conversation): no ring, no beam */
 .holo-noproj::after { content: none; }
 .holo-noproj { margin-bottom: -30px; }
+
+/* ---------- buttons with two opposite corners cut, like the windows (proposal, mocks) ---------- */
+/* btns-d adds to the chosen brackets (btns-b): the top left and bottom right corners are cut; under the pointer
+   the button lights up and its words stay light (they used to turn dark on full cyan); the small keys for a
+   choice (.chip) take the same faint ground, the same corners and the same answer to the pointer */
+.btns-d .btn {
+  --bc: var(--accent); --cut: 9px; --bg: rgba(231, 237, 244, 0.07);
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  background:
+    linear-gradient(135deg, transparent 6.4px, var(--bc) 6.4px 8.4px, transparent 8.4px) top left / 16px 16px no-repeat,
+    linear-gradient(315deg, transparent 6.4px, var(--bc) 6.4px 8.4px, transparent 8.4px) bottom right / 16px 16px no-repeat,
+    var(--bg);
+}
+.btns-d .btn-primary { --bg: rgba(67, 217, 210, 0.14); }
+.btns-d .btn-danger { --bc: var(--red); }
+.btns-d .btn:disabled { --bc: var(--star); }
+.btns-d .btn:hover:not(:disabled), .btns-d .btn:focus-visible { --bg: rgba(231, 237, 244, 0.18); color: var(--star); }
+.btns-d .btn-primary:hover:not(:disabled), .btns-d .btn-primary:focus-visible { --bg: rgba(67, 217, 210, 0.32); color: #d9fffc; }
+.btns-d .btn-danger:hover:not(:disabled), .btns-d .btn-danger:focus-visible { --bg: rgba(228, 91, 97, 0.3); color: #ffd9db; }
+.btns-d .btn.is-on { --bg: var(--cyan); color: var(--deep); }
+.btns-d .chip {
+  --cc: var(--line-strong); --cut: 7px; --bg: rgba(231, 237, 244, 0.07);
+  clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+  border-color: var(--cc);
+  background:
+    linear-gradient(135deg, transparent 4.95px, var(--cc) 4.95px 5.95px, transparent 5.95px) top left / 12px 12px no-repeat,
+    linear-gradient(315deg, transparent 4.95px, var(--cc) 4.95px 5.95px, transparent 5.95px) bottom right / 12px 12px no-repeat,
+    var(--bg);
+}
+.btns-d .chip:hover, .btns-d .chip:focus-visible { --cc: var(--cyan); --bg: rgba(67, 217, 210, 0.2); color: var(--cyan); }
+.btns-d .chip.is-on { --cc: var(--cyan); --bg: var(--cyan); color: var(--deep); }
+.btns-d .chip.is-off { --cc: rgba(228, 91, 97, 0.7); }
+
+/* ---------- the map readout as fields (proposal, mocks) ---------- */
+.mfields { margin: 4px 0 0; padding-left: 2ch; display: grid; gap: 2px; }
+.mfields > div { display: grid; grid-template-columns: 15ch minmax(0, 1fr); gap: 0 8px; }
+.mfields dt { text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; color: rgba(231, 237, 244, 0.6); }
+.mfields dd { margin: 0; color: var(--star); }
+.mread.is-off .mfields div:first-child dd { color: var(--red); }
+
+/* ---------- the console that fills up (storyboard, mocks) ---------- */
+.screen-live { display: grid; gap: 14px; align-content: start; }
+.screen-live .win { margin-bottom: 0; }
+.live-wide { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.9fr) minmax(0, 1.05fr); align-items: start; max-width: none; }
+.live-wide > .alarm-strip { grid-column: 1 / -1; margin: 0; }
+.live-col { display: grid; gap: 14px; align-content: start; min-width: 0; }
+.live-meters { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 10px; }
+.live-meters > .win:only-child { grid-column: 2; }
+.live-meters > .win-oxygen:only-child { grid-column: 1; }
+.win-meter .win-body { padding: 8px 12px 10px; }
+.win-meter .timer { min-width: 0; font-size: calc(var(--ds) * 30px); }
+.win-meter .status-o2, .win-meter .status-link { gap: 10px; }
+.win-meter .meter { max-width: none; }
+.notes { margin: 0; display: grid; gap: 10px; }
+.notes > div { display: grid; gap: 2px; }
+.notes dt { font: 500 11px var(--font-mono); letter-spacing: 0.12em; color: var(--cyan); }
+.notes dd { margin: 0; font-size: 15px; line-height: 1.4; color: var(--star); }
+/* the reports NOVA attaches to her message: lines of text, as a terminal lists files */
+.atts { display: grid; gap: 1px; margin-left: calc(3.3em + 8px); }
+.att { justify-self: start; padding: 3px 0; font: inherit; color: var(--cyan); background: none; border: 0; border-bottom: 1px dashed transparent; cursor: pointer; text-align: left; }
+.att:hover, .att:focus-visible { border-bottom-color: var(--cyan); color: var(--star); outline: none; }
+/* on a laptop each column of the filling console scrolls on its own, and NOVA's channel stays at its last line */
+.cs-deck .screen.live-wide { height: 100%; min-height: 0; overflow: hidden; }
+.live-wide .live-col { max-height: 100%; overflow-y: auto; scrollbar-width: none; padding-bottom: 4px; }
+.live-wide .live-col::-webkit-scrollbar { display: none; }
+
+/* NOVA's conversation without the tab (2026-11-25: «la chat con nova penso stia meglio senza linguetta»): the same
+   frame with a flat top; and each report a window with its tab («i report però diventano con la linguetta») */
+:is(.wins-b1, .wins-b2, .wins-b3) .win.win-term { --ws: 0px; }
+.rw-title { margin: 2px 2px 4px; color: var(--cyan); font-size: calc(var(--ds) * 17px); letter-spacing: 0.04em; line-height: 1.2; }
+.reports-wins > .hint { margin-top: 0; }
+/* phone: the clock and the questions stay in view while the channel under them scrolls */
+.screen-live:not(.live-wide) > .live-meters {
+  position: sticky; top: 0; z-index: 6; margin: -16px -16px 0; padding: 10px 16px 8px;
+  background: var(--deep); border-bottom: 1px solid var(--line);
+}
+.cs-deck .screen-live:not(.live-wide) > .live-meters { margin: -4px -2px 0; padding: 6px 2px 8px; }
+/* without the legend the readout follows the map directly */
+.win-map .holo + .mread { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line); }

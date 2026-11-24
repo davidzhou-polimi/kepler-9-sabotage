@@ -505,9 +505,9 @@ const WINDOWS = {
 // ---------- everything chosen so far, together ----------
 
 // console A (retro, dark keys), reports C (the card first), the time line; windows: the tab, in the versions below
-const chosen = (extra = {}) => deck('retro', { reportStyle: 'crewtop', reportsBare: true, timeUi: 'cells10', mapDetail: { holo: 4 }, deckBar: 'leds', ...extra });
+const chosen = (extra = {}) => deck('retro', { reportStyle: 'crewwin', reportsBare: true, timeUi: 'cells10', mapDetail: { holo: 4, info: 'fields' }, deckBar: 'leds', ledStyle: 'b', askUi: 'thread', ...extra });
 const askDraft10 = { kind: 'hatch', what: 'M-K', a: 50, b: 60 };
-const BASE = 'btns-b wins-b1';
+const BASE = 'btns-b btns-d wins-b1';
 const win2Frames = (cls, all, extra = {}) => [
   cap('Telefono, rapporti', phone(chosen({ state: d2state({ tab: 'reports' }), ...extra }), { cls: `btns-b ${cls}` })),
   cap('Telefono, rapporti più sotto', phone(chosen({ state: d2state({ tab: 'reports' }), ...extra }), { cls: `btns-b ${cls}`, scroll: '400' })),
@@ -615,7 +615,8 @@ const ledFrames = (ledStyle) => [
   cap('Telefono, ultimo minuto', phone(chosen({ state: d2state({ tab: 'map' }), remainingMs: 42000, ledStyle }), { cls: `${BASE} emergency alarm` })),
 ];
 const BARLED = {
-  id: 'barled', title: 'La barra fisica: i LED',
+  id: 'barled', title: 'La barra fisica: i LED', decided: 'B, sporgente come i tasti', chosen: 'b',
+  answer: 'B · Sporgente come i tasti · «forse il glow dei led disturba mentre leggo le cose» (l\'alone attorno ai LED è tolto: la lente resta accesa, ma non fa più luce sul pannello)',
   quote: '«i led li renderei di quelli che escono un po\', tipo quelli per arduino, al momento sembrano incassati e bidimensionali a differenza dei tasti che hanno tridimensionalità» · «i led così sono orrendi, immaginavo con un po\' di prospettiva, non piatti»',
   context: 'La prima prova era una capsula vista di lato, quindi piatta: tolta. Qui due modi di dare la prospettiva. In tutti e due non c\'è più l\'incasso attorno, ogni LED ha il suo colore anche da spento (PWR acceso fisso, LINK ambra che lampeggia, ALARM rosso scuro che si accende nell\'ultimo minuto) e il nome è inciso sotto. Già fatto sulla stessa barra: il nastro a strisce gira tutto attorno a CODE, e la scritta è una targhetta di metallo che dice solo MISSION CONTROL. Il primo riquadro di ogni direzione mostra la barra del laptop a grandezza vera, per vedere i LED da vicino.',
   dirs: [
@@ -681,7 +682,8 @@ const novaFrames = (ui) => [
   cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'ask', draft: { ...hatchQ, what: null }, askStep: 0, log: [{ q: { kind: 'motion', what: 'K', a: 40, b: 50 }, ans: 'yes' }] }), askUi: ui }), { cls: BASE, big: true })),
 ];
 const ASKTERM2 = {
-  id: 'nova', title: 'NOVA on Kepler-9: il canale non si apre sulla mappa',
+  id: 'nova', title: 'NOVA on Kepler-9: il canale non si apre sulla mappa', decided: 'B, tutta la conversazione con NOVA', chosen: 'thread',
+  answer: 'B · Tutta la conversazione con NOVA · «per rendere il terminale più leggibile possiamo allineare il ">" davanti al messaggio? così finisce sempre allo stesso punto?» (fatto: i nomi finiscono sulla stessa colonna)',
   quote: '«non è solo il nome della finestra che non mi convince, non mi convince che mostra fin da subito la mappa, e mi chiede subito se voglio interagire, come se nova fosse ridotto a quello (nel nostro caso sì ma è poco "realistico")»',
   context: `Già applicato in tutte le prove: la finestra si chiama «NOVA ON KEPLER-9» (e il tasto sulla barra «NOVA», perché «ASK NOVA» non lo scriveresti: dimmi se sul tasto lo vuoi tenere); «NIGHT SHIFT» è tolto ovunque, anche nel gioco, e resta «MISSION CONTROL»; dentro la conversazione la mappa non ha più l'anello e il raggio del proiettore, ed è per il resto la stessa. Quello che resta da scegliere è come si apre il canale. In tutte e due le direzioni il canale è aperto e fermo: NOVA dice cosa regge il collegamento, e la mappa compare solo dopo che hai chiesto tu di fare una domanda. Testi nuovi da approvare: la riga di NOVA «The link will carry 2 questions and the emergency code.», ricavata dalla frase del briefing «It will carry only 2 questions and the emergency code.»; il comando «NEW QUESTION»; e la tua riga «New question», che è il comando ripetuto.`,
   dirs: [
@@ -700,6 +702,64 @@ const ASKTERM2 = {
   ],
 };
 
+// ---------- the console fills up after accepting NOVA's transmission (storyboard) ----------
+
+const liveState = (stage, s = {}) => (stage < 0 ? { ...base(), phase: 'home' } : d2state({ tab: 'ask', draft: { ...hatchQ, what: null }, askStep: 0, ...s }));
+const liveL = (label, stage, s = {}, extra = {}) => cap(label, laptop(chosen({ flow: 'live', stage, state: liveState(stage, s), remainingMs: 10 * MIN - 9000, ...extra }), { cls: BASE, big: true }));
+const liveP = (label, stage, s = {}, opts = {}) => cap(label, phone(chosen({ flow: 'live', stage, state: liveState(stage, s), remainingMs: 10 * MIN - 9000 }), { cls: BASE, ...opts }));
+const LIVE = {
+  id: 'live', title: 'La console si popola dopo aver accettato la trasmissione',
+  quote: '«dovrebbe essere una richiesta di nova, che chiede a mission control di rispondere, chi apre la webapp accetta la trasmissione e nova inizia a scrivere. compare poi la schermata briefing, che si compila mentre nova scrive, come se mission control stesse prendendo in carico il caso e si appunta le cose no, e anche i report vengono aperti man mano che nova li apre (nella chat si vedono come allegati non lo so)» · «ah, e per forza di cose, anche il timer dell\'ossigeno e il numero di domande, saranno finestre, che compaiono dove che è comparso il briefing ecc. quindi vediamo veramente la console popolarsi dopo aver accettato il caso»',
+  context: `È uno storyboard: i momenti in ordine, sul laptop e sul telefono. Non ci sono scelte da fare con il pallino; dimmi cosa non torna. Come l'ho letta. La console è vuota e c'è solo la richiesta di NOVA, la sua prima frase di oggi («Mission Control, this is NOVA on Kepler-9.») con ACCEPT. Accettando, NOVA scrive il resto del briefing nel suo canale, una frase alla volta, e ogni cosa compare quando la dice: gli appunti del caso (la finestra CASE … // BRIEFING, una riga per ogni frase), i quattro rapporti come allegati sotto la frase che li nomina (e la colonna dei rapporti si apre), la mappa quando parla dei sensori, la finestra QUESTIONS quando dice quante domande regge il collegamento, la finestra OXYGEN quando dice l'ossigeno. Sulla barra un tasto si accende solo quando c'è ciò che apre. L'ossigeno corre da quando accetti, come avevi deciso: la sua finestra arriva con l'ultima frase, una decina di secondi dopo, e mostra già il tempo sceso. Sul laptop le colonne sono tre: NOVA, il caso (ossigeno e domande in alto; sotto gli appunti, oppure la mappa o il codice con i tasti), i rapporti. Sul telefono ossigeno e domande stanno in alto e sotto c'è un canale alla volta. Testi nuovi da approvare: ACCEPT e INCOMING TRANSMISSION; le sette righe di appunti, che sono le frasi di NOVA ridotte a parole chiave (SITUATION_ «03:00 · Recycler sabotaged · Every module sealed»; SABOTEUR_ «Whoever was in Life Support»; REPORTS_ «4 reports · One is false»; SENSORS_ «Hatch openings · Motion · No names recorded»; LINK_ «2 questions · A refused question still counts»; CODE_ «False report number + saboteur's ID · One attempt»; OXYGEN_ «10 minutes»); e gli allegati, righe di testo come in un terminale («+ REPORT 01 · MIRA»). Dopo i tuoi ultimi messaggi: il canale di NOVA non ha più la linguetta, e ogni rapporto è una finestra con la sua linguetta («REPORT 01»), sotto il titolo CREW REPORTS.`,
+  common: [
+    liveL('1 · Laptop: la richiesta di NOVA, console vuota', -1),
+    liveL('2 · Accettato: NOVA scrive, compaiono gli appunti del caso', 1),
+    liveL('3 · NOVA allega i rapporti: si apre la colonna dei rapporti', 3),
+    liveL('4 · Il collegamento: compare QUESTIONS (gli appunti crescono)', 5),
+    liveL('5 · L\'ossigeno: compare OXYGEN, NOVA ha finito e il canale è fermo', 8),
+    liveL('6 · Tasto MAP: la mappa al posto degli appunti', 8, { tab: 'map', mapSel: 'M-K' }),
+    liveP('1 · Telefono: la richiesta di NOVA', -1),
+    liveP('2 · NOVA scrive', 1),
+    liveP('3 · I rapporti come allegati', 3, {}, { scroll: 'bottom' }),
+    liveP('4 · Compare QUESTIONS', 5, {}, { scroll: 'bottom' }),
+    liveP('5 · Compare OXYGEN, NOVA ha finito', 8, {}, { scroll: 'bottom' }),
+    liveP('6 · Tasto BRIEFING: gli appunti del caso', 8, { tab: 'briefing' }),
+    liveP('7 · Tasto REPORTS: i rapporti', 8, { tab: 'reports' }),
+  ],
+  dirs: [],
+};
+
+// ---------- buttons with cut corners (done, to check) ----------
+
+const BTN2 = {
+  id: 'buttons2', title: 'I pulsanti con gli angoli smussati', done: 'angoli opposti smussati, hover senza testo nero, tasti di scelta coerenti',
+  quote: '«il pulsante è rimasto con un design piatto, non come le nostre finestre, potremmo aggiungere gli angoli opposti smussati, e va risolto il hover che mostra testo nero. e poi è incoerente con i pulsanti per selezionare orario: lì terrei almeno il trasparentino ed effetto hover no?»',
+  context: 'I pulsanti tengono le staffe ai lati che avevi scelto e prendono due angoli opposti smussati (in alto a sinistra e in basso a destra), come le finestre. Passandoci sopra si illuminano e le parole restano chiare: prima diventavano scure su ciano pieno. I tasti di scelta (gli intervalli di tempo, e ogni altro tasto piccolo) hanno lo stesso fondo trasparente, gli stessi angoli e la stessa risposta al puntatore; quello scelto resta pieno di ciano, come le cose selezionate altrove. È solo nei mock: nel gioco lo porto quando mi dici che va bene. Passa il mouse sui pulsanti per vedere l\'effetto.',
+  common: [
+    cap('NEW QUESTION', phone(chosen({ state: d2state({ tab: 'ask', draft: { ...hatchQ, what: null }, askStep: 0 }), askUi: 'open' }), { cls: BASE })),
+    cap('Gli intervalli di tempo', phone(chosen({ state: d2state({ tab: 'ask', draft: hatchQ, askStep: 2 }), askUi: 'open' }), { cls: BASE })),
+    cap('SEND QUESTION', phone(chosen({ state: d2state({ tab: 'ask', draft: hatchQ, askStep: 3 }), askUi: 'open' }), { cls: BASE })),
+    cap('SEND CODE, e la conferma', phone(chosen({ state: d2state({ tab: 'code', codeInput: '127', confirming: true }) }), { cls: BASE })),
+  ],
+  dirs: [],
+};
+
+// ---------- the map readout in the words of a console (done, texts to approve) ----------
+
+const mapShot = (label, sel) => cap(label, phone(chosen({ state: d2state({ tab: 'map', mapSel: sel }) }), { cls: BASE }));
+const MAPTEXT = {
+  id: 'maptext', title: 'Sotto la mappa: le parole di una console', done: 'lettura a campi, testi da approvare',
+  quote: '«"Logs every opening, with the time. Never who opened it." so lame non scriverlo così scrivilo più nel linguaggio di una console da mission control, sono particolarmente contrario al "never who opened it", cioè è awkward, anche "Disconnected by hand, from inside." è innaturale, anche "Logs whether anything moved, never who."»',
+  context: 'Dove: scheda MAP, sotto la mappa, quando si tocca un portello o un modulo; lo legge chi sta decidendo cosa chiedere a NOVA. Al posto delle frasi, una lettura a campi come su una console: etichetta e valore, una riga per cosa. Un portello: «Hatch log: Online», «Records: Each opening, with its time», «Identity: Not recorded». Un modulo: «Motion sensor: Online», «Records: Movement, with its time», «Identity: Not recorded». Life Support: «Motion sensor: Offline», «Cause: Manual disconnection, inside the module». Il portello di Life Support: «Hatch log: Offline», «Cause: Manual disconnection, inside Life Support». «Identity: Not recorded» prende il posto di «never who»: dice la stessa regola (i sensori non dicono chi) come un dato. Sono proposte mie: cambiale come vuoi. La legenda sotto la mappa è tolta («è poco realistico avere la legenda sulla mappa di mission control»): cosa sono i segni lo dice la lettura quando li tocchi, e Life Support ha già scritto SENSORS OFFLINE sul modello.',
+  common: [
+    mapShot('Un portello', 'M-K'),
+    mapShot('Un modulo', 'K'),
+    mapShot('Life Support', 'L'),
+    mapShot('Il portello di Life Support', 'L-K'),
+  ],
+  dirs: [],
+};
+
 // ---------- under the map ----------
 
 const mapInfoDir = (key, title, note, info, rec = false) => ({
@@ -712,7 +772,8 @@ const mapInfoDir = (key, title, note, info, rec = false) => ({
   ],
 });
 const MAPINFO = {
-  id: 'mapinfo', title: 'Sotto la mappa',
+  id: 'mapinfo', title: 'Sotto la mappa', decided: 'B, una lettura da terminale', chosen: 'readout',
+  answer: 'B · Una lettura da terminale · «"Logs every opening, with the time. Never who opened it." so lame non scriverlo così scrivilo più nel linguaggio di una console da mission control, sono particolarmente contrario al "never who opened it", cioè è awkward, anche "Disconnected by hand, from inside." è innaturale, anche "Logs whether anything moved, never who."» (i testi nuovi sono nella tavola «Sotto la mappa: le parole di una console»)',
   quote: '«la parte sotto la mappa è da sistemare, i messaggi con ">" in genere sono formattati male»',
   context: `Due cose distinte. La prima l'ho già corretta nel gioco, perché era un difetto: una riga che comincia con «>» e va a capo ora continua sotto il suo testo, non sotto il segno. Vale per tutte: la riga sotto la mappa, lo stato in home, la domanda in anteprima, lo storico delle domande, i finali, la soluzione. La seconda è questa tavola: come sta scritto ciò che si legge sotto la mappa. Le parole sono quelle di oggi, divise in nome e frasi; cambia solo la forma, e la legenda si allinea a sinistra con una linea sotto.`,
   dirs: [
@@ -736,6 +797,7 @@ const homeDir2 = (key, title, note, style, rec = false) => ({
 });
 const HOME2 = {
   id: 'home2', title: 'La home come la home della console',
+  redo: '«dovrebbe essere una richiesta di nova, che chiede a mission control di rispondere, chi apre la webapp accetta la trasmissione e nova inizia a scrivere. compare poi la schermata briefing, che si compila mentre nova scrive, come se mission control stesse prendendo in carico il caso e si appunta le cose no, e anche i report vengono aperti man mano che nova li apre (nella chat si vedono come allegati non lo so), lo stile del terminale con cui si scambiano i messaggi nova e mission control deve essere coerente.»',
   quote: '«se tutta l\'app è la console, anche la schermata di gioco non deve menzionare elementi relativi al gioco, ma essere come la home di una console»',
   context: `Leggo così: la schermata da cui si parte è la console di Mission Control in attesa, non il menu di un gioco. Quindi in tutte e tre le direzioni: sparisce «SABOTAGE» (la console non lo sa ancora, lo dice NOVA nel briefing); «NEW GAME» diventa «ANSWER», perché si risponde alla trasmissione di NOVA; «CONTINUE» diventa «RESUME». Sono parole nuove, da approvare. Altre due parole di gioco stanno fuori dalla home e qui non sono disegnate: la conferma dopo il tasto di accensione («QUIT GAME», con i pulsanti QUIT e CANCEL) e «NEW GAME» in fondo alla soluzione. Per tutte e due propongo «CLOSE LINK». Se invece intendevi le schermate dell'indagine, dimmelo.`,
   dirs: [
@@ -966,16 +1028,18 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [BARLED, ASKTERM2, MAPINFO, HOME2];
-const NOTES = [PORTRAITS];
-const DECIDED = [ASKTERM, REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const STORY = [LIVE];
+const OPEN = [];
+const NOTES = [BTN2, MAPTEXT, PORTRAITS];
+const DECIDED = [BARLED, ASKTERM2, MAPINFO, HOME2, ASKTERM, REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">
     <h1>NOVA // Mock</h1>
     <p>${tidy(`Schermate vere dell'app, caso di prova ${SAMPLE}, font Jersey 10. Ogni riquadro scorre. Prima le tavole aperte: in ognuna scegli una direzione con il pallino, e in fondo trovi la raccolta. Sotto, le tavole già decise, con tutte le prove.`)}</p>
-    <nav class="mock-nav">${OPEN.map((b) => `<a href="#${b.id}">${b.title}</a>`).join('')}<a href="#summary">Raccolta</a>${NOTES.map((b) => `<a href="#${b.id}">${b.title} (fatto)</a>`).join('')}${DECIDED.map((b) => `<a href="#${b.id}">${b.title} (${b.rejected ? 'bocciata' : b.redo ? 'da rifare' : b.over ? 'superata' : 'deciso'})</a>`).join('')}<a href="#fonts">Font (deciso)</a></nav>
+    <nav class="mock-nav">${STORY.concat(OPEN).map((b) => `<a href="#${b.id}">${b.title}</a>`).join('')}<a href="#summary">Raccolta</a>${NOTES.map((b) => `<a href="#${b.id}">${b.title} (fatto)</a>`).join('')}${DECIDED.map((b) => `<a href="#${b.id}">${b.title} (${b.rejected ? 'bocciata' : b.redo ? 'da rifare' : b.over ? 'superata' : 'deciso'})</a>`).join('')}<a href="#fonts">Font (deciso)</a></nav>
   </div>
+  ${STORY.map(board).join('')}
   ${OPEN.map(board).join('')}
   <section class="board" id="summary">
     <header class="board-head"><h2>Raccolta</h2></header>
@@ -992,6 +1056,8 @@ root.addEventListener('click', (e) => {
   if (b.dataset.replay === 'boot') { cs.classList.remove('fx-boot'); void cs.offsetWidth; cs.classList.add('fx-boot'); }
   if (b.dataset.replay === 'static') { cs.classList.remove('cs-switching'); void cs.offsetWidth; cs.classList.add('cs-switching'); setTimeout(() => cs.classList.remove('cs-switching'), 400); }
 });
+// in the filling console NOVA's channel shows its last line, as a conversation does
+root.querySelectorAll('.live-wide .win-term').forEach((w) => { const col = w.closest('.live-col'); col.scrollTop = col.scrollHeight; });
 root.querySelectorAll('[data-scroll]').forEach((frame) => {
   const f = frame.querySelector('.cs-screen > .cs-scroll, .cs-mon-main .cs-scroll') || frame;
   f.scrollTop = frame.dataset.scroll === 'bottom' ? f.scrollHeight : Number(frame.dataset.scroll);
@@ -1002,7 +1068,7 @@ function summary() {
     const vs = [...root.querySelectorAll(`input[name="${b.id}"]:checked`)].map((v) => b.dirs.find((x) => x.key === v.value).title);
     return `${b.title}: ${vs.length ? vs.join(' + ') : '(da scegliere)'}`;
   });
-  root.querySelector('[data-summary]').textContent = lines.join('\n');
+  root.querySelector('[data-summary]').textContent = lines.length ? lines.join('\n') : 'Nessuna tavola con scelte aperte. Sopra c\'è lo storyboard da confermare; sotto, le cose fatte da controllare.';
 }
 root.addEventListener('change', summary);
 summary();

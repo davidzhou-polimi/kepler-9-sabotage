@@ -136,7 +136,7 @@ const REPORT_HINT = {
 // bare (proposal, mocks): no window around the reports; the cards stand on the screen under the title
 export function reportsPanel(c, style = 'card', { bare = false } = {}) {
   const block = (p) => (style === 'card' ? reportBlock(c, p) : reportAlt(c, p, style));
-  if (style === 'crewwin') return `<div class="reports-wins"><p class="hint">${REPORT_HINT[style]}</p>${c.order.map(block).join('')}</div>`;
+  if (style === 'crewwin') return `<div class="reports-wins"><h2 class="win-title rw-title">CREW REPORTS</h2><p class="hint">${REPORT_HINT[style]}</p>${c.order.map(block).join('')}</div>`;
   return win('CREW REPORTS', `
     <p class="hint">${REPORT_HINT[style]}</p>
     <div class="reports reports-${style}">${c.order.map(block).join('')}</div>`, { cls: `win-reports ${bare ? 'win-bare' : ''}` });
@@ -285,11 +285,21 @@ function mapInfoParts(sel) {
 // detail.info (what stands under the map; proposals, mocks only until one is chosen; default: the legend and one line):
 //   'card':    a small card: the sign of the legend, the name of the place, its sentences in the reading font
 //   'readout': a terminal readout: the name on the prompt line, one sentence per line under it
+//   'fields':  the readout in the words of a console: one line per reading, label and value (chosen layout
+//              2026-11-25; the sentences were found unnatural, these wordings are a proposal)
+const MAP_FIELDS = (sel) => (sel === 'L' ? [['Motion sensor', 'Offline'], ['Cause', 'Manual disconnection, inside the module']]
+  : sel === 'L-K' ? [['Hatch log', 'Offline'], ['Cause', 'Manual disconnection, inside Life Support']]
+    : HATCH_NAME[sel] ? [['Hatch log', 'Online'], ['Records', 'Each opening, with its time'], ['Identity', 'Not recorded']]
+      : [['Motion sensor', 'Online'], ['Records', 'Movement, with its time'], ['Identity', 'Not recorded']]);
 export function mapPanel(sel, { title = 'STATION MAP', detail = {}, console: withConsole = false } = {}) {
-  const legend = `<div class="legend ${detail.info ? 'legend-row' : ''}"><span><i class="lg lg-hatch"></i>Hatch</span><span><i class="lg lg-sensor"></i>Motion sensor</span>${withConsole ? '<span><i class="lg lg-console"></i>Console</span>' : ''}<span><i class="lg lg-off"></i>Offline</span></div>`;
+  // no legend with the console readout: Mission Control's own map wouldn't carry one, and the readout names
+  // what is tapped (2026-11-25: «è poco realistico avere la legenda sulla mappa di mission control»)
+  const legend = detail.info === 'fields' ? '' : `<div class="legend ${detail.info ? 'legend-row' : ''}"><span><i class="lg lg-hatch"></i>Hatch</span><span><i class="lg lg-sensor"></i>Motion sensor</span>${withConsole ? '<span><i class="lg lg-console"></i>Console</span>' : ''}<span><i class="lg lg-off"></i>Offline</span></div>`;
   const { name, sentences, kind } = mapInfoParts(sel);
   const info = detail.info === 'card'
     ? `<div class="minfo ${kind ? `minfo-${kind}` : ''}">${kind ? `<i class="lg lg-${kind}"></i>` : ''}<div>${name ? `<b class="minfo-name">${esc(name)}</b>` : ''}<p>${esc(sentences.join(' '))}</p></div></div>`
+    : detail.info === 'fields'
+      ? `<div class="log map-info mread ${kind === 'off' ? 'is-off' : ''}">${name ? `<p class="pl">&gt; <b>${esc(name)}</b></p><dl class="mfields">${MAP_FIELDS(sel).map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>` : `<p class="pl">&gt; ${esc(sentences.join(' '))}</p>`}</div>`
     : detail.info === 'readout'
       ? `<div class="log map-info mread ${kind === 'off' ? 'is-off' : ''}">${name ? `<p class="pl">&gt; <b>${esc(name)}</b></p>${sentences.map((x) => `<p class="mread-s">${esc(x.trim())}</p>`).join('')}` : `<p class="pl">&gt; ${esc(sentences.join(' '))}</p>`}</div>`
       : log([esc(mapInfo(sel))], 'map-info');
@@ -540,7 +550,9 @@ export function askPanel(state, c, where = 'chips', detail = {}, callUi = null, 
 // fosse ridotto a quello» (2026-11-25), the channel no longer opens on the map, and the map has no projector:
 //   'open':   the channel is open and quiet; a question starts with a command (askStep 0), then as 'chat'
 //   'thread': the same, with NOVA's own messages (the briefing) at the top: the whole conversation in one place
-function askTerm(state, mode, detail) {
+// intro (the console fills up, storyboard): { stage, c } with stage -1 NOVA's request, 0..7 the briefing line
+// she is writing, 8 finished. Until she has finished there is nothing to send; the reports come as attachments.
+function askTerm(state, mode, detail, intro = null) {
   const left = MAX_QUESTIONS - state.log.length;
   const d = state.draft;
   const opens = mode === 'open' || mode === 'thread';
@@ -552,7 +564,18 @@ function askTerm(state, mode, detail) {
   const place = d.what ? (HATCH_NAME[d.what] ? `${HATCH_NAME[d.what]} hatch` : MOD_NAME[d.what]) : '';
   const model = mapSvg(d.what, { act: 'draft-place', cls: 'map-pick', detail: opens ? { ...detail, noproj: true } : detail });
   const send = `<div class="actions">${btn('SEND QUESTION', 'send-question', { cls: 'btn-primary', disabled: !d.what })}<span class="note">Uses 1 of ${MAX_QUESTIONS}. ${left} left.</span></div>`;
-  const briefing = mode === 'thread' ? ['hello', 'situation', 'saboteur', 'reports'].map((id) => row('nova', keyed(BPARTS[id]))).join('') : '';
+  let briefing = mode === 'thread' ? ['hello', 'situation', 'saboteur', 'reports'].map((id) => row('nova', keyed(BPARTS[id]))).join('') : '';
+  if (intro) {
+    const n = Math.min(intro.stage, BRIEFING_PARTS.length - 1);
+    // the reports she attaches are lines of text, as a terminal lists files, not boxes
+    const files = `<div class="atts">${intro.c.order.map((p, i) => `<button type="button" class="att" data-act="tab" data-v="reports">+ REPORT ${String(i + 1).padStart(2, '0')} · ${esc(PEOPLE[p].short.toUpperCase())}</button>`).join('')}</div>`;
+    briefing = BRIEFING_PARTS.slice(0, Math.max(0, n) + 1).map((part, i) => row('nova', `${keyed(part)}${i === n && intro.stage < 8 && intro.stage >= 0 ? '<span class="tl-cur"></span>' : ''}`, part.id === 'reports' ? files : '')).join('');
+    if (intro.stage < 0) {
+      return win('NOVA ON KEPLER-9', `<div class="term">${briefing}
+        ${row('mc', '<span class="tl-cur"></span>', `<div class="actions"><span class="hc-tag">INCOMING TRANSMISSION</span>${btn('ACCEPT', 'new-game', { cls: 'btn-primary' })}</div>`, 'tl-draft')}</div>`, { cls: 'win-ask win-term' });
+    }
+    if (intro.stage < 8) return win('NOVA ON KEPLER-9', `<div class="term">${briefing}</div>`, { cls: 'win-ask win-term' });
+  }
   const quiet = row('nova', `The link will carry ${left} ${left === 1 ? 'question' : 'questions'} and the emergency code.`)
     + row('mc', '<span class="tl-cur"></span>', `<div class="actions">${btn('NEW QUESTION', 'ask-step', { cls: 'btn-primary', attrs: 'data-v="1"' })}</div>`, 'tl-draft');
   const hint = 'Tap a hatch to ask if it opened, or a module to ask about motion.';
@@ -801,8 +824,58 @@ export function screenSolution(view) {
 
 // The debrief questions are on the scoreboard sheet, not in NOVA (decided 2026-11-23).
 
+// The console fills up after NOVA's transmission is accepted (storyboard, mocks only until approved).
+// view.stage: -1 NOVA's request, waiting; 0..7 NOVA is writing that line of her briefing; 8 she has finished.
+// Each thing appears when she says it: the case notes Mission Control takes, the reports she attaches, the
+// station model, the questions the link will carry, the oxygen clock.
+// Laptop: three columns, NOVA | the case (clock, questions, then notes, model or code) | the reports.
+// Phone: the clock and the questions on top, one channel under them.
+const NOTES = [
+  ['situation', 'SITUATION_', '03:00 · Recycler sabotaged · Every module sealed'],
+  ['saboteur', 'SABOTEUR_', 'Whoever was in Life Support'],
+  ['reports', 'REPORTS_', '4 reports · One is false'],
+  ['sensors', 'SENSORS_', 'Hatch openings · Motion · No names recorded'],
+  ['link', 'LINK_', '2 questions · A refused question still counts'],
+  ['code', 'CODE_', 'False report number + saboteur\'s ID · One attempt'],
+  ['oxygen', 'OXYGEN_', '10 minutes'],
+];
+export function screenLive(view) {
+  const { state, c, wide, remainingMs } = view;
+  const stage = view.stage ?? 8;
+  const at = (id) => BRIEFING_PARTS.findIndex((p) => p.id === id); // the line that brings each thing
+  const has = (id) => stage >= at(id);
+  const detail = view.mapDetail || {};
+  const chat = askTerm(state, 'thread', detail, { stage, c });
+  if (stage < 0) return `<main class="screen screen-live ${wide ? 'live-wide' : ''}"><div class="live-col">${chat}</div></main>`;
+  const leftQ = MAX_QUESTIONS - state.log.length;
+  const on = Math.ceil(Math.max(0, remainingMs / OXYGEN_MS) * 20);
+  const oxygen = has('oxygen') ? win('OXYGEN', `<div class="status-o2"><span class="timer" data-timer>${fmtClock(remainingMs)}</span>
+      <span class="meter" data-meter>${Array.from({ length: 20 }, (_, i) => `<i class="${i < on ? 'on' : ''}"></i>`).join('')}</span></div>`, { cls: 'win-meter win-oxygen' }) : '';
+  const questions = has('link') ? win('QUESTIONS', `<div class="status-link"><span class="pips">${Array.from({ length: MAX_QUESTIONS }, (_, i) => `<i class="${i < leftQ ? 'on' : ''}"></i>`).join('')}</span>
+      <span class="status-num">${leftQ}/${MAX_QUESTIONS}</span></div>`, { cls: 'win-meter win-questions' }) : '';
+  const meters = oxygen || questions ? `<div class="live-meters">${oxygen}${questions}</div>` : '';
+  const notes = stage >= 1 ? win(`CASE ${esc(c.code)} // BRIEFING`, `<dl class="notes">${NOTES.filter(([id]) => has(id)).map(([id, label, text]) => `<div><dt>${label}</dt><dd>${text}${at(id) === stage ? '<span class="tl-cur"></span>' : ''}</dd></div>`).join('')}</dl>`, { cls: 'win-notes' }) : '';
+  const reports = has('reports') ? reportsPanel(c, view.reportStyle || 'crewtop', { bare: true }) : '';
+  const model = has('sensors') ? mapPanel(state.mapSel, { detail }) : '';
+  const code = has('code') ? codePanel(state) : '';
+  const tab = state.tab || 'ask';
+  const modals = `${state.profile ? profileModal(c, state.profile) : ''}${view.quitOpen ? quitModal(c) : ''}`;
+  const critical = remainingMs <= 60000 && has('oxygen') ? `<div class="alarm-strip" role="alert">${warningIcon()}<span>OXYGEN CRITICAL // LESS&nbsp;THAN&nbsp;ONE&nbsp;MINUTE</span></div>` : '';
+  if (wide) {
+    const mid = tab === 'map' && model ? model : tab === 'code' && code ? code : notes;
+    return `<main class="screen screen-live live-wide">${critical}
+      <div class="live-col">${chat}</div>
+      <div class="live-col">${meters}${mid}</div>
+      <div class="live-col">${reports}</div>
+      ${modals}</main>`;
+  }
+  const channel = { reports, map: model, code, briefing: notes, ask: chat }[tab] || chat;
+  return `<main class="screen screen-live">${meters}${critical}${channel}${modals}</main>`;
+}
+
 export function screen(view) {
   if (view.shell) return consoleScreen(view, screen); // the whole app as Mission Control's console (proposals)
+  if (view.flow === 'live') return screenLive(view);
   const f = {
     home: screenHome, briefing: screenBriefing, play: screenPlay,
     ending: screenEnding, solution: screenSolution,

@@ -582,3 +582,7 @@
     2px 9px 5px rgba(0, 0, 0, 0.55), 0 0 14px 3px var(--glow);
 }
 .cs-deck:not(.is-wide) .cs-leds { gap: 14px; padding: 0 2px; }
+
+/* no halo around the LEDs: it pulled the eye while reading («forse il glow dei led disturba mentre leggo le cose»,
+   2026-11-25). The lens is still bright when lit */
+.cs-leds .cs-led2 i { --glow: transparent !important; }
