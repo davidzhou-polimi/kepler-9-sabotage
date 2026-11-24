@@ -209,7 +209,7 @@ const holoDir = (key, title, note, detail, rec = false) => ({
   ],
 });
 const HOLO = {
-  id: 'holo', title: 'Mappa a ologramma',
+  id: 'holo', title: 'Mappa a ologramma', decided: 'C, ologramma proiettato', chosen: 'C', answer: 'C · Ologramma proiettato',
   quote: '«per migliorare la mappa non intendevo questo, intendevo renderla meno schematica, sparo, magari un ologramma? è fattibile?»',
   context: 'Sì, è fattibile, e senza librerie: è la stessa mappa inclinata in 3D con il CSS, quindi portelli e moduli si toccano ancora, anche nelle domande a NOVA, e funziona offline. Le pareti sono copie dei contorni sollevate a strati. Un ologramma 3D vero (con una libreria come three.js, da girare con il dito) è fattibile anche lui, ma costa un giorno o più, pesa sul telefono e rende più difficile toccare i portelli: con la scadenza di due giorni non lo consiglio. Con «riduci movimento» attivo, niente tremolio né oscillazione.',
   dirs: [
@@ -231,7 +231,7 @@ const homeDir = (key, title, note, style, rec = false) => ({
   ],
 });
 const HOME = {
-  id: 'home', title: 'Home: i testi in grigio',
+  id: 'home', title: 'Home: i testi in grigio', decided: 'B, lo stato in una finestra di NOVA', chosen: 'B', answer: 'B · Lo stato in una finestra di NOVA',
   quote: '«da migliorare, i testi in grigio soprattutto»',
   context: 'Ho misurato: il contrasto dei grigi sul fondo è già buono (circa 9 a 1). Il difetto è un altro: sono piccoli, sottili e tutti dello stesso grigio, quindi non dicono cosa conta. Le direzioni lavorano su gerarchia e colore; i testi restano quelli di oggi.',
   dirs: [
@@ -342,8 +342,8 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [HOLO, HOME];
-const DECIDED = [MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const OPEN = [];
+const DECIDED = [HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">

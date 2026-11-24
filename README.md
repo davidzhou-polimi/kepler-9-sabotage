@@ -57,7 +57,6 @@ js/ui.js            screens as pure functions (state -> HTML), shared by the gam
 js/app.js           state, events, timer, saving, developer tools
 js/portraits.js     16×16 pixel portraits (placeholders)
 js/fonts.js         display font switch
-js/stars.js         pixel star field
 js/typing.js        NOVA typing effect
 sw.js               offline cache
 fonts/              self-hosted Google Fonts (latin), made by tools/fetch_fonts.py

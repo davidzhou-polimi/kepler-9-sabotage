@@ -2,7 +2,6 @@
 import { generateCase, randomCode, normalizeCode, answer, PEOPLE, HATCH_NAME } from './generator.js';
 import { screen, newState, fmtClock, MAX_QUESTIONS, OXYGEN_MS, esc } from './ui.js';
 import { initFontSwitch } from './fonts.js';
-import { initStars } from './stars.js';
 import { typeIn } from './typing.js';
 
 const STORE = 'k9-nova-state-v1';
@@ -57,6 +56,8 @@ function view() {
     reportStyle: 'sheet', // chosen 2026-11-23: the report as a document, signed at the bottom
     askWhere: 'tap', // chosen 2026-11-23: tap a hatch (opening) or a module (motion) on the map
     briefStyle: 'txmix', briefTyped: true, // chosen 2026-11-23: NOVA's messages + rule cards
+    mapDetail: { holo: 3 }, // chosen 2026-11-24: projected hologram (tilted, raised walls, beam, slow sway)
+    homeStyle: 'window', // chosen 2026-11-24: the home status in a NOVA window
     quit: state.phase === 'play', quitOpen: state.quitOpen,
     saved: state.resume ? { code: state.code, phase: state.resume, remainingMs: remaining() } : null,
   };
@@ -266,7 +267,6 @@ function onDevClick(e) {
 // ---------- start ----------
 
 initFontSwitch();
-initStars(document.getElementById('stars'));
 // Opening the page always shows the home (reset, chosen 2026-11-23: A + B). A saved game is offered with
 // CONTINUE if still open. The oxygen clock is wall-clock based: it kept running while the page was closed.
 if (state.code && state.phase !== 'home') {

@@ -48,10 +48,6 @@ body.emergency, .emergency {
     linear-gradient(rgba(228, 91, 97, 0.08) 1px, transparent 1px),
     linear-gradient(90deg, rgba(228, 91, 97, 0.08) 1px, transparent 1px);
 }
-#stars {
-  position: fixed; inset: 0; width: 100%; height: 100%;
-  image-rendering: pixelated; pointer-events: none; z-index: 0;
-}
 #app { position: relative; z-index: 1; container-type: inline-size; }
 p { margin: 0 0 0.6em; }
 button { font: inherit; color: inherit; }
@@ -604,7 +600,8 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 
 /* ---------- hologram map (proposals, mocks) ---------- */
 .holo { position: relative; perspective: 900px; margin: -34px 0 -44px; overflow: hidden; padding: 10px 0 20px; }
-.holo-stage { position: relative; transform-style: preserve-3d; transform: rotateX(50deg); transform-origin: 50% 60%; animation: holo-flicker 4s steps(1) infinite; }
+/* no opacity or filter on the 3D stage: either would flatten the raised walls */
+.holo-stage { position: relative; transform-style: preserve-3d; transform: rotateX(50deg); transform-origin: 50% 60%; }
 .holo .map { filter: drop-shadow(0 0 3px rgba(67, 217, 210, 0.7)); }
 .holo .map .room rect:first-child { fill: rgba(67, 217, 210, 0.07); stroke: rgba(67, 217, 210, 0.85); }
 .holo .map .room.is-off rect:first-child { fill: rgba(228, 91, 97, 0.1); stroke: var(--red); }
@@ -618,12 +615,13 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .holo-scan {
   position: absolute; inset: 0; pointer-events: none;
   background: repeating-linear-gradient(0deg, rgba(67, 217, 210, 0.07) 0 1px, transparent 1px 4px);
-  animation: holo-scan 6s linear infinite;
+  animation: holo-scan 6s linear infinite, holo-flicker 4s steps(1) infinite;
 }
 @keyframes holo-scan { to { background-position: 0 120px; } }
-@keyframes holo-flicker { 0%, 100% { opacity: 1; } 47% { opacity: 0.9; } 48% { opacity: 1; } 83% { opacity: 0.94; } 84% { opacity: 1; } }
-.holo-3 .holo-stage { animation: holo-flicker 4s steps(1) infinite, holo-sway 10s ease-in-out infinite; }
-.holo-3:hover .holo-stage, .holo-3:focus-within .holo-stage { animation-play-state: running, paused; }
+/* the flicker brightens the scan lines for an instant, the map itself never changes */
+@keyframes holo-flicker { 0%, 46%, 48%, 82%, 84%, 100% { background-color: transparent; } 47% { background-color: rgba(67, 217, 210, 0.08); } 83% { background-color: rgba(67, 217, 210, 0.05); } }
+/* the sway never stops, not even under the pointer (a pause on hover flattened the map in some browsers) */
+.holo-3 .holo-stage { animation: holo-sway 10s ease-in-out infinite; }
 @keyframes holo-sway { 0%, 100% { transform: rotateX(50deg) rotateZ(-5deg); } 50% { transform: rotateX(50deg) rotateZ(5deg); } }
 .holo-beam {
   position: absolute; left: 0; right: 0; bottom: 0; height: 70%; pointer-events: none;
