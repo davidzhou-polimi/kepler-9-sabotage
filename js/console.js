@@ -214,7 +214,9 @@ function deckShell(view, screenFn) {
   const led = (label, cls) => `<span class="cs-led2 ${cls}"><i></i>${label}</span>`;
   const leds = `<span class="cs-leds" aria-hidden="true">${led('PWR', 'is-on')}${led('LINK', 'is-warn')}${led('ALARM', critical(view) ? 'is-alarm' : '')}</span>`;
   const instr = {
-    leds: leds + grille,
+    // the plate as a real nameplate, screwed on («questa parte della macchina non mi convince», 2026-11-25: it was
+    // a line of text floating on the bar)
+    leds: `${leds}<span class="cs-grille" aria-hidden="true"></span><span class="cs-plate"><i></i><b>MISSION CONTROL · NIGHT SHIFT</b><i></i></span>`,
     gauge: `<span class="cs-lampset">${lamp('PWR', 'is-on')}${link}${lamp('ALARM', critical(view) ? 'is-alarm' : '')}</span>${grille}`,
     tiles,
     tilesgrille: tiles + grille,

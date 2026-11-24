@@ -513,3 +513,23 @@
   .cs-deck .hc-call { margin-top: 10px; padding: 9px 14px 10px; gap: 6px; }
   .cs-deck .hc-call .btn, .cs-deck .hc-act .btn { min-height: 40px; padding: 6px 14px; font-size: calc(var(--ds) * 20px); }
 }
+/* the tape goes all the way round the CODE key: the key's own depth (a 5px shadow below it) used to cover the
+   bottom strip (measured 2026-11-25), so the guard now reaches 5px lower and the strip shows under the key */
+:is(.deck-retro, .deck-color) .cs-guard { padding-bottom: 5px; margin-bottom: -5px; }
+
+/* the nameplate: brushed metal, two screws, the words engraved */
+.cs-plate {
+  order: 4; flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 10px; padding: 8px 10px 7px; border-radius: 3px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, #b3bcc9, #7f8a99 55%, #939dac);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.65), 0 0 0 1px #0a0e14;
+}
+.cs-plate b { font: 600 10px/1 var(--font-mono); letter-spacing: 0.2em; white-space: nowrap; color: #0e141d; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4); }
+.cs-plate i {
+  flex: none; width: 8px; height: 8px; border-radius: 50%;
+  background: linear-gradient(135deg, transparent 43%, #1a212b 43% 57%, transparent 57%), radial-gradient(circle at 35% 30%, #eef2f6, #5b6676 75%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.cs-deck:not(.is-wide) .cs-plate { display: none; }
+@container (max-width: 1180px) { .cs-deck.is-wide .cs-plate { display: none; } }
