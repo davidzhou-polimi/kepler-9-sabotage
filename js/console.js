@@ -121,13 +121,9 @@ function dashShell(view, inner) {
 // view.deskPower: 'top' the power button beside the telemetry display (where QUIT is today);
 //                 'panel' on the key panel (two rows of three on a phone).
 
-const pixels = (rows) => rows.map((row, y) => [...row].map((ch, x) => (ch === 'k' ? `<rect x="${x}" y="${y}" width="1.02" height="1.02"/>` : '')).join('')).join('');
-const POWER = [
-  '.....k.....', '.....k.....', '..kk.k.kk..', '.k...k...k.', 'k....k....k', 'k....k....k',
-  'k.........k', 'k.........k', 'k.........k', '.k.......k.', '..kk...kk..', '....kkk....',
-];
+// the power symbol as a drawing of lines, not of pixels («l'icona power on rendilo vettoriale, non pixel», 2026-11-25)
 const powerKey = (live) => `<button type="button" class="cs-power" ${live ? 'data-act="quit"' : 'disabled'} aria-label="Quit game">
-    <svg viewBox="0 0 11 12" shape-rendering="crispEdges" aria-hidden="true">${pixels(POWER)}</svg></button>`;
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5V12"/><path d="M7.2 7.4A7.5 7.5 0 1 0 16.8 7.4"/></svg></button>`;
 const key2 = (label, v, { on = false, live = true, cls = '' } = {}) =>
   `<button type="button" class="cs-key cs-key2 ${on ? 'is-on' : ''} ${cls}" ${live ? `data-act="tab" data-v="${v}"` : 'disabled'}><i class="cs-led" aria-hidden="true"></i><span>${label}</span></button>`;
 // no case open: the same display, waiting for telemetry
