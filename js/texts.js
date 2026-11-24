@@ -226,8 +226,8 @@ export function solutionText(c) {
   happened.push(`${S} was in Life Support at 03:00.`);
   happened.push(`${S} stayed ${inMod(m)} until ${fmtTime(c.t)}, then opened the ${HATCH_NAME[HATCH_OF[m]]} hatch, crossed the Corridor and entered Life Support through the Life Support–Corridor hatch at ${fmtTime(c.t + 1)}. Inside, ${S} disconnected the sensors by hand and, at 03:00, sabotaged the recycler.`);
   happened.push(PEOPLE[s].human
-    ? `${S} had been paid by the rival company that wants the recycler test to fail.`
-    : 'Nobody paid ECHO-7: the rival company hacked the android from outside the station and sent it into Life Support.');
+    ? 'Voran Industries paid them to make the recycler test fail.'
+    : 'Voran Industries hacked ECHO-7 from outside the station to make the recycler test fail.');
   const sr = c.reports[s];
   if (sr.obs.type === 'heard') {
     happened.push(`${S}'s report was invented: ${HEARD[sr.obs.mod]} did not open around ${fmtTime(sr.obs.t)}.`);
