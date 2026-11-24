@@ -1036,3 +1036,29 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .holo-5 .h-label { transform: translate(-50%, -50%) translateZ(calc(var(--hh) + 14px)) rotateZ(27deg) rotateX(-56deg); }
 @media (prefers-reduced-motion: reduce) { .holo-5 .holo-stage { animation: none; } }
 @container (max-width: 340px) { .h-label { padding: 0 3px; font-size: 9px; letter-spacing: 0.04em; } .h-label small { font-size: 7px; } }
+
+/* each report a window of its own (proposal, mocks): the crew card first, then the text, no window around them */
+.reports-wins > .hint { margin: 0 2px 10px; }
+.reports-wins .win { margin-bottom: 14px; }
+.win-report .crew-id { padding: 2px 0 12px; border-top: 0; border-bottom: 1px solid rgba(67, 217, 210, 0.4); }
+.win-report .rep-body { margin: 0; padding: 12px 0 0; color: var(--star); }
+
+/* ---------- the 10-minute window without a slider (proposals, mocks) ---------- */
+/* cells: the hour as twelve marks, like the oxygen bar */
+.tc-cells { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; }
+.tc-cell { height: 44px; padding: 12px 0; border: 0; background: none; cursor: pointer; }
+.tc-cell i { display: block; height: 100%; border: 1px solid rgba(67, 217, 210, 0.45); }
+.tc-cell.is-on i { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 10px rgba(67, 217, 210, 0.6); }
+.tc-cell:hover i, .tc-cell:focus-visible i { border-color: var(--star); }
+.tc-cell:focus-visible { outline: none; }
+.tc-scale { display: flex; justify-content: space-between; margin-top: -6px; font: 500 11px var(--font-mono); letter-spacing: 0.04em; color: rgba(231, 237, 244, 0.62); }
+/* step: one display between a minus and a plus key */
+.ts-one .ts-box { grid-template-columns: 48px auto 48px; grid-template-rows: auto 48px; }
+.ts-one .ts-l { display: flex; align-items: center; gap: 10px; }
+.ts-one .ts-l .tt-len { margin-left: 0; }
+.ts-one .ts-v { display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 7.4em; }
+.ts-one .ts-v i { font-style: normal; color: rgba(67, 217, 210, 0.6); }
+/* around: the times a report can state, as keys */
+.ta-keys { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.ta-keys .chip { min-height: 40px; padding: 4px 0; text-align: center; }
+@container (max-width: 520px) { .ta-keys { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

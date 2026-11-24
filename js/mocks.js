@@ -504,23 +504,24 @@ const WINDOWS = {
 // ---------- everything chosen so far, together ----------
 
 // console A (retro, dark keys), reports C (the card first), the time line; windows: the tab, in the versions below
-const chosen = (extra = {}) => deck('retro', { reportStyle: 'crewtop', timeUi: 'track', ...extra });
+const chosen = (extra = {}) => deck('retro', { reportStyle: 'crewtop', timeUi: 'cells10', mapDetail: { holo: 4 }, deckBar: 'tiles', ...extra });
+const askDraft10 = { kind: 'hatch', what: 'M-K', a: 50, b: 60 };
 const BASE = 'btns-b wins-b1';
 const win2Frames = (cls, all, extra = {}) => [
   cap('Telefono, rapporti', phone(chosen({ state: d2state({ tab: 'reports' }), ...extra }), { cls: `btns-b ${cls}` })),
   cap('Telefono, rapporti più sotto', phone(chosen({ state: d2state({ tab: 'reports' }), ...extra }), { cls: `btns-b ${cls}`, scroll: '400' })),
   ...(all ? [
-    cap('Telefono, domande', phone(chosen({ state: d2state({ tab: 'ask', draft: askDraft }) }), { cls: `btns-b ${cls}`, scroll: '200' })),
+    cap('Telefono, domande', phone(chosen({ state: d2state({ tab: 'ask', draft: askDraft10 }) }), { cls: `btns-b ${cls}`, scroll: '200' })),
     cap('Telefono, briefing', phone(chosen({ state: d2state({ tab: 'briefing' }) }), { cls: `btns-b ${cls}` })),
     cap('Telefono, codice', phone(chosen({ state: d2state({ tab: 'code', codeInput: '127' }) }), { cls: `btns-b ${cls}` })),
     cap('Telefono, home', phone(chosen({ state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 } }), { cls: `btns-b ${cls}` })),
   ] : []),
-  cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'ask', draft: askDraft, log: askLog }), ...extra }), { cls: `btns-b ${cls}`, big: true })),
+  cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'ask', draft: askDraft10, log: askLog }), ...extra }), { cls: `btns-b ${cls}`, big: true })),
 ];
 const WINDOWS2 = {
   id: 'windows2', title: 'Le finestre con la linguetta, decorate come le carte',
   quote: '«delle finestre con linguetta, non mi piace la linea sotto il titolo, vedi se riesci a decorare le finestre più simili a come sono le carte» · «le schede report, come appaiono? perché le finestre che hai messo non ci sono più no?»',
-  context: `Qui c'è tutto il già scelto insieme: la console A, i rapporti con la carta in testa (C), la linea del tempo, e le finestre con la linguetta. Quindi si vede anche come stanno le schede dei rapporti dentro le finestre nuove: le finestre di prima non ci sono più. In tutte le direzioni la linea sotto il titolo è tolta. Per le decorazioni ho guardato le due carte che mi hai mandato: quella di Hana e quella della missione. L'ultima casella riguarda solo i rapporti: una carta dentro una finestra fa due cornici una nell'altra, e si può togliere quella di fuori.`,
+  context: `Qui c'è tutto il già scelto insieme: la console A, i rapporti con la carta in testa (C), l'ologramma con le pareti di luce, la finestra di tempo da 10 minuti (con il comando che consiglio nella sua tavola, finché non scegli), e le finestre con la linguetta. Quindi si vede anche come stanno le schede dei rapporti dentro le finestre nuove: le finestre di prima non ci sono più. In tutte le direzioni la linea sotto il titolo è tolta. Per le decorazioni ho guardato le due carte che mi hai mandato: quella di Hana e quella della missione. Per i rapporti dentro la finestra, che fanno due cornici una nell'altra, c'è la tavola subito sotto.`,
   dirs: [
     {
       key: 'b1', title: 'A · La linguetta, senza la linea',
@@ -539,10 +540,66 @@ const WINDOWS2 = {
         <p>Costo: è la più carica; le strisce stanno sotto ogni finestra.</p>`,
       frames: win2Frames('wins-b3', false),
     },
+  ],
+};
+
+// ---------- the reports: no frame inside a frame ----------
+
+const rep3Frames = (extra) => [
+  cap('Telefono, rapporti', phone(chosen({ state: d2state({ tab: 'reports' }), ...extra }), { cls: 'btns-b wins-b2' })),
+  cap('Telefono, rapporti più sotto', phone(chosen({ state: d2state({ tab: 'reports' }), ...extra }), { cls: 'btns-b wins-b2', scroll: '400' })),
+  cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'ask', draft: askDraft10, log: askLog }), ...extra }), { cls: 'btns-b wins-b2', big: true })),
+];
+const REPORTS3 = {
+  id: 'reports3', title: 'I rapporti: niente cornici annidate',
+  quote: '«un po\' strana questa cosa annidata»',
+  context: `Leggo così: la carta del rapporto dentro la finestra CREW REPORTS fa due cornici una nell'altra, ed è quello che stona. Due modi di toglierne una. Le prove sono con le finestre «come la carta dell'equipaggio» della tavola sopra, ma valgono con qualsiasi finestra tu scelga. In tutte e due il rapporto resta com'è: la carta in testa, poi il testo.`,
+  dirs: [
+    { key: 'now', title: 'Oggi · Annidato', note: '<p>La carta del rapporto dentro la finestra, per confronto.</p>', frames: rep3Frames({}) },
     {
-      key: 'bare', multi: true, title: 'I rapporti senza finestra attorno',
-      note: '<p>Le carte dei rapporti stanno direttamente sullo schermo, sotto il titolo CREW REPORTS, senza la cornice della finestra. Vale con qualsiasi direzione; qui sulla B. Costo: i rapporti sono l\'unica parte senza finestra.</p>',
-      frames: win2Frames('wins-b2', false, { reportsBare: true }),
+      key: 'each', title: 'A · Ogni rapporto è una finestra', rec: true,
+      note: `<p>Sparisce la finestra CREW REPORTS: i quattro rapporti sono quattro finestre, ognuna con «REPORT 01» nella linguetta e dentro la carta e il testo. La cornice è una sola, ed è quella delle finestre, uguale a mappa, domande e codice.</p>
+        <p>Perché: toglie l'annidamento senza lasciare i rapporti fuori dal sistema delle finestre, e la finestra decorata come la carta fa di ogni rapporto una carta. Costo: non c'è più il titolo CREW REPORTS; sul telefono lo dice il tasto acceso, sul laptop resta la riga «Tap a card for the profile.».</p>`,
+      frames: rep3Frames({ reportStyle: 'crewwin' }),
+    },
+    {
+      key: 'bare', title: 'B · Le carte senza finestra attorno',
+      note: `<p>Resta il titolo CREW REPORTS, senza cornice; sotto, le carte dei rapporti con la loro cornice dritta.</p>
+        <p>Costo: i rapporti sono l'unica parte dello schermo senza finestra, e la loro cornice è diversa da quella delle finestre accanto.</p>`,
+      frames: rep3Frames({ reportsBare: true }),
+    },
+  ],
+};
+
+// ---------- the physical bar without the needle ----------
+
+const barFrames = (bar) => [
+  cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'map', mapSel: 'M-K' }), deckBar: bar }), { cls: BASE, big: true })),
+  cap('Telefono, rapporti', phone(chosen({ state: d2state({ tab: 'reports' }), deckBar: bar }), { cls: BASE })),
+  cap('Telefono, ultimo minuto', phone(chosen({ state: d2state({ tab: 'map' }), remainingMs: 42000, deckBar: bar }), { cls: `${BASE} emergency alarm` })),
+  cap('Telefono, home', phone(chosen({ state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 }, deckBar: bar }), { cls: BASE })),
+];
+const BAR = {
+  id: 'bar', title: 'La barra fisica, senza lo strumento a lancetta',
+  quote: '«non mi convince molto, soprattutto il coso con la freccia su PWR e LINK»',
+  context: `Lo strumento a lancetta è tolto in tutte le direzioni. Per il resto non mi hai detto cosa non convince, quindi ti dico cosa ci vedo io: in fila ci sono pezzi di peso molto diverso senza un ordine, una griglia grande che non serve a niente, tre spie minuscole, una scritta che galleggia. Le tre direzioni usano solo pezzi che hai già visto (i tasti, CODE sotto la protezione, il tasto di accensione, le spie PWR, LINK e ALARM), ordinati in modi diversi. Se quello che non ti convince è altro, dimmelo e rifaccio su quello. Le altre tavole aperte mostrano la barra A, senza lo strumento, finché non scegli.`,
+  dirs: [
+    { key: 'gauge', title: 'Oggi', note: '<p>La barra che hai visto, con lo strumento.</p>', frames: barFrames('gauge').slice(0, 2) },
+    {
+      key: 'tiles', title: 'A · Tre spie in un solo riquadro', rec: true,
+      note: `<p>PWR, LINK e ALARM diventano tre tasselli illuminati in un riquadro incassato, come i pannelli di segnalazione di una sala di controllo: PWR acceso, LINK ambra che lampeggia, ALARM spento finché non manca un minuto. Niente griglia, niente scritta. Tasti a sinistra, spie al centro, CODE e accensione a destra.</p>
+        <p>Perché: sono tre gruppi leggibili al posto di sei pezzi in fila, e LINK dice «collegamento instabile» senza uno strumento da interpretare.</p>`,
+      frames: barFrames('tiles'),
+    },
+    {
+      key: 'tilesgrille', title: 'B · Le spie, con la griglia e la targhetta',
+      note: '<p>Come A, tenendo l\'altoparlante a fessure e la scritta MISSION CONTROL · NIGHT SHIFT. Costo: tornano i pezzi che riempiono senza dire niente.</p>',
+      frames: barFrames('tilesgrille'),
+    },
+    {
+      key: 'min', title: 'C · Solo i tasti',
+      note: '<p>Tasti, CODE e accensione, nient\'altro. Sul telefono una riga sola, con l\'accensione in fondo. Costo: è la barra «un po\' triste» di due prove fa, con meno ancora.</p>',
+      frames: barFrames('min'),
     },
   ],
 };
@@ -557,7 +614,8 @@ const timeWinDir = (key, title, note, ui, draft, rec = false) => ({
   ],
 });
 const TIMEWIN = {
-  id: 'timewin', title: 'La finestra di tempo: libera o a durata fissa',
+  id: 'timewin', title: 'La finestra di tempo: libera o a durata fissa', decided: 'A, 10 minuti, si sposta soltanto', chosen: 'fixed10',
+  answer: 'A · 10 minuti, si sposta soltanto, non mi piace lo slider (il comando è nella tavola «La finestra di 10 minuti, senza slider»)',
   quote: '«ma se io nel selettore seleziono dalle 2 alle 3, non è sempre meglio di fare un range piccolo? sennò serve un design che invita a selezionare un range, es. uno slider che ha già la durata impostata e non modificabile, e tu trascini solo.»',
   context: `Hai ragione, e l'ho misurato su 3000 casi. La domanda «il portello accusato si è aperto fra le 02:00 e le 03:00?» risolve il caso da sola in 3000 casi su 3000. Una finestra stretta non dà mai di più, e messa nel punto sbagliato dà «no» in tutti e due i casi possibili. Quindi oggi scegliere l'orario è una scelta finta: chi ci pensa chiede tutta l'ora. Con la tua finestra a durata fissa ogni caso resta risolvibile (3000 su 3000 a 5, 10, 15, 20 e 30 minuti, con una domanda e con due), ma diventa necessaria l'ora che il rapporto dichiara («At around 02:55 I heard…»). Due costi, uguali per ogni durata. Primo: una finestra messa male risponde «no», e quel «no» sembra una prova: la squadra può concludere che chi accusa mente e sbagliare il codice. Secondo: è una regola in più da dire, una frase nel briefing e una riga nel materiale del gruppo.`,
   dirs: [
@@ -569,18 +627,42 @@ const TIMEWIN = {
   ],
 };
 
+// ---------- the 10-minute window without a slider ----------
+
+const tenDir = (key, title, note, ui, rec = false) => ({
+  key, title, rec, note,
+  frames: [
+    cap('Telefono, Ask NOVA', phone(chosen({ state: d2state({ tab: 'ask', draft: askDraft10 }), timeUi: ui }), { cls: BASE, scroll: '250' })),
+    cap('Laptop: la finestra Ask NOVA', `<div class="${BASE}">${column(askPanel({ ...base(), draft: askDraft10 }, c, 'tap', { holo: 4 }, null, ui))}</div>`),
+  ],
+});
+const TIME10 = {
+  id: 'time10', title: 'La finestra di 10 minuti, senza slider',
+  quote: '«A · 10 minuti, si sposta soltanto, non mi piace lo slider»',
+  context: `La finestra resta di 10 minuti e si sposta soltanto, a passi di 5: undici posizioni, da 02:00–02:10 a 02:50–03:00. Cambia il comando. In tutte e tre la domanda sotto si aggiorna come oggi. Non mi hai detto cosa non ti piace dello slider: se era solo com'era disegnato e non il gesto, dimmelo e lo ridisegno.`,
+  dirs: [
+    tenDir('fixed10', 'Oggi · Lo slider', '<p>La finestra che scorre sulla linea, per confronto.</p>', 'fixed10'),
+    tenDir('cells10', 'A · Le tacche dell\'ossigeno', `<p>L'ora è fatta di dodici tacche da 5 minuti, come la barra dell'ossigeno in alto; le due accese sono la finestra. Si tocca una tacca e la finestra va lì.</p>
+      <p>Perché: è un segno che l'interfaccia ha già, si vede dove sta la finestra dentro l'ora, e non c'è niente da trascinare. Costo: sul telefono una tacca è larga circa 24 pixel; si tocca «vicino», la finestra si ferma sulla posizione più vicina.</p>`, 'cells10', true),
+    tenDir('step10', 'B · Un display fra − e +', `<p>La finestra si legge per intero in un display, fra un tasto − e un tasto +: 5 minuti a tocco.</p>
+      <p>Costo: fino a dieci tocchi per attraversare l'ora, e non si vede dove sta la finestra dentro l'ora.</p>`, 'step10'),
+    tenDir('around10', 'C · Gli orari del rapporto', `<p>Undici tasti con gli orari, da 02:05 a 02:55: si tocca l'ora che il rapporto dichiara («At around 02:55…») e la domanda copre i 5 minuti prima e dopo.</p>
+      <p>Perché: è il gesto più vicino a come si ragiona, «verso le 02:55». Costo: undici tasti occupano tre righe sul telefono, e la finestra da 10 minuti si capisce solo dalla domanda sotto.</p>`, 'around10'),
+  ],
+};
+
 // ---------- the hologram, second round ----------
 
 const holoDir2 = (key, title, note, n, rec = false) => ({
   key, title, rec, note,
   frames: [
     cap('Telefono, scheda MAP', phone(chosen({ state: d2state({ tab: 'map', mapSel: 'K' }), mapDetail: { holo: n } }), { cls: BASE })),
-    cap('Telefono, Ask NOVA', phone(chosen({ state: d2state({ tab: 'ask', draft: askDraft }), mapDetail: { holo: n } }), { cls: BASE })),
+    cap('Telefono, Ask NOVA', phone(chosen({ state: d2state({ tab: 'ask', draft: askDraft10 }), mapDetail: { holo: n } }), { cls: BASE })),
     cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'map', mapSel: 'M-K' }), mapDetail: { holo: n } }), { cls: BASE, big: true })),
   ],
 });
 const HOLO2 = {
-  id: 'holo2', title: 'L\'ologramma della mappa, seconda prova',
+  id: 'holo2', title: 'L\'ologramma della mappa, seconda prova', decided: 'A, pareti di luce, nomi dritti', chosen: 'h4', answer: 'A · Pareti di luce, nomi dritti',
   quote: '«l\'ologramma della mappa è migliorabile»',
   context: `Non mi hai detto in cosa, quindi ti dico cosa ci vedo io di debole, e le prove correggono quello. I nomi dei moduli sono inclinati con il pavimento e tagliati dalle righe delle pareti: si leggono male. Le pareti sono cinque contorni impilati, che sembrano pile di fogli più che stanze. Il proiettore è una barretta piatta. Se intendevi altro, dimmelo e rifaccio su quello. La mappa resta la stessa (stessi moduli, portelli e sensori, stesse zone da toccare).`,
   dirs: [
@@ -740,9 +822,9 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [WINDOWS2, TIMEWIN, HOLO2];
+const OPEN = [WINDOWS2, REPORTS3, BAR, TIME10];
 const NOTES = [PORTRAITS];
-const DECIDED = [CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const DECIDED = [TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">

@@ -189,6 +189,11 @@ function desk2Shell(view, inner) {
 // view.deck: 'retro' chunky dark keys, slotted grille, needle gauge, a tube with its bezel
 //            'color' as retro, with coloured key caps: amber ASK NOVA (the amber of the QUESTIONS marks), red CODE
 //            'scifi' flat backlit keys, light strips, no bezel
+// view.deckBar (what is on the bar besides the keys; proposals after «non mi convince molto, soprattutto il coso
+// con la freccia su PWR e LINK», 2026-11-24; default 'gauge', the bar as first shown):
+//   'tiles':       no needle, no grille, no plate: PWR, LINK and ALARM as three lit tiles in one recessed panel
+//   'tilesgrille': the tiles, with the grille and the plate
+//   'min':         only the keys, CODE and the power button
 function deckShell(view, screenFn) {
   const { state } = view;
   const playing = state.phase === 'play';
@@ -202,16 +207,20 @@ function deckShell(view, screenFn) {
   const link = style === 'scifi'
     ? '<span class="cs-link"><span class="cs-o2-label">LINK</span><span class="cs-link-bars"><i class="on"></i><i class="on is-flick"></i><i></i><i></i><i></i></span></span>'
     : '<span class="cs-link"><span class="cs-gauge"><i></i></span><span class="cs-o2-label">LINK</span></span>';
-  return `<div class="cs cs-deck deck-${style} ${view.wide ? 'is-wide' : ''} ${fxClass(view)}">
+  const bar = view.deckBar || 'gauge';
+  const tiles = `<span class="cs-ann" aria-hidden="true"><b class="is-on">PWR</b><b class="is-warn">LINK</b><b class="${critical(view) ? 'is-alarm' : ''}">ALARM</b></span>`;
+  const grille = '<span class="cs-grille" aria-hidden="true"></span><span class="cs-brand">MISSION CONTROL · NIGHT SHIFT</span>';
+  const instr = {
+    gauge: `<span class="cs-lampset">${lamp('PWR', 'is-on')}${link}${lamp('ALARM', critical(view) ? 'is-alarm' : '')}</span>${grille}`,
+    tiles,
+    tilesgrille: tiles + grille,
+    min: '',
+  }[bar];
+  return `<div class="cs cs-deck deck-${style} bar-${bar} ${view.wide ? 'is-wide' : ''} ${fxClass(view)}">
     <div class="cs-screen"><div class="cs-scroll">${inner}</div><div class="cs-fx" aria-hidden="true"></div></div>
     <div class="cs-bar">
-      <div class="cs-instr">
-        <span class="cs-lampset">${lamp('PWR', 'is-on')}${link}${lamp('ALARM', critical(view) ? 'is-alarm' : '')}</span>
-        <span class="cs-grille" aria-hidden="true"></span>
-        <span class="cs-brand">MISSION CONTROL · NIGHT SHIFT</span>
-        ${powerKey(playing)}
-      </div>
-      <div class="cs-keyrow">${keys}${code}</div>
+      ${bar === 'min' ? '' : `<div class="cs-instr">${instr}${powerKey(playing)}</div>`}
+      <div class="cs-keyrow">${keys}${code}${bar === 'min' ? powerKey(playing) : ''}</div>
     </div>
   </div>`;
 }

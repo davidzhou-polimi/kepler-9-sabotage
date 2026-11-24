@@ -33,3 +33,7 @@ Third freeze of the day. The third console round goes back with corrections (no 
 ## 2026-11-24-choices
 
 Fourth freeze of the day. Decided: the console with the tube and the dark keys (A), the windows with the title in a tab (B), the reports as crew cards with the card first (C), the time line for the time window (A). Open: how the tab windows are decorated after the two cards received (and whether the reports keep a window around them), with everything chosen shown together; the time window free or of fixed length, with the measurement on 3000 cases; the hologram, second round.
+
+## 2026-11-24-nesting
+
+Fifth freeze of the day. Decided: the time window is 10 minutes long and is only moved; the hologram with walls of light and upright names. Open: the tab windows decorated after the cards; the reports without a frame inside a frame; the physical bar without the needle gauge; how the 10-minute window is moved, since the slider was not liked.

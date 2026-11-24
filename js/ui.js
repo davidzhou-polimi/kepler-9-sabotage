@@ -86,6 +86,8 @@ export function reportBlock(c, p) {
 //             the card (portrait, name, role, ID), with the card's PERSONNEL FILE line as the way to the profile
 //   crewsign: today's light sheet, signed with a small crew card
 //   crewtop:  the crew card first, as printed, then the text
+//   crewwin:  no frame inside a frame: each report is a window of its own, titled REPORT 01, with the crew card
+//             first and then the text; there is no CREW REPORTS window around them
 function reportAlt(c, p, style) {
   const P = PEOPLE[p];
   const n = String(c.order.indexOf(p) + 1).padStart(2, '0');
@@ -94,13 +96,14 @@ function reportAlt(c, p, style) {
   const meta = `${esc(P.role.toUpperCase()).replace(/ /g, '&nbsp;')}&nbsp;·&nbsp;ID&nbsp;${P.id}`;
   const who = `<span class="rep-who"><b class="rep-name">${esc(P.name.toUpperCase())}</b><span class="rep-meta">${meta}</span></span>`;
   const prof = `type="button" data-act="profile" data-p="${p}" aria-label="Profile of ${esc(P.name)}"`;
-  if (style === 'crew' || style === 'crewsign' || style === 'crewtop') {
+  if (style === 'crew' || style === 'crewsign' || style === 'crewtop' || style === 'crewwin') {
     const id = `<button class="crew-id" ${prof}>
         <span class="crew-photo">${portrait(p)}</span>
         <span class="crew-who"><b class="crew-name">${esc(P.short.toUpperCase())}</b><span class="crew-role">${esc(P.role)}</span><span class="crew-chip">ID ${P.id}</span></span>
         <span class="crew-file">PERSONNEL FILE</span>
       </button>`;
     if (style === 'crewsign') return `<article class="rep rep-sheet"><div class="sheet-top">REPORT <b>${n}</b></div>${body}${id}</article>`;
+    if (style === 'crewwin') return win(`REPORT ${n}`, `${id}${body}`, { cls: 'win-report rep' });
     const top = `<div class="crew-top"><span>REPORT ${n}</span><i></i><span class="crew-dot"></span></div>`;
     return `<article class="rep rep-crew ${style === 'crewtop' ? 'is-top' : ''}">${top}${style === 'crewtop' ? id + body : body + id}</article>`;
   }
@@ -126,11 +129,13 @@ function reportAlt(c, p, style) {
 const REPORT_HINT = {
   card: 'Tap a card for the profile.', lead: 'Tap a name for the profile.', sheet: 'Tap a signature for the profile.', tag: 'Tap a card for the profile.',
   crew: 'Tap a card for the profile.', crewsign: 'Tap a signature for the profile.', crewtop: 'Tap a card for the profile.',
+  crewwin: 'Tap a card for the profile.',
 };
 
 // bare (proposal, mocks): no window around the reports; the cards stand on the screen under the title
 export function reportsPanel(c, style = 'card', { bare = false } = {}) {
   const block = (p) => (style === 'card' ? reportBlock(c, p) : reportAlt(c, p, style));
+  if (style === 'crewwin') return `<div class="reports-wins"><p class="hint">${REPORT_HINT[style]}</p>${c.order.map(block).join('')}</div>`;
   return win('CREW REPORTS', `
     <p class="hint">${REPORT_HINT[style]}</p>
     <div class="reports reports-${style}">${c.order.map(block).join('')}</div>`, { cls: `win-reports ${bare ? 'win-bare' : ''}` });
@@ -383,6 +388,10 @@ export function briefingPanel({ typed = true, style = 'now', start = false, call
 //   'step':  two displays, each with a minus and a plus key
 //   'box':   today's two menus, drawn as console displays
 //   'fixed10', 'fixed15': the time line with a window of fixed length (10 or 15 minutes) that is only moved
+// The 10-minute window is decided (2026-11-24), the slider is not («non mi piace lo slider»). Other ways to move it:
+//   'cells10':  the hour as twelve marks, like the oxygen bar; the two lit ones are the window
+//   'step10':   one display with the window, between a minus and a plus key
+//   'around10': the times a report can state, as keys; the window is the 5 minutes before and after
 export function askPanel(state, c, where = 'chips', detail = {}, callUi = null, timeUi = 'select') {
   const used = state.log.length;
   const left = MAX_QUESTIONS - used;
@@ -446,7 +455,26 @@ export function askPanel(state, c, where = 'chips', detail = {}, callUi = null, 
         <span class="tt-win" style="left:${((d.a / 5 + 0.5) / 13 * 100).toFixed(3)}%;width:${((d.b - d.a) / 5 / 13 * 100).toFixed(3)}%" aria-hidden="true"><i></i></span></div>
       <p class="hint map-hint">Drag the window, or tap a time to move it there.</p>
     </div>`;
-  const timeField = fixed ? fixedTrack() : {
+  const ten = {
+    cells10: () => `<div class="field tc"><span class="label">TIME_</span>
+      <div class="tt-read"><span class="ts-l">From</span><b>${fmtTime(d.a)}</b><span class="ts-l">To</span><b>${fmtTime(d.b)}</b><span class="tt-len">10 MIN</span></div>
+      <div class="tc-cells" role="group" aria-label="Time window">${GRID.slice(0, -1).map((v) => `<button type="button" class="tc-cell ${v >= d.a && v < d.b ? 'is-on' : ''}" data-act="draft-time" data-v="${v}" aria-label="${fmtTime(v)}"><i></i></button>`).join('')}</div>
+      <div class="tc-scale" aria-hidden="true">${[0, 15, 30, 45, 60].map((v) => `<span>${fmtTime(v)}</span>`).join('')}</div>
+      <p class="hint map-hint">Tap a mark to move the window there.</p>
+    </div>`,
+    step10: () => `<div class="field field-time ts ts-one"><span class="label">TIME_</span>
+      <div class="ts-box"><span class="ts-l">Window<span class="tt-len">10 MIN</span></span>
+        <button type="button" class="ts-k" data-act="draft-step" data-d="-5" aria-label="5 minutes earlier">&minus;</button>
+        <b class="ts-v">${fmtTime(d.a)}<i>&ndash;</i>${fmtTime(d.b)}</b>
+        <button type="button" class="ts-k" data-act="draft-step" data-d="5" aria-label="5 minutes later">+</button></div>
+    </div>`,
+    around10: () => `<div class="field ta"><span class="label">TIME_</span>
+      <div class="tt-read"><span class="ts-l">From</span><b>${fmtTime(d.a)}</b><span class="ts-l">To</span><b>${fmtTime(d.b)}</b><span class="tt-len">10 MIN</span></div>
+      <div class="ta-keys" role="group" aria-label="Time window">${GRID.slice(1, -1).map((v) => `<button type="button" class="chip ${v === d.a + 5 ? 'is-on' : ''}" data-act="draft-time" data-v="${v}">${fmtTime(v)}</button>`).join('')}</div>
+      <p class="hint map-hint">Tap a time: the question covers the 5 minutes before and after it.</p>
+    </div>`,
+  }[timeUi];
+  const timeField = ten ? ten() : fixed ? fixedTrack() : {
     select: () => `<div class="field field-time"><span class="label">TIME_</span>
       <label>From ${selA}</label>
       <label>To ${selB}</label>
