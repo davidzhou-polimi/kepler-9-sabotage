@@ -41,3 +41,7 @@ Fifth freeze of the day. Decided: the time window is 10 minutes long and is only
 ## 2026-11-24-terminal
 
 Sixth freeze of the day. Decided: the reports as cards without a window around them; the bar with the lamps, the grille and the plate, the lamps as LEDs (shown as done). Superseded, with the words: the decoration of the tab windows, and the control of the 10-minute window (it goes into the new ASK NOVA). Open: ASK NOVA as a chat in a terminal; what is written under the map; the home as the home of a console, without the words of a game. In the game since this round: lines that start with the prompt mark wrap under their text.
+
+## 2026-11-25
+
+Decided: the window is NOVA ON KEPLER-9 and NIGHT SHIFT is gone everywhere (in the game too); the map inside NOVA's conversation has no projector; on the bar the tape closes round the CODE key and the plate is a metal nameplate. The first terminal chat goes back with the words. Open: the LEDs on the bar, in two drawings with depth (the first try, a flat capsule, was thrown out); how NOVA's channel opens (quiet, or with the whole conversation); what is written under the map; the home as the home of a console.

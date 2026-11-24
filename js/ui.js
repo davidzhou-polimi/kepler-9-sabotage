@@ -246,9 +246,10 @@ export function mapSvg(sel, { act = 'map-sel', only = null, cls = '', detail = {
         <b class="h-label">${esc(MOD_NAME[m].toUpperCase())}${m === 'L' ? '<small>SENSORS OFFLINE</small>' : ''}</b>
       </div>`;
     };
-    return `<div class="holo holo-3 holo-x holo-${detail.holo}">
+    // detail.noproj: the same model without the ring and the beam of the projector (inside NOVA's conversation)
+    return `<div class="holo holo-3 holo-x holo-${detail.holo} ${detail.noproj ? 'holo-noproj' : ''}">
       <div class="holo-stage">${svg}<div class="h-boxes" aria-hidden="true">${['C', 'B', 'N', 'K', 'M', 'L'].map(box).join('')}</div></div>
-      <div class="holo-beam" aria-hidden="true"></div>
+      ${detail.noproj ? '' : '<div class="holo-beam" aria-hidden="true"></div>'}
       <div class="holo-scan" aria-hidden="true"></div>
     </div>`;
   }
@@ -334,7 +335,7 @@ const oxygenVisual = () => `<div class="viz viz-o2"><span class="o2">10:00</span
 const sensorVisual = (calls) => () => `<div class="viz viz-sensors"><span><i class="lg lg-hatch"></i>HATCH OPENING</span><span><i class="lg lg-sensor"></i>MOTION</span>${calls ? '<span><i class="lg lg-console"></i>CONSOLE CALL</span>' : ''}</div>`;
 
 const whoNova = `<span class="who who-nova">${novaIcon()}<b>NOVA</b><span>STATION AI</span></span>`;
-const whoMc = `<span class="who who-mc"><b>MISSION CONTROL</b><span>NIGHT SHIFT</span>${mcIcon()}</span>`;
+const whoMc = `<span class="who who-mc"><b>MISSION CONTROL</b>${mcIcon()}</span>`;
 
 // style (proposals, mocks only until one is chosen):
 //   'now':  today, one log of eight lines
@@ -526,7 +527,7 @@ export function askPanel(state, c, where = 'chips', detail = {}, callUi = null, 
         <p class="a a-${e.ans} ${i === state.log.length - 1 ? 'type-me' : ''}" data-type-key="ans-${i}">NOVA: ${esc(ANSWERS[e.ans])}</p>
       </div>`).join('') : '<p class="muted pl">&gt; No questions sent yet.</p>';
 
-  return win('ASK NOVA', `
+  return win('NOVA ON KEPLER-9', `
     ${builder}
     <div class="sub">TRANSMISSION LOG</div>
     <div class="log qa-log">${history}</div>`, { cls: 'win-ask' });
@@ -535,17 +536,25 @@ export function askPanel(state, c, where = 'chips', detail = {}, callUi = null, 
 // ASK NOVA as a chat in a terminal (proposals, mocks only until one is chosen). The window is always 10 minutes.
 //   'cmd':  the station model, then one command line: the place tapped and the 10 minutes are its two slots
 //   'chat': NOVA asks one thing at a time (state.askStep: 1 the place, 2 the 10 minutes, 3 send)
+// After «non mi convince che mostra fin da subito la mappa, e mi chiede subito se voglio interagire, come se nova
+// fosse ridotto a quello» (2026-11-25), the channel no longer opens on the map, and the map has no projector:
+//   'open':   the channel is open and quiet; a question starts with a command (askStep 0), then as 'chat'
+//   'thread': the same, with NOVA's own messages (the briefing) at the top: the whole conversation in one place
 function askTerm(state, mode, detail) {
   const left = MAX_QUESTIONS - state.log.length;
   const d = state.draft;
-  const step = state.askStep || (d.what ? 3 : 1);
+  const opens = mode === 'open' || mode === 'thread';
+  const step = state.askStep ?? (d.what ? 3 : opens ? 0 : 1);
   const q = { kind: d.kind, what: d.what, a: d.a, b: d.b };
   const row = (who, html, wide = '', cls = '') => `<div class="tl tl-${who} ${cls}"><span class="tl-who">${who === 'nova' ? 'NOVA' : 'MC'}</span><div class="tl-txt">${html}</div>${wide ? `<div class="tl-wide">${wide}</div>` : ''}</div>`;
   const past = state.log.map((e, i) => row('mc', esc(questionText(e.q)))
     + row('nova', `<span class="a a-${e.ans} ${i === state.log.length - 1 ? 'type-me' : ''}" data-type-key="ans-${i}">${esc(ANSWERS[e.ans])}</span>`)).join('');
   const place = d.what ? (HATCH_NAME[d.what] ? `${HATCH_NAME[d.what]} hatch` : MOD_NAME[d.what]) : '';
-  const model = mapSvg(d.what, { act: 'draft-place', cls: 'map-pick', detail });
+  const model = mapSvg(d.what, { act: 'draft-place', cls: 'map-pick', detail: opens ? { ...detail, noproj: true } : detail });
   const send = `<div class="actions">${btn('SEND QUESTION', 'send-question', { cls: 'btn-primary', disabled: !d.what })}<span class="note">Uses 1 of ${MAX_QUESTIONS}. ${left} left.</span></div>`;
+  const briefing = mode === 'thread' ? ['hello', 'situation', 'saboteur', 'reports'].map((id) => row('nova', keyed(BPARTS[id]))).join('') : '';
+  const quiet = row('nova', `The link will carry ${left} ${left === 1 ? 'question' : 'questions'} and the emergency code.`)
+    + row('mc', '<span class="tl-cur"></span>', `<div class="actions">${btn('NEW QUESTION', 'ask-step', { cls: 'btn-primary', attrs: 'data-v="1"' })}</div>`, 'tl-draft');
   const hint = 'Tap a hatch to ask if it opened, or a module to ask about motion.';
   let live;
   if (left <= 0) live = row('nova', 'Link capacity reached. Only the emergency code can still be sent.');
@@ -558,11 +567,11 @@ function askTerm(state, mode, detail) {
   } else {
     const times = GRID.slice(0, -2).map((a) => `<button type="button" class="chip ${a === d.a ? 'is-on' : ''}" data-act="draft-time" data-v="${a}">${fmtTime(a)}&ndash;${fmtTime(a + 10)}</button>`).join('');
     const edit = (v, label) => `<button type="button" class="tl-edit" data-act="ask-step" data-v="${v}">${label}</button>`;
-    live = row('nova', hint, step === 1 ? model : '')
+    live = step === 0 ? quiet : (opens ? row('mc', 'New question') : '') + row('nova', hint, step === 1 ? model : '')
       + (step > 1 ? row('mc', edit(1, esc(place))) + row('nova', 'Which 10 minutes?', step === 2 ? `<div class="tw-keys">${times}</div>` : '') : '')
       + (step > 2 ? row('mc', edit(2, `${fmtTime(d.a)}&ndash;${fmtTime(d.b)}`)) + row('mc', `${esc(questionText(q))}<span class="tl-cur"></span>`, send, 'tl-draft') : '');
   }
-  return win('ASK NOVA', `<div class="term">${past}${live}</div>`, { cls: 'win-ask win-term' });
+  return win('NOVA ON KEPLER-9', `<div class="term">${briefing}${past}${live}</div>`, { cls: 'win-ask win-term' });
 }
 
 // ---------- emergency code ----------
@@ -614,7 +623,7 @@ export function screenHome(view = {}) {
   return `<main class="screen screen-home">
     ${top}
     <div class="home-title">
-      <p class="kicker">MISSION CONTROL // NIGHT SHIFT</p>
+      <p class="kicker">MISSION CONTROL</p>
       <h1 class="title">KEPLER-9</h1>
       <p class="title-sub">SABOTAGE</p>
     </div>
@@ -652,12 +661,12 @@ function consoleHome({ rows, lines, open, style }) {
   if (style === 'plain') {
     return `<main class="screen screen-home">
       <div class="home-top home-top-bright"><span><b>NOVA</b> // STATION AI</span><span>LINK: <b class="warn">UNSTABLE</b></span></div>
-      <div class="home-title"><p class="kicker">MISSION CONTROL // NIGHT SHIFT</p><h1 class="title">KEPLER-9</h1></div>
+      <div class="home-title"><p class="kicker">MISSION CONTROL</p><h1 class="title">KEPLER-9</h1></div>
       <div class="home-status">${win('NOVA // STATUS', `${whoNova}<div class="log nova home-status-log">${lines.map((l) => prompt(l)).join('')}</div>`)}</div>
       <div class="menu">${resume}${answer}</div>
     </main>`;
   }
-  const top = '<div class="home-top home-top-bright"><span><b>MISSION CONTROL</b> // NIGHT SHIFT</span><span>LINK: <b class="warn">UNSTABLE</b></span></div>';
+  const top = '<div class="home-top home-top-bright"><span><b>MISSION CONTROL</b></span><span>LINK: <b class="warn">UNSTABLE</b></span></div>';
   if (style === 'terminal') {
     return `<main class="screen screen-home home-terminal">
       ${top}
@@ -718,7 +727,7 @@ export function quitModal(c) {
   </div>`;
 }
 
-const TABS = [['reports', 'REPORTS'], ['map', 'MAP'], ['ask', 'ASK NOVA'], ['code', 'CODE'], ['briefing', 'BRIEFING']];
+const TABS = [['reports', 'REPORTS'], ['map', 'MAP'], ['ask', 'NOVA'], ['code', 'CODE'], ['briefing', 'BRIEFING']];
 
 export function screenPlay(view) {
   const { state, c, wide } = view;

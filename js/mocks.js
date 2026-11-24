@@ -609,16 +609,27 @@ const BAR = {
 // ---------- the bar with LED lamps (done, to check) ----------
 
 const homeSaved = { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 };
+const ledFrames = (ledStyle) => [
+  cap('Laptop, la barra a grandezza vera', `<div class="mock-barzoom ${BASE}">${laptop(chosen({ state: d2state({ tab: 'map', mapSel: 'M-K' }), ledStyle }), { cls: BASE, big: true })}</div>`),
+  cap('Telefono, rapporti', phone(chosen({ state: d2state({ tab: 'reports' }), ledStyle }), { cls: BASE })),
+  cap('Telefono, ultimo minuto', phone(chosen({ state: d2state({ tab: 'map' }), remainingMs: 42000, ledStyle }), { cls: `${BASE} emergency alarm` })),
+];
 const BARLED = {
-  id: 'barled', title: 'La barra fisica: le spie a LED', done: 'spie a LED',
-  quote: '«per le spie puoi fare tipo dei led?»',
-  context: 'Sì. È la barra che hai scelto (spie, griglia, targhetta) con le tre spie come LED: una lente nella sua ghiera, il nome inciso sotto. PWR è acceso fisso, LINK è ambra e lampeggia, ALARM è spento e diventa rosso lampeggiante nell\'ultimo minuto.',
-  common: [
-    cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'map', mapSel: 'M-K' }) }), { cls: BASE, big: true })),
-    cap('Telefono, rapporti', phone(chosen({ state: d2state({ tab: 'reports' }) }), { cls: BASE })),
-    cap('Telefono, ultimo minuto', phone(chosen({ state: d2state({ tab: 'map' }), remainingMs: 42000 }), { cls: `${BASE} emergency alarm` })),
+  id: 'barled', title: 'La barra fisica: i LED',
+  quote: '«i led li renderei di quelli che escono un po\', tipo quelli per arduino, al momento sembrano incassati e bidimensionali a differenza dei tasti che hanno tridimensionalità» · «i led così sono orrendi, immaginavo con un po\' di prospettiva, non piatti»',
+  context: 'La prima prova era una capsula vista di lato, quindi piatta: tolta. Qui due modi di dare la prospettiva. In tutti e due non c\'è più l\'incasso attorno, ogni LED ha il suo colore anche da spento (PWR acceso fisso, LINK ambra che lampeggia, ALARM rosso scuro che si accende nell\'ultimo minuto) e il nome è inciso sotto. Già fatto sulla stessa barra: il nastro a strisce gira tutto attorno a CODE, e la scritta è una targhetta di metallo che dice solo MISSION CONTROL. Il primo riquadro di ogni direzione mostra la barra del laptop a grandezza vera, per vedere i LED da vicino.',
+  dirs: [
+    {
+      key: 'a', title: 'A · La cupola sul suo collare, vista dall\'alto', rec: true,
+      note: '<p>Il LED da saldare: il collare è un\'ellisse appoggiata sul pannello, il corpo sale da lì e finisce a cupola, con la luce che gira attorno al cilindro e l\'ombra sul pannello.</p><p>Perché: l\'ellisse del collare è ciò che dà la prospettiva, ed è la forma che si riconosce come LED.</p>',
+      frames: ledFrames('a'),
+    },
+    {
+      key: 'b', title: 'B · Sporgente come i tasti',
+      note: '<p>Lo stesso trucco dei tasti: si vede la cima tonda della lente e, sotto, il suo fianco, con un anello dove esce dal pannello.</p><p>Costo: è coerente con i tasti, ma sembra più un pulsante luminoso che un LED.</p>',
+      frames: ledFrames('b'),
+    },
   ],
-  dirs: [],
 };
 
 // ---------- ASK NOVA as a chat in a terminal ----------
@@ -627,6 +638,7 @@ const hatchQ = { kind: 'hatch', what: 'M-K', a: 50, b: 60 };
 const askT = (ui, s, opts = {}) => phone(chosen({ state: d2state({ tab: 'ask', ...s }), askUi: ui }), { cls: BASE, ...opts });
 const ASKTERM = {
   id: 'askterm', title: 'ASK NOVA come una chat, nel terminale',
+  redo: '«rimuoverei l\'ologramma ha poco senso se è nella chat, togliere solo l\'ellisse e il raggio che accende la mappa, la mappa tenere così com\'è.» · «non mi convince la schermata con nova, non scriverei ask nova, ma Nova on Kepler 9, perché la mission control penso non abbia solo una navicella, e sicuro non menzionerei night shift, è mission control e basta, la console non cambia in base ai turni.» · «tornando alla schermata con nova: non è solo il nome della finestra che non mi convince, non mi convince che mostra fin da subito la mappa, e mi chiede subito se voglio interagire, come se nova fosse ridotto a quello (nel nostro caso sì ma è poco "realistico")»',
   quote: '«ask nova vorrei sia più chatbot ma in terminale»',
   context: `La finestra ASK NOVA diventa una conversazione scritta in un terminale: le righe di NOVA e le tue, una sotto l'altra, e le risposte restano lì come storico al posto del TRANSMISSION LOG. La domanda è sempre quella di oggi, con la finestra di 10 minuti. I testi sono quelli che l'app ha già, con tre aggiunte da approvare: «MC» davanti alle tue righe (Mission Control, per stare in una colonna stretta), «NOVA» davanti alle sue, e una sola frase nuova di NOVA nella direzione A, «Which 10 minutes?». La frase con cui NOVA apre è l'aiuto di oggi sotto la mappa («Tap a hatch to ask if it opened, or a module to ask about motion.»).`,
   dirs: [
@@ -654,6 +666,37 @@ const ASKTERM = {
       ],
     },
     { key: 'now', title: 'Oggi', note: '<p>La finestra di oggi, con la finestra di tempo da 10 minuti, per confronto.</p>', frames: [cap('Telefono, Ask NOVA', askT(null, { draft: hatchQ }))] },
+  ],
+};
+
+// ---------- NOVA on Kepler-9: a channel that doesn't open on the map ----------
+
+const novaT = (ui, s, opts = {}) => phone(chosen({ state: d2state({ tab: 'ask', ...s }), askUi: ui }), { cls: BASE, ...opts });
+const novaFrames = (ui) => [
+  cap('Appena aperto il canale', novaT(ui, { draft: { ...hatchQ, what: null }, askStep: 0 }, ui === 'thread' ? { scroll: 'bottom' } : {})),
+  cap('Dopo NEW QUESTION: NOVA chiede il luogo', novaT(ui, { draft: { ...hatchQ, what: null }, askStep: 1 }, { scroll: 'bottom' })),
+  cap('NOVA chiede i 10 minuti', novaT(ui, { draft: hatchQ, askStep: 2 }, { scroll: 'bottom' })),
+  cap('La domanda pronta', novaT(ui, { draft: hatchQ, askStep: 3 }, { scroll: 'bottom' })),
+  cap('Dopo la risposta', novaT(ui, { draft: { ...hatchQ, what: null }, askStep: 0, log: [{ q: hatchQ, ans: 'no' }] }, { scroll: 'bottom' })),
+  cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'ask', draft: { ...hatchQ, what: null }, askStep: 0, log: [{ q: { kind: 'motion', what: 'K', a: 40, b: 50 }, ans: 'yes' }] }), askUi: ui }), { cls: BASE, big: true })),
+];
+const ASKTERM2 = {
+  id: 'nova', title: 'NOVA on Kepler-9: il canale non si apre sulla mappa',
+  quote: '«non è solo il nome della finestra che non mi convince, non mi convince che mostra fin da subito la mappa, e mi chiede subito se voglio interagire, come se nova fosse ridotto a quello (nel nostro caso sì ma è poco "realistico")»',
+  context: `Già applicato in tutte le prove: la finestra si chiama «NOVA ON KEPLER-9» (e il tasto sulla barra «NOVA», perché «ASK NOVA» non lo scriveresti: dimmi se sul tasto lo vuoi tenere); «NIGHT SHIFT» è tolto ovunque, anche nel gioco, e resta «MISSION CONTROL»; dentro la conversazione la mappa non ha più l'anello e il raggio del proiettore, ed è per il resto la stessa. Quello che resta da scegliere è come si apre il canale. In tutte e due le direzioni il canale è aperto e fermo: NOVA dice cosa regge il collegamento, e la mappa compare solo dopo che hai chiesto tu di fare una domanda. Testi nuovi da approvare: la riga di NOVA «The link will carry 2 questions and the emergency code.», ricavata dalla frase del briefing «It will carry only 2 questions and the emergency code.»; il comando «NEW QUESTION»; e la tua riga «New question», che è il comando ripetuto.`,
+  dirs: [
+    {
+      key: 'open', title: 'A · Il canale aperto, la domanda parte da un comando', rec: true,
+      note: `<p>Aprendo il canale trovi la riga di NOVA sul collegamento e la tua riga vuota con NEW QUESTION. Solo dopo NOVA chiede dove, e compare la mappa; poi i 10 minuti; poi la domanda da mandare. Dopo la risposta il canale torna fermo, con una domanda in meno.</p>
+        <p>Perché: risponde alla tua critica con il minimo: NOVA non ti accoglie con la mappa, e la domanda è una cosa che chiedi tu. Costo: un tocco in più per ogni domanda (due in tutto).</p>`,
+      frames: novaFrames('open'),
+    },
+    {
+      key: 'thread', title: 'B · Tutta la conversazione con NOVA',
+      note: `<p>Come A, ma in cima al canale ci sono i messaggi che NOVA ti ha già scritto, quelli del briefing: è una conversazione sola, dall'inizio.</p>
+        <p>Da sapere: tocca il briefing che avevi deciso (i messaggi di NOVA più le quattro schede delle regole). I messaggi starebbero in due posti, qui e sotto BRIEFING, oppure BRIEFING terrebbe solo le regole. Lo propongo una volta sola, perché è il modo in cui NOVA sembra meno ridotta alle domande.</p>`,
+      frames: novaFrames('thread'),
+    },
   ],
 };
 
@@ -698,7 +741,7 @@ const HOME2 = {
   dirs: [
     homeDir2('window', 'Oggi', '<p>La home di oggi dentro la console.</p>', 'window'),
     homeDir2('plain', 'A · La home di oggi, senza parole di gioco', '<p>Resta com\'è: il nome della stazione grande, lo stato di NOVA nella sua finestra. Cambiano solo le parole dette sopra.</p>', 'plain'),
-    homeDir2('console', 'B · La stazione e la trasmissione in arrivo', `<p>La home è il quadro di una console: in alto di chi è (MISSION CONTROL // NIGHT SHIFT) e lo stato del collegamento; poi la stazione KEPLER-9 con le sue letture (le righe di oggi, come etichetta e valore); sotto, in ambra che lampeggia, «INCOMING TRANSMISSION» di NOVA, con ANSWER. Con un caso aperto, nel quadro della stazione ci sono il caso e l'ossigeno, con RESUME.</p>
+    homeDir2('console', 'B · La stazione e la trasmissione in arrivo', `<p>La home è il quadro di una console: in alto di chi è (MISSION CONTROL) e lo stato del collegamento; poi la stazione KEPLER-9 con le sue letture (le righe di oggi, come etichetta e valore); sotto, in ambra che lampeggia, «INCOMING TRANSMISSION» di NOVA, con ANSWER. Con un caso aperto, nel quadro della stazione ci sono il caso e l'ossigeno, con RESUME.</p>
       <p>Perché: è l'unica in cui si capisce cosa succede premendo: si risponde a una chiamata. Costo: «INCOMING TRANSMISSION» è una scritta nuova in più.</p>`, 'console', true),
     homeDir2('terminal', 'C · Un terminale', `<p>Le stesse cose come righe di un terminale, in linea con ASK NOVA: la stazione, le letture, e l'ultima riga in ambra, «Incoming transmission: NOVA, station AI».</p>
       <p>Costo: è la più spoglia; due righe nuove («Station Kepler-9» e quella della trasmissione).</p>`, 'terminal'),
@@ -923,9 +966,9 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [ASKTERM, MAPINFO, HOME2];
-const NOTES = [BARLED, PORTRAITS];
-const DECIDED = [REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const OPEN = [BARLED, ASKTERM2, MAPINFO, HOME2];
+const NOTES = [PORTRAITS];
+const DECIDED = [ASKTERM, REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">

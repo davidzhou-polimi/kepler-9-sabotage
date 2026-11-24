@@ -52,7 +52,7 @@ const alarmStrip = (view) => (critical(view) ? '<div class="alarm-strip" role="a
 function monitorShell(view, inner) {
   return `<div class="cs cs-monitor ${fxClass(view)}">
     <div class="cs-glass"><div class="cs-scroll">${sysLine(view.c)}${inner}</div><div class="cs-fx" aria-hidden="true"></div></div>
-    <div class="cs-panel">${lamps(view)}<span class="cs-brand">MISSION CONTROL · NIGHT SHIFT</span></div>
+    <div class="cs-panel">${lamps(view)}<span class="cs-brand">MISSION CONTROL</span></div>
   </div>`;
 }
 
@@ -68,7 +68,7 @@ function deskShell(view, inner) {
   if (!playing) {
     return `<div class="cs cs-desk ${fxClass(view)}">
       <div class="cs-monitors cs-monitors-one">${monitor('MON 3 // COMMS · KEPLER-9', inner, 'cs-mon-main')}</div>
-      <div class="cs-deskpanel">${lamps(view)}<span class="cs-brand">MISSION CONTROL · NIGHT SHIFT</span></div>
+      <div class="cs-deskpanel">${lamps(view)}<span class="cs-brand">MISSION CONTROL</span></div>
     </div>`;
   }
   const ch = channelOf(state.tab);
@@ -203,20 +203,21 @@ function deckShell(view, screenFn) {
   let tab = state.tab;
   if (view.wide && tab === 'reports') tab = 'ask'; // on a laptop the reports are always on screen
   const k = (label, v) => key2(label, v, { on: playing && tab === v, live: playing, cls: `cs-key-${v}` });
-  const keys = (view.wide ? '' : k('REPORTS', 'reports')) + k('MAP', 'map') + k('ASK NOVA', 'ask') + k('BRIEFING', 'briefing');
+  const keys = (view.wide ? '' : k('REPORTS', 'reports')) + k('MAP', 'map') + k('NOVA', 'ask') + k('BRIEFING', 'briefing');
   const code = `<div class="cs-guard">${key2('CODE', 'code', { on: playing && tab === 'code', live: playing, cls: 'cs-key-red' })}</div>`;
   const link = style === 'scifi'
     ? '<span class="cs-link"><span class="cs-o2-label">LINK</span><span class="cs-link-bars"><i class="on"></i><i class="on is-flick"></i><i></i><i></i><i></i></span></span>'
     : '<span class="cs-link"><span class="cs-gauge"><i></i></span><span class="cs-o2-label">LINK</span></span>';
   const bar = view.deckBar || 'gauge';
   const tiles = `<span class="cs-ann" aria-hidden="true"><b class="is-on">PWR</b><b class="is-warn">LINK</b><b class="${critical(view) ? 'is-alarm' : ''}">ALARM</b></span>`;
-  const grille = '<span class="cs-grille" aria-hidden="true"></span><span class="cs-brand">MISSION CONTROL · NIGHT SHIFT</span>';
+  const grille = '<span class="cs-grille" aria-hidden="true"></span><span class="cs-brand">MISSION CONTROL</span>';
   const led = (label, cls) => `<span class="cs-led2 ${cls}"><i></i>${label}</span>`;
-  const leds = `<span class="cs-leds" aria-hidden="true">${led('PWR', 'is-on')}${led('LINK', 'is-warn')}${led('ALARM', critical(view) ? 'is-alarm' : '')}</span>`;
+  // view.ledStyle: 'a' a dome on its collar, seen from above; 'b' pushed out like the keys (proposals)
+  const leds = `<span class="cs-leds led-${view.ledStyle || 'a'}" aria-hidden="true">${led('PWR', 'is-on')}${led('LINK', 'is-warn')}${led('ALARM', critical(view) ? 'is-alarm' : '')}</span>`;
   const instr = {
     // the plate as a real nameplate, screwed on («questa parte della macchina non mi convince», 2026-11-25: it was
     // a line of text floating on the bar)
-    leds: `${leds}<span class="cs-grille" aria-hidden="true"></span><span class="cs-plate"><i></i><b>MISSION CONTROL · NIGHT SHIFT</b><i></i></span>`,
+    leds: `${leds}<span class="cs-grille" aria-hidden="true"></span><span class="cs-plate"><i></i><b>MISSION CONTROL</b><i></i></span>`,
     gauge: `<span class="cs-lampset">${lamp('PWR', 'is-on')}${link}${lamp('ALARM', critical(view) ? 'is-alarm' : '')}</span>${grille}`,
     tiles,
     tilesgrille: tiles + grille,

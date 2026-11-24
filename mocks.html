@@ -36,6 +36,10 @@
     .dir.is-chosen { border-left-color: var(--cyan); }
     .done-no { background: var(--red); }
     .done-redo { background: var(--amber); }
+    /* a laptop frame shown at full size but cut to its bar, to see small hardware up close */
+    .mock-barzoom { width: 1000px; height: 112px; overflow: hidden; position: relative; }
+    .mock-barzoom .mock-wide-wrap.is-big { width: 1280px; height: 780px; position: absolute; right: 0; bottom: 0; }
+    .mock-barzoom .mock-wide { transform: none !important; }
     .pcompare { display: flex; gap: 10px; align-items: flex-start; }
     .pcompare > img { display: block; width: 152px; height: 190px; object-fit: cover; }
     .pcompare img.is-pixel { image-rendering: pixelated; }
