@@ -194,6 +194,7 @@ function desk2Shell(view, inner) {
 //   'tiles':       no needle, no grille, no plate: PWR, LINK and ALARM as three lit tiles in one recessed panel
 //   'tilesgrille': the tiles, with the grille and the plate
 //   'min':         only the keys, CODE and the power button
+//   'leds':        chosen 2026-11-24 (the lamps with the grille and the plate), with the lamps as LEDs
 function deckShell(view, screenFn) {
   const { state } = view;
   const playing = state.phase === 'play';
@@ -210,7 +211,10 @@ function deckShell(view, screenFn) {
   const bar = view.deckBar || 'gauge';
   const tiles = `<span class="cs-ann" aria-hidden="true"><b class="is-on">PWR</b><b class="is-warn">LINK</b><b class="${critical(view) ? 'is-alarm' : ''}">ALARM</b></span>`;
   const grille = '<span class="cs-grille" aria-hidden="true"></span><span class="cs-brand">MISSION CONTROL · NIGHT SHIFT</span>';
+  const led = (label, cls) => `<span class="cs-led2 ${cls}"><i></i>${label}</span>`;
+  const leds = `<span class="cs-leds" aria-hidden="true">${led('PWR', 'is-on')}${led('LINK', 'is-warn')}${led('ALARM', critical(view) ? 'is-alarm' : '')}</span>`;
   const instr = {
+    leds: leds + grille,
     gauge: `<span class="cs-lampset">${lamp('PWR', 'is-on')}${link}${lamp('ALARM', critical(view) ? 'is-alarm' : '')}</span>${grille}`,
     tiles,
     tilesgrille: tiles + grille,

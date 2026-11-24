@@ -37,3 +37,7 @@ Fourth freeze of the day. Decided: the console with the tube and the dark keys (
 ## 2026-11-24-nesting
 
 Fifth freeze of the day. Decided: the time window is 10 minutes long and is only moved; the hologram with walls of light and upright names. Open: the tab windows decorated after the cards; the reports without a frame inside a frame; the physical bar without the needle gauge; how the 10-minute window is moved, since the slider was not liked.
+
+## 2026-11-24-terminal
+
+Sixth freeze of the day. Decided: the reports as cards without a window around them; the bar with the lamps, the grille and the plate, the lamps as LEDs (shown as done). Superseded, with the words: the decoration of the tab windows, and the control of the 10-minute window (it goes into the new ASK NOVA). Open: ASK NOVA as a chat in a terminal; what is written under the map; the home as the home of a console, without the words of a game. In the game since this round: lines that start with the prompt mark wrap under their text.

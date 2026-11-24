@@ -25,7 +25,8 @@ export function win(title, body, { cls = '', tone = '', id = '' } = {}) {
 export const btn = (label, act, { cls = '', attrs = '', disabled = false } = {}) =>
   `<button type="button" class="btn ${cls}" data-act="${act}" ${attrs} ${disabled ? 'disabled' : ''}><span>${label}</span></button>`;
 
-const log = (lines, cls = '') => `<div class="log ${cls}">${lines.map((l) => `<p>${l}</p>`).join('')}</div>`;
+// a line that starts with the prompt mark gets class "pl": when it wraps, the next lines start under its text
+const log = (lines, cls = '') => `<div class="log ${cls}">${lines.map((l) => `<p${/^(&gt;|<span class="prompt">)/.test(l) ? ' class="pl"' : ''}>${l}</p>`).join('')}</div>`;
 
 export function fmtClock(ms) {
   const s = Math.max(0, Math.ceil(ms / 1000));
@@ -271,12 +272,31 @@ function mapInfo(sel) {
   return `> ${MOD_NAME[sel].toUpperCase()}: motion sensor online. Logs whether anything moved, never who.`;
 }
 
+// The place tapped, as a name and its sentences (the same words as mapInfo).
+function mapInfoParts(sel) {
+  const s = mapInfo(sel).slice(2);
+  const i = s.indexOf(': ');
+  const text = i < 0 ? s : s[i + 2].toUpperCase() + s.slice(i + 3);
+  const kind = !sel ? '' : sel === 'L' || sel === 'L-K' ? 'off' : HATCH_NAME[sel] ? 'hatch' : sel === 'console' ? 'console' : 'sensor';
+  return { name: i < 0 ? '' : s.slice(0, i), sentences: text.match(/[^.]+\./g) || [text], kind };
+}
+
+// detail.info (what stands under the map; proposals, mocks only until one is chosen; default: the legend and one line):
+//   'card':    a small card: the sign of the legend, the name of the place, its sentences in the reading font
+//   'readout': a terminal readout: the name on the prompt line, one sentence per line under it
 export function mapPanel(sel, { title = 'STATION MAP', detail = {}, console: withConsole = false } = {}) {
+  const legend = `<div class="legend ${detail.info ? 'legend-row' : ''}"><span><i class="lg lg-hatch"></i>Hatch</span><span><i class="lg lg-sensor"></i>Motion sensor</span>${withConsole ? '<span><i class="lg lg-console"></i>Console</span>' : ''}<span><i class="lg lg-off"></i>Offline</span></div>`;
+  const { name, sentences, kind } = mapInfoParts(sel);
+  const info = detail.info === 'card'
+    ? `<div class="minfo ${kind ? `minfo-${kind}` : ''}">${kind ? `<i class="lg lg-${kind}"></i>` : ''}<div>${name ? `<b class="minfo-name">${esc(name)}</b>` : ''}<p>${esc(sentences.join(' '))}</p></div></div>`
+    : detail.info === 'readout'
+      ? `<div class="log map-info mread ${kind === 'off' ? 'is-off' : ''}">${name ? `<p class="pl">&gt; <b>${esc(name)}</b></p>${sentences.map((x) => `<p class="mread-s">${esc(x.trim())}</p>`).join('')}` : `<p class="pl">&gt; ${esc(sentences.join(' '))}</p>`}</div>`
+      : log([esc(mapInfo(sel))], 'map-info');
   return win(title, `
     ${mapSvg(sel, { detail, console: withConsole })}
     ${detail.numbers ? hatchLegend() : ''}
-    <div class="legend"><span><i class="lg lg-hatch"></i>Hatch</span><span><i class="lg lg-sensor"></i>Motion sensor</span>${withConsole ? '<span><i class="lg lg-console"></i>Console</span>' : ''}<span><i class="lg lg-off"></i>Offline</span></div>
-    ${log([esc(mapInfo(sel))], 'map-info')}`, { cls: 'win-map' });
+    ${legend}
+    ${info}`, { cls: 'win-map' });
 }
 
 // ---------- briefing ----------
@@ -361,7 +381,7 @@ export function briefingPanel({ typed = true, style = 'now', start = false, call
     const card = (title, id, viz) => `<div class="rule"><h3 class="sub">${title}</h3>${viz()}<p>${keyed(BP[id])}</p></div>`;
     return win('NOVA // BRIEFING', `
       ${whoNova}
-      <div class="log nova mix-voice ${typed ? 'type-me' : ''}">${['hello', 'situation', 'saboteur', 'reports'].map((id) => `<p>&gt; ${keyed(BP[id])}</p>`).join('')}</div>
+      <div class="log nova mix-voice ${typed ? 'type-me' : ''}">${['hello', 'situation', 'saboteur', 'reports'].map((id) => `<p class="pl">&gt; ${keyed(BP[id])}</p>`).join('')}</div>
       <div class="rules">
         ${card('SENSORS', 'sensors', sensorVisual(calls))}${card('QUESTIONS', 'link', linkVisual)}
         ${card('EMERGENCY CODE', 'code', codeVisual)}${card('OXYGEN', 'oxygen', oxygenVisual)}
@@ -392,7 +412,8 @@ export function briefingPanel({ typed = true, style = 'now', start = false, call
 //   'cells10':  the hour as twelve marks, like the oxygen bar; the two lit ones are the window
 //   'step10':   one display with the window, between a minus and a plus key
 //   'around10': the times a report can state, as keys; the window is the 5 minutes before and after
-export function askPanel(state, c, where = 'chips', detail = {}, callUi = null, timeUi = 'select') {
+export function askPanel(state, c, where = 'chips', detail = {}, callUi = null, timeUi = 'select', askUi = null) {
+  if (askUi) return askTerm(state, askUi, detail);
   const used = state.log.length;
   const left = MAX_QUESTIONS - used;
   const d = state.draft;
@@ -501,14 +522,47 @@ export function askPanel(state, c, where = 'chips', detail = {}, callUi = null, 
 
   const history = state.log.length ? state.log.map((e, i) => `
       <div class="qa">
-        <p class="q">&gt; Q${i + 1}: ${esc(questionText(e.q))}</p>
+        <p class="q pl">&gt; Q${i + 1}: ${esc(questionText(e.q))}</p>
         <p class="a a-${e.ans} ${i === state.log.length - 1 ? 'type-me' : ''}" data-type-key="ans-${i}">NOVA: ${esc(ANSWERS[e.ans])}</p>
-      </div>`).join('') : '<p class="muted">&gt; No questions sent yet.</p>';
+      </div>`).join('') : '<p class="muted pl">&gt; No questions sent yet.</p>';
 
   return win('ASK NOVA', `
     ${builder}
     <div class="sub">TRANSMISSION LOG</div>
     <div class="log qa-log">${history}</div>`, { cls: 'win-ask' });
+}
+
+// ASK NOVA as a chat in a terminal (proposals, mocks only until one is chosen). The window is always 10 minutes.
+//   'cmd':  the station model, then one command line: the place tapped and the 10 minutes are its two slots
+//   'chat': NOVA asks one thing at a time (state.askStep: 1 the place, 2 the 10 minutes, 3 send)
+function askTerm(state, mode, detail) {
+  const left = MAX_QUESTIONS - state.log.length;
+  const d = state.draft;
+  const step = state.askStep || (d.what ? 3 : 1);
+  const q = { kind: d.kind, what: d.what, a: d.a, b: d.b };
+  const row = (who, html, wide = '', cls = '') => `<div class="tl tl-${who} ${cls}"><span class="tl-who">${who === 'nova' ? 'NOVA' : 'MC'}</span><div class="tl-txt">${html}</div>${wide ? `<div class="tl-wide">${wide}</div>` : ''}</div>`;
+  const past = state.log.map((e, i) => row('mc', esc(questionText(e.q)))
+    + row('nova', `<span class="a a-${e.ans} ${i === state.log.length - 1 ? 'type-me' : ''}" data-type-key="ans-${i}">${esc(ANSWERS[e.ans])}</span>`)).join('');
+  const place = d.what ? (HATCH_NAME[d.what] ? `${HATCH_NAME[d.what]} hatch` : MOD_NAME[d.what]) : '';
+  const model = mapSvg(d.what, { act: 'draft-place', cls: 'map-pick', detail });
+  const send = `<div class="actions">${btn('SEND QUESTION', 'send-question', { cls: 'btn-primary', disabled: !d.what })}<span class="note">Uses 1 of ${MAX_QUESTIONS}. ${left} left.</span></div>`;
+  const hint = 'Tap a hatch to ask if it opened, or a module to ask about motion.';
+  let live;
+  if (left <= 0) live = row('nova', 'Link capacity reached. Only the emergency code can still be sent.');
+  else if (mode === 'cmd') {
+    const line = d.what
+      ? esc(questionText(q)).replace(esc(place), (m) => `<b class="slot">${m}</b>`)
+        .replace(`between ${fmtTime(d.a)} and ${fmtTime(d.b)}`, `between <span class="slot slot-time"><button type="button" data-act="draft-step" data-d="-5" aria-label="5 minutes earlier">&#9664;</button>${fmtTime(d.a)} and ${fmtTime(d.b)}<button type="button" data-act="draft-step" data-d="5" aria-label="5 minutes later">&#9654;</button></span>`)
+      : 'Tap a hatch or a module.';
+    live = row('nova', hint, model) + row('mc', `${line}<span class="tl-cur"></span>`, send, 'tl-draft');
+  } else {
+    const times = GRID.slice(0, -2).map((a) => `<button type="button" class="chip ${a === d.a ? 'is-on' : ''}" data-act="draft-time" data-v="${a}">${fmtTime(a)}&ndash;${fmtTime(a + 10)}</button>`).join('');
+    const edit = (v, label) => `<button type="button" class="tl-edit" data-act="ask-step" data-v="${v}">${label}</button>`;
+    live = row('nova', hint, step === 1 ? model : '')
+      + (step > 1 ? row('mc', edit(1, esc(place))) + row('nova', 'Which 10 minutes?', step === 2 ? `<div class="tw-keys">${times}</div>` : '') : '')
+      + (step > 2 ? row('mc', edit(2, `${fmtTime(d.a)}&ndash;${fmtTime(d.b)}`)) + row('mc', `${esc(questionText(q))}<span class="tl-cur"></span>`, send, 'tl-draft') : '');
+  }
+  return win('ASK NOVA', `<div class="term">${past}${live}</div>`, { cls: 'win-ask win-term' });
 }
 
 // ---------- emergency code ----------
@@ -548,9 +602,10 @@ export function screenHome(view = {}) {
       : [['CASE_', `${esc(s.code)} · closed`, `Case ${esc(s.code)}: closed`]]),
   ];
   const lines = rows.map((r) => r[2]);
+  if (style === 'console' || style === 'terminal' || style === 'plain') return consoleHome({ rows, lines, open, style });
   let info;
-  if (style === 'bright') info = `<div class="log home-log home-log-bright">${lines.map((l) => `<p><span class="prompt">&gt;</span> ${l}</p>`).join('')}</div>`;
-  else if (style === 'window') info = `<div class="home-status">${win('NOVA // STATUS', `${whoNova}<div class="log nova home-status-log">${lines.map((l) => `<p><span class="prompt">&gt;</span> ${l}</p>`).join('')}</div>`)}</div>`;
+  if (style === 'bright') info = `<div class="log home-log home-log-bright">${lines.map((l) => `<p class="pl"><span class="prompt">&gt;</span> ${l}</p>`).join('')}</div>`;
+  else if (style === 'window') info = `<div class="home-status">${win('NOVA // STATUS', `${whoNova}<div class="log nova home-status-log">${lines.map((l) => `<p class="pl"><span class="prompt">&gt;</span> ${l}</p>`).join('')}</div>`)}</div>`;
   else if (style === 'data') info = `<dl class="home-data">${rows.map((r) => `<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl>`;
   else info = log(lines.map((l) => `&gt; ${l}`), 'home-log');
   const top = style === 'now'
@@ -582,6 +637,49 @@ export function screenBriefing(view) {
       ${mapPanel(view.state.mapSel)}
     </div>
     ${startInside ? '' : `<div class="menu">${btn('START MISSION', 'start-mission', { cls: 'btn-primary' })}</div>`}
+  </main>`;
+}
+
+// The home as the home of Mission Control's console, without the words of a game (proposals, mocks only until
+// one is chosen): no SABOTAGE before NOVA has spoken, ANSWER for NEW GAME, RESUME for CONTINUE.
+//   'plain':    today's home with only those changes
+//   'console':  the station as a panel with its readings, and the incoming transmission to answer
+//   'terminal': the same as the lines of a terminal
+function consoleHome({ rows, lines, open, style }) {
+  const resume = open ? btn('RESUME', 'continue', { cls: 'btn-primary' }) : '';
+  const answer = btn('ANSWER', 'new-game', { cls: open ? '' : 'btn-primary' });
+  const prompt = (l, cls = '') => `<p class="pl ${cls}"><span class="prompt">&gt;</span> ${l}</p>`;
+  if (style === 'plain') {
+    return `<main class="screen screen-home">
+      <div class="home-top home-top-bright"><span><b>NOVA</b> // STATION AI</span><span>LINK: <b class="warn">UNSTABLE</b></span></div>
+      <div class="home-title"><p class="kicker">MISSION CONTROL // NIGHT SHIFT</p><h1 class="title">KEPLER-9</h1></div>
+      <div class="home-status">${win('NOVA // STATUS', `${whoNova}<div class="log nova home-status-log">${lines.map((l) => prompt(l)).join('')}</div>`)}</div>
+      <div class="menu">${resume}${answer}</div>
+    </main>`;
+  }
+  const top = '<div class="home-top home-top-bright"><span><b>MISSION CONTROL</b> // NIGHT SHIFT</span><span>LINK: <b class="warn">UNSTABLE</b></span></div>';
+  if (style === 'terminal') {
+    return `<main class="screen screen-home home-terminal">
+      ${top}
+      <div class="log home-term">
+        ${prompt('Station Kepler-9')}${lines.map((l) => prompt(l)).join('')}
+        ${prompt('Incoming transmission: NOVA, station AI<span class="tl-cur"></span>', 'is-in')}
+      </div>
+      <div class="menu">${resume}${answer}</div>
+    </main>`;
+  }
+  return `<main class="screen screen-home home-console">
+    ${top}
+    <section class="hc-panel">
+      <h1 class="title hc-name">KEPLER-9</h1>
+      <dl class="home-data">${rows.map((r) => `<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl>
+      ${open ? `<div class="hc-act">${resume}</div>` : ''}
+    </section>
+    <section class="hc-call">
+      <span class="hc-tag">INCOMING TRANSMISSION</span>
+      ${whoNova}
+      ${answer}
+    </section>
   </main>`;
 }
 
@@ -629,7 +727,7 @@ export function screenPlay(view) {
   const panel = {
     reports: () => reportsPanel(c, view.reportStyle || 'card', { bare: Boolean(view.reportsBare) }),
     map: () => mapPanel(state.mapSel, { detail: view.mapDetail || {}, console: view.callUi === 'map' }),
-    ask: () => askPanel(state, c, view.askWhere, view.mapDetail || {}, view.callUi || null, view.timeUi || 'select'),
+    ask: () => askPanel(state, c, view.askWhere, view.mapDetail || {}, view.callUi || null, view.timeUi || 'select', view.askUi || null),
     code: () => codePanel(state),
     briefing: () => briefingPanel({ typed: Boolean(view.briefTyped), style: view.briefStyle || 'now', calls: Boolean(view.callUi) }),
   }[tab]();
@@ -677,16 +775,16 @@ export function screenSolution(view) {
   const section = (h, html) => `<div class="sol-sec"><h3 class="sub">${h}</h3>${html}</div>`;
   const ps = (arr) => arr.map((l) => `<p>${esc(l)}</p>`).join('');
   const asked = state.log.length
-    ? state.log.map((e, i) => `<p>&gt; Q${i + 1}: ${esc(questionText(e.q))} <b>${esc(ANSWERS[e.ans].split('.')[0])}.</b></p>`).join('')
-    : '<p>&gt; No questions sent.</p>';
+    ? state.log.map((e, i) => `<p class="pl">&gt; Q${i + 1}: ${esc(questionText(e.q))} <b>${esc(ANSWERS[e.ans].split('.')[0])}.</b></p>`).join('')
+    : '<p class="pl">&gt; No questions sent.</p>';
   return `<main class="screen screen-solution">
     ${caseBar(c)}
     ${win(`CASE ${esc(c.code)} // SOLUTION`, `
       ${section('WHAT HAPPENED', ps(s.happened))}
       ${section('THE REPORTS', ps(s.reports))}
-      ${section('ONE QUESTION THAT SETTLED IT', `<p class="mono">&gt; ${esc(s.question.text)}</p><p>${esc(s.question.answer)}</p>`)}
+      ${section('ONE QUESTION THAT SETTLED IT', `<p class="mono pl">&gt; ${esc(s.question.text)}</p><p>${esc(s.question.answer)}</p>`)}
       ${section('THE CODE', `<p class="big-code">${esc(c.emergencyCode)}</p><p>${esc(s.code)}</p>`)}
-      ${section('YOUR TRANSMISSIONS', `<div class="log">${asked}${state.sentCode ? `<p>&gt; Code: ${esc(state.sentCode)}</p>` : '<p>&gt; Code: not sent.</p>'}</div>`)}
+      ${section('YOUR TRANSMISSIONS', `<div class="log">${asked}${state.sentCode ? `<p class="pl">&gt; Code: ${esc(state.sentCode)}</p>` : '<p class="pl">&gt; Code: not sent.</p>'}</div>`)}
       <div class="actions">${btn('NEW GAME', 'new-game', { cls: 'btn-primary' })}</div>
     `)}
   </main>`;

@@ -341,8 +341,10 @@ select {
 select:focus-visible { outline: 2px solid var(--cyan); }
 .preview {
   font-family: var(--font-mono); font-size: 15px; color: var(--cyan);
-  padding: 12px 14px; margin-top: 6px; background: rgba(11, 18, 32, 0.6); border-left: 3px solid var(--cyan);
+  padding: 12px 14px 12px calc(14px + 2ch); text-indent: -2ch; margin-top: 6px; background: rgba(11, 18, 32, 0.6); border-left: 3px solid var(--cyan);
 }
+/* a line that starts with the prompt mark: when it wraps, the next lines start under its text, not under the mark */
+.pl { padding-left: 2ch; text-indent: -2ch; }
 .qa { margin-bottom: 10px; }
 .qa .q { color: rgba(231, 237, 244, 0.85); margin-bottom: 2px; }
 .qa .a { font-weight: 600; }
@@ -1062,3 +1064,67 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .ta-keys { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
 .ta-keys .chip { min-height: 40px; padding: 4px 0; text-align: center; }
 @container (max-width: 520px) { .ta-keys { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ---------- under the map (proposals, mocks) ---------- */
+.legend-row { justify-content: flex-start; gap: 6px 16px; margin: 12px 0 10px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.minfo { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; align-items: start; min-height: 4.6em; }
+.minfo:not([class*="minfo-"]) { grid-template-columns: minmax(0, 1fr); }
+.minfo .lg { margin-top: 5px; width: 14px; height: 14px; }
+.minfo-name { display: block; font-family: var(--fd), 'IBM Plex Mono', monospace; font-weight: 400; font-size: calc(var(--ds) * 17px); line-height: 1.2; letter-spacing: 0.04em; color: var(--cyan); }
+.minfo-off .minfo-name { color: var(--red); }
+.minfo p { margin: 2px 0 0; font-size: 15px; line-height: 1.45; color: var(--star); }
+.minfo:not([class*="minfo-"]) p { color: rgba(231, 237, 244, 0.7); }
+.mread { min-height: 4.8em; color: var(--star); }
+.mread b { color: var(--cyan); font-weight: 600; letter-spacing: 0.04em; }
+.mread.is-off b { color: var(--red); }
+.mread p { margin: 0 0 0.15em; }
+.mread .mread-s { padding-left: 2ch; }
+
+/* ---------- ASK NOVA as a chat in a terminal (proposals, mocks) ---------- */
+.win-term .win-body { background: rgba(2, 5, 9, 0.55); }
+.term { font-family: var(--font-mono); font-size: 14px; line-height: 1.55; }
+.tl { display: grid; grid-template-columns: 3.3em minmax(0, 1fr); gap: 0 8px; padding: 5px 0; }
+.tl-who { font-weight: 600; letter-spacing: 0.06em; }
+.tl-who::after { content: '>'; margin-left: 1px; opacity: 0.7; }
+.tl-nova .tl-who { color: var(--cyan); }
+.tl-mc .tl-who { color: var(--amber); }
+.tl-txt { color: var(--star); min-width: 0; }
+.tl-mc .tl-txt { color: rgba(231, 237, 244, 0.86); }
+.tl-wide { grid-column: 1 / -1; margin-top: 6px; }
+.tl .a { font-weight: 600; }
+.tl-edit { padding: 0; font: inherit; color: var(--amber); background: none; border: 0; border-bottom: 1px dashed var(--amber); cursor: pointer; }
+.tl-cur::after { content: '█'; margin-left: 3px; color: var(--amber); animation: blink 0.9s steps(1) infinite; }
+.tl-draft { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--line); }
+.tl-draft .actions { margin-top: 4px; }
+.slot { font-weight: 600; color: var(--amber); border-bottom: 1px dashed var(--amber); }
+.slot-time { display: inline-flex; align-items: center; gap: 6px; border-bottom: 0; white-space: nowrap; }
+.slot-time button { width: 34px; height: 34px; padding: 0; cursor: pointer; border: 2px solid var(--amber); background: rgba(242, 184, 75, 0.1); color: var(--amber); font-size: 12px; }
+.tw-keys { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.tw-keys .chip { min-height: 40px; padding: 4px 0; text-align: center; white-space: nowrap; }
+@container (max-width: 520px) { .tw-keys { grid-template-columns: repeat(3, minmax(0, 1fr)); } .tw-keys .chip { font-size: 12px; } }
+@media (prefers-reduced-motion: reduce) { .tl-cur::after { animation: none; } }
+
+/* ---------- the home as the home of a console (proposals, mocks) ---------- */
+.home-console, .home-terminal { justify-content: flex-start; }
+.hc-panel { width: 100%; max-width: 460px; margin: 22px auto 0; padding: 16px 18px 14px; border: 2px solid var(--line-strong); background: var(--panel); }
+.hc-name { font-size: calc(var(--ds) * clamp(34px, 12cqi, 84px)); text-align: left; }
+.hc-panel .home-data { margin: 12px 0 0; max-width: none; }
+.hc-act { display: flex; margin-top: 12px; }
+.hc-call {
+  width: 100%; max-width: 460px; margin: 16px auto 0; padding: 12px 18px 14px; display: grid; gap: 10px; justify-items: start;
+  border: 2px solid var(--amber); background: rgba(242, 184, 75, 0.08);
+}
+/* the words never disappear: only the mark before them blinks */
+.hc-tag { display: inline-flex; align-items: center; gap: 8px; font: 600 12px var(--font-mono); letter-spacing: 0.14em; color: var(--amber); }
+.hc-tag::before { content: ''; width: 9px; height: 9px; background: var(--amber); animation: blink 1.2s steps(1) infinite; }
+.hc-call .btn, .hc-act .btn { font-size: calc(var(--ds) * 24px); padding: 10px 18px; }
+.home-term { max-width: 460px; width: 100%; margin: 26px auto 0; font-size: 15px; color: var(--star); }
+.home-term .is-in { margin-top: 0.8em; color: var(--amber); }
+.home-term .is-in .prompt { color: var(--amber); }
+.home-terminal .menu { justify-content: flex-start; max-width: 460px; width: 100%; margin: 18px auto auto; }
+@media (prefers-reduced-motion: reduce) { .hc-tag::before { animation: none; } }
+/* the console's own header stays on one line on a phone */
+:is(.home-console, .home-terminal) .home-top { white-space: nowrap; }
+@container (max-width: 460px) { :is(.home-console, .home-terminal) .home-top { font-size: 10px; letter-spacing: 0.05em; } }
+@container (max-width: 340px) { :is(.home-console, .home-terminal) .home-top { font-size: 9px; letter-spacing: 0; } }
+@container (max-width: 340px) { .tw-keys { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -475,3 +475,41 @@
 /* only the keys: on a phone the power button closes the row of keys */
 .cs-deck:not(.is-wide).bar-min .cs-keyrow { grid-template-columns: repeat(5, minmax(0, 1fr)) 44px; align-items: center; }
 .cs-deck:not(.is-wide).bar-min .cs-key2, .cs-deck:not(.is-wide).bar-min .cs-guard .cs-key2 { font-size: calc(var(--ds) * clamp(9px, 2.8cqi, 12px)); }
+
+/* the lamps as LEDs: a lens in its bezel, the name engraved under it */
+.cs-leds {
+  order: 3; flex: none; display: inline-flex; gap: 16px; padding: 7px 14px 5px; border-radius: 4px; background: #0b0f15;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+.cs-led2 { display: inline-flex; flex-direction: column; align-items: center; gap: 5px; font: 600 9px/1 var(--font-mono); letter-spacing: 0.14em; color: rgba(231, 237, 244, 0.62); }
+.cs-led2 i {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #56627a, #1b212b 65%);
+  box-shadow: 0 0 0 2px #04060a, 0 0 0 3px #5b687c;
+}
+.cs-led2.is-on i { background: radial-gradient(circle at 35% 30%, #eafffd, var(--cyan) 45%, #17807b); box-shadow: 0 0 0 2px #04060a, 0 0 0 3px #5b687c, 0 0 12px 3px rgba(67, 217, 210, 0.75); }
+.cs-led2.is-warn i { animation: cs-led-warn 1.6s steps(1) infinite; }
+.cs-led2.is-alarm i { animation: cs-led-alarm 0.5s steps(1) infinite; }
+@keyframes cs-led-warn {
+  0%, 49% { background: radial-gradient(circle at 35% 30%, #fff6dc, var(--amber) 45%, #9a6a12); box-shadow: 0 0 0 2px #04060a, 0 0 0 3px #5b687c, 0 0 12px 3px rgba(242, 184, 75, 0.75); }
+  50%, 100% { background: radial-gradient(circle at 35% 30%, #7a6030, #2b2110 65%); box-shadow: 0 0 0 2px #04060a, 0 0 0 3px #5b687c; }
+}
+@keyframes cs-led-alarm {
+  0%, 49% { background: radial-gradient(circle at 35% 30%, #ffe1e2, var(--red) 45%, #8a2328); box-shadow: 0 0 0 2px #04060a, 0 0 0 3px #5b687c, 0 0 12px 3px rgba(228, 91, 97, 0.8); }
+  50%, 100% { background: radial-gradient(circle at 35% 30%, #74383b, #2a1214 65%); box-shadow: 0 0 0 2px #04060a, 0 0 0 3px #5b687c; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-led2.is-warn i { animation: none; background: radial-gradient(circle at 35% 30%, #fff6dc, var(--amber) 45%, #9a6a12); box-shadow: 0 0 0 2px #04060a, 0 0 0 3px #5b687c, 0 0 12px 3px rgba(242, 184, 75, 0.75); }
+  .cs-led2.is-alarm i { animation: none; background: radial-gradient(circle at 35% 30%, #ffe1e2, var(--red) 45%, #8a2328); box-shadow: 0 0 0 2px #04060a, 0 0 0 3px #5b687c, 0 0 12px 3px rgba(228, 91, 97, 0.8); }
+}
+.cs-deck:not(.is-wide) .cs-leds { gap: 12px; padding: 7px 10px 5px; }
+/* the console home on short screens: the station panel and the call give up their air */
+@container (max-height: 560px) {
+  .cs-deck .hc-panel { margin-top: 10px; padding: 10px 14px; }
+  .cs-deck .hc-name { font-size: calc(var(--ds) * 30px); }
+  .cs-deck .hc-panel .home-data { margin-top: 6px; }
+  .cs-deck .hc-panel .home-data > div { padding: 5px 2px; }
+  .cs-deck .hc-act { margin-top: 8px; }
+  .cs-deck .hc-call { margin-top: 10px; padding: 9px 14px 10px; gap: 6px; }
+  .cs-deck .hc-call .btn, .cs-deck .hc-act .btn { min-height: 40px; padding: 6px 14px; font-size: calc(var(--ds) * 20px); }
+}

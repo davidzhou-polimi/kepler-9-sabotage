@@ -126,15 +126,16 @@ const CRITICAL = {
 function board(b) {
   return `<section class="board" id="${b.id}">
     <header class="board-head">
-      <h2>${b.title}${b.decided ? ` <span class="done">Deciso: ${b.decided}</span>` : ''}${b.rejected ? ' <span class="done done-no">Bocciata</span>' : ''}${b.redo ? ' <span class="done done-redo">Da rifare</span>' : ''}${b.done ? ` <span class="done">Fatto: ${b.done}</span>` : ''}</h2>
+      <h2>${b.title}${b.decided ? ` <span class="done">Deciso: ${b.decided}</span>` : ''}${b.rejected ? ' <span class="done done-no">Bocciata</span>' : ''}${b.redo ? ' <span class="done done-redo">Da rifare</span>' : ''}${b.done ? ` <span class="done">Fatto: ${b.done}</span>` : ''}${b.over ? ' <span class="done done-redo">Superata</span>' : ''}</h2>
       <p class="quote">${b.quote}</p>
       <p>${tidy(b.context)}</p>
     </header>
     ${b.decided && b.answer ? `<p class="answer">La tua scelta: <b>${b.answer}</b></p>` : ''}
     ${b.rejected ? `<p class="answer">La tua risposta: <b>${b.rejected}</b></p>` : ''}
     ${b.redo ? `<p class="answer">La tua risposta: <b>${b.redo}</b></p>` : ''}
+    ${b.over ? `<p class="answer">La tua risposta: <b>${b.over}</b></p>` : ''}
     ${b.common ? `<div class="dir-frames board-common">${b.common.join('')}</div>` : ''}
-    ${b.dirs.map((d) => direction(b.id, d, b.chosen, Boolean(b.rejected || b.redo))).join('')}
+    ${b.dirs.map((d) => direction(b.id, d, b.chosen, Boolean(b.rejected || b.redo || b.over))).join('')}
   </section>`;
 }
 
@@ -504,7 +505,7 @@ const WINDOWS = {
 // ---------- everything chosen so far, together ----------
 
 // console A (retro, dark keys), reports C (the card first), the time line; windows: the tab, in the versions below
-const chosen = (extra = {}) => deck('retro', { reportStyle: 'crewtop', timeUi: 'cells10', mapDetail: { holo: 4 }, deckBar: 'tiles', ...extra });
+const chosen = (extra = {}) => deck('retro', { reportStyle: 'crewtop', reportsBare: true, timeUi: 'cells10', mapDetail: { holo: 4 }, deckBar: 'leds', ...extra });
 const askDraft10 = { kind: 'hatch', what: 'M-K', a: 50, b: 60 };
 const BASE = 'btns-b wins-b1';
 const win2Frames = (cls, all, extra = {}) => [
@@ -519,7 +520,7 @@ const win2Frames = (cls, all, extra = {}) => [
   cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'ask', draft: askDraft10, log: askLog }), ...extra }), { cls: `btns-b ${cls}`, big: true })),
 ];
 const WINDOWS2 = {
-  id: 'windows2', title: 'Le finestre con la linguetta, decorate come le carte',
+  id: 'windows2', title: 'Le finestre con la linguetta, decorate come le carte', over: '«superato»',
   quote: '«delle finestre con linguetta, non mi piace la linea sotto il titolo, vedi se riesci a decorare le finestre più simili a come sono le carte» · «le schede report, come appaiono? perché le finestre che hai messo non ci sono più no?»',
   context: `Qui c'è tutto il già scelto insieme: la console A, i rapporti con la carta in testa (C), l'ologramma con le pareti di luce, la finestra di tempo da 10 minuti (con il comando che consiglio nella sua tavola, finché non scegli), e le finestre con la linguetta. Quindi si vede anche come stanno le schede dei rapporti dentro le finestre nuove: le finestre di prima non ci sono più. In tutte le direzioni la linea sotto il titolo è tolta. Per le decorazioni ho guardato le due carte che mi hai mandato: quella di Hana e quella della missione. Per i rapporti dentro la finestra, che fanno due cornici una nell'altra, c'è la tavola subito sotto.`,
   dirs: [
@@ -551,7 +552,7 @@ const rep3Frames = (extra) => [
   cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'ask', draft: askDraft10, log: askLog }), ...extra }), { cls: 'btns-b wins-b2', big: true })),
 ];
 const REPORTS3 = {
-  id: 'reports3', title: 'I rapporti: niente cornici annidate',
+  id: 'reports3', title: 'I rapporti: niente cornici annidate', decided: 'B, le carte senza finestra attorno', chosen: 'bare', answer: 'B · Le carte senza finestra attorno',
   quote: '«un po\' strana questa cosa annidata»',
   context: `Leggo così: la carta del rapporto dentro la finestra CREW REPORTS fa due cornici una nell'altra, ed è quello che stona. Due modi di toglierne una. Le prove sono con le finestre «come la carta dell'equipaggio» della tavola sopra, ma valgono con qualsiasi finestra tu scelga. In tutte e due il rapporto resta com'è: la carta in testa, poi il testo.`,
   dirs: [
@@ -580,7 +581,8 @@ const barFrames = (bar) => [
   cap('Telefono, home', phone(chosen({ state: { ...base(), phase: 'home' }, saved: { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 }, deckBar: bar }), { cls: BASE })),
 ];
 const BAR = {
-  id: 'bar', title: 'La barra fisica, senza lo strumento a lancetta',
+  id: 'bar', title: 'La barra fisica, senza lo strumento a lancetta', decided: 'B, le spie con la griglia e la targhetta', chosen: 'tilesgrille',
+  answer: 'B · Le spie, con la griglia e la targhetta > per le spie puoi fare tipo dei led? (le spie a LED sono nella tavola «La barra fisica: le spie a LED»)',
   quote: '«non mi convince molto, soprattutto il coso con la freccia su PWR e LINK»',
   context: `Lo strumento a lancetta è tolto in tutte le direzioni. Per il resto non mi hai detto cosa non convince, quindi ti dico cosa ci vedo io: in fila ci sono pezzi di peso molto diverso senza un ordine, una griglia grande che non serve a niente, tre spie minuscole, una scritta che galleggia. Le tre direzioni usano solo pezzi che hai già visto (i tasti, CODE sotto la protezione, il tasto di accensione, le spie PWR, LINK e ALARM), ordinati in modi diversi. Se quello che non ti convince è altro, dimmelo e rifaccio su quello. Le altre tavole aperte mostrano la barra A, senza lo strumento, finché non scegli.`,
   dirs: [
@@ -601,6 +603,105 @@ const BAR = {
       note: '<p>Tasti, CODE e accensione, nient\'altro. Sul telefono una riga sola, con l\'accensione in fondo. Costo: è la barra «un po\' triste» di due prove fa, con meno ancora.</p>',
       frames: barFrames('min'),
     },
+  ],
+};
+
+// ---------- the bar with LED lamps (done, to check) ----------
+
+const homeSaved = { code: SAMPLE, phase: 'play', remainingMs: 6 * MIN + 12000 };
+const BARLED = {
+  id: 'barled', title: 'La barra fisica: le spie a LED', done: 'spie a LED',
+  quote: '«per le spie puoi fare tipo dei led?»',
+  context: 'Sì. È la barra che hai scelto (spie, griglia, targhetta) con le tre spie come LED: una lente nella sua ghiera, il nome inciso sotto. PWR è acceso fisso, LINK è ambra e lampeggia, ALARM è spento e diventa rosso lampeggiante nell\'ultimo minuto.',
+  common: [
+    cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'map', mapSel: 'M-K' }) }), { cls: BASE, big: true })),
+    cap('Telefono, rapporti', phone(chosen({ state: d2state({ tab: 'reports' }) }), { cls: BASE })),
+    cap('Telefono, ultimo minuto', phone(chosen({ state: d2state({ tab: 'map' }), remainingMs: 42000 }), { cls: `${BASE} emergency alarm` })),
+  ],
+  dirs: [],
+};
+
+// ---------- ASK NOVA as a chat in a terminal ----------
+
+const hatchQ = { kind: 'hatch', what: 'M-K', a: 50, b: 60 };
+const askT = (ui, s, opts = {}) => phone(chosen({ state: d2state({ tab: 'ask', ...s }), askUi: ui }), { cls: BASE, ...opts });
+const ASKTERM = {
+  id: 'askterm', title: 'ASK NOVA come una chat, nel terminale',
+  quote: '«ask nova vorrei sia più chatbot ma in terminale»',
+  context: `La finestra ASK NOVA diventa una conversazione scritta in un terminale: le righe di NOVA e le tue, una sotto l'altra, e le risposte restano lì come storico al posto del TRANSMISSION LOG. La domanda è sempre quella di oggi, con la finestra di 10 minuti. I testi sono quelli che l'app ha già, con tre aggiunte da approvare: «MC» davanti alle tue righe (Mission Control, per stare in una colonna stretta), «NOVA» davanti alle sue, e una sola frase nuova di NOVA nella direzione A, «Which 10 minutes?». La frase con cui NOVA apre è l'aiuto di oggi sotto la mappa («Tap a hatch to ask if it opened, or a module to ask about motion.»).`,
+  dirs: [
+    {
+      key: 'chat', title: 'A · NOVA chiede una cosa alla volta', rec: true,
+      note: `<p>Come un chatbot: NOVA chiede dove, e compare il modello della stazione da toccare; poi chiede quali 10 minuti, e compaiono gli undici intervalli; poi la domanda è scritta per intero sulla tua riga, con SEND QUESTION. Le tue risposte già date restano scritte e si possono toccare per cambiarle.</p>
+        <p>Perché: è quello che hai chiesto, e guida chi gioca per la prima volta un passo alla volta, con gli stessi tre tocchi di oggi. Costo: la conversazione si allunga e scorre; il modello della stazione si vede solo mentre si sceglie il luogo.</p>`,
+      frames: [
+        cap('1 · NOVA chiede il luogo', askT('chat', { draft: { ...hatchQ, what: null }, askStep: 1 })),
+        cap('2 · NOVA chiede i 10 minuti', askT('chat', { draft: hatchQ, askStep: 2 })),
+        cap('3 · La domanda pronta', askT('chat', { draft: hatchQ, askStep: 3 })),
+        cap('Dopo la prima risposta', askT('chat', { draft: { ...hatchQ, what: null }, askStep: 1, log: [{ q: hatchQ, ans: 'no' }] })),
+        cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'ask', draft: hatchQ, askStep: 2, log: [{ q: { kind: 'motion', what: 'K', a: 40, b: 50 }, ans: 'yes' }] }), askUi: 'chat' }), { cls: BASE, big: true })),
+      ],
+    },
+    {
+      key: 'cmd', title: 'B · Una riga di comando',
+      note: `<p>Il modello della stazione resta sempre in vista. Sotto, la tua riga è la domanda con due parti che cambiano: il luogo (toccando il modello) e i 10 minuti (con le due frecce, 5 minuti a tocco). Lo storico sta sopra.</p>
+        <p>Costo: è la finestra di oggi vestita da terminale, più che una conversazione.</p>`,
+      frames: [
+        cap('Niente scelto', askT('cmd', { draft: { ...hatchQ, what: null } })),
+        cap('La domanda pronta', askT('cmd', { draft: hatchQ }, { scroll: 'bottom' })),
+        cap('Dopo la prima risposta', askT('cmd', { draft: { kind: 'motion', what: 'M', a: 45, b: 55 }, log: [{ q: hatchQ, ans: 'no' }] }, { scroll: 'bottom' })),
+        cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'ask', draft: hatchQ, log: [{ q: { kind: 'motion', what: 'K', a: 40, b: 50 }, ans: 'yes' }] }), askUi: 'cmd' }), { cls: BASE, big: true })),
+      ],
+    },
+    { key: 'now', title: 'Oggi', note: '<p>La finestra di oggi, con la finestra di tempo da 10 minuti, per confronto.</p>', frames: [cap('Telefono, Ask NOVA', askT(null, { draft: hatchQ }))] },
+  ],
+};
+
+// ---------- under the map ----------
+
+const mapInfoDir = (key, title, note, info, rec = false) => ({
+  key, title, rec, note,
+  frames: [
+    cap('Portello toccato', phone(chosen({ state: d2state({ tab: 'map', mapSel: 'M-K' }), mapDetail: { holo: 4, info } }), { cls: BASE })),
+    cap('Life Support toccato', phone(chosen({ state: d2state({ tab: 'map', mapSel: 'L' }), mapDetail: { holo: 4, info } }), { cls: BASE })),
+    cap('Niente toccato', phone(chosen({ state: d2state({ tab: 'map' }), mapDetail: { holo: 4, info } }), { cls: BASE })),
+    cap('Laptop, indagine (ridotto)', laptop(chosen({ state: d2state({ tab: 'map', mapSel: 'K' }), mapDetail: { holo: 4, info } }), { cls: BASE, big: true })),
+  ],
+});
+const MAPINFO = {
+  id: 'mapinfo', title: 'Sotto la mappa',
+  quote: '«la parte sotto la mappa è da sistemare, i messaggi con ">" in genere sono formattati male»',
+  context: `Due cose distinte. La prima l'ho già corretta nel gioco, perché era un difetto: una riga che comincia con «>» e va a capo ora continua sotto il suo testo, non sotto il segno. Vale per tutte: la riga sotto la mappa, lo stato in home, la domanda in anteprima, lo storico delle domande, i finali, la soluzione. La seconda è questa tavola: come sta scritto ciò che si legge sotto la mappa. Le parole sono quelle di oggi, divise in nome e frasi; cambia solo la forma, e la legenda si allinea a sinistra con una linea sotto.`,
+  dirs: [
+    mapInfoDir('now', 'Oggi, con l\'a capo corretto', '<p>La riga di oggi, con la seconda riga che ora parte sotto il testo.</p>', undefined),
+    mapInfoDir('card', 'A · Una scheda del luogo', `<p>Il segno della legenda, il nome del luogo come titolo, e sotto le frasi nel carattere dei testi, bianche. Niente «>».</p>
+      <p>Perché: è una descrizione, non una riga che qualcuno sta scrivendo; il «>» resta per ciò che NOVA e la console dicono. E il titolo dice subito cosa hai toccato.</p>`, 'card', true),
+    mapInfoDir('readout', 'B · Una lettura da terminale', `<p>Resta il «>»: il nome sulla riga del segno, e le frasi una per riga, rientrate.</p>
+      <p>Costo: resta tutto nel carattere a spaziatura fissa, più faticoso da leggere.</p>`, 'readout'),
+  ],
+};
+
+// ---------- the home as the home of a console ----------
+
+const homeDir2 = (key, title, note, style, rec = false) => ({
+  key, title, rec, note,
+  frames: [
+    cap('Telefono, nessun caso aperto', phone(chosen({ state: { ...base(), phase: 'home' }, homeStyle: style }), { cls: BASE })),
+    cap('Telefono, un caso aperto', phone(chosen({ state: { ...base(), phase: 'home' }, homeStyle: style, saved: homeSaved }), { cls: BASE })),
+    cap('Laptop (ridotto)', laptop(chosen({ state: { ...base(), phase: 'home' }, homeStyle: style, saved: homeSaved }), { cls: BASE, big: true })),
+  ],
+});
+const HOME2 = {
+  id: 'home2', title: 'La home come la home della console',
+  quote: '«se tutta l\'app è la console, anche la schermata di gioco non deve menzionare elementi relativi al gioco, ma essere come la home di una console»',
+  context: `Leggo così: la schermata da cui si parte è la console di Mission Control in attesa, non il menu di un gioco. Quindi in tutte e tre le direzioni: sparisce «SABOTAGE» (la console non lo sa ancora, lo dice NOVA nel briefing); «NEW GAME» diventa «ANSWER», perché si risponde alla trasmissione di NOVA; «CONTINUE» diventa «RESUME». Sono parole nuove, da approvare. Altre due parole di gioco stanno fuori dalla home e qui non sono disegnate: la conferma dopo il tasto di accensione («QUIT GAME», con i pulsanti QUIT e CANCEL) e «NEW GAME» in fondo alla soluzione. Per tutte e due propongo «CLOSE LINK». Se invece intendevi le schermate dell'indagine, dimmelo.`,
+  dirs: [
+    homeDir2('window', 'Oggi', '<p>La home di oggi dentro la console.</p>', 'window'),
+    homeDir2('plain', 'A · La home di oggi, senza parole di gioco', '<p>Resta com\'è: il nome della stazione grande, lo stato di NOVA nella sua finestra. Cambiano solo le parole dette sopra.</p>', 'plain'),
+    homeDir2('console', 'B · La stazione e la trasmissione in arrivo', `<p>La home è il quadro di una console: in alto di chi è (MISSION CONTROL // NIGHT SHIFT) e lo stato del collegamento; poi la stazione KEPLER-9 con le sue letture (le righe di oggi, come etichetta e valore); sotto, in ambra che lampeggia, «INCOMING TRANSMISSION» di NOVA, con ANSWER. Con un caso aperto, nel quadro della stazione ci sono il caso e l'ossigeno, con RESUME.</p>
+      <p>Perché: è l'unica in cui si capisce cosa succede premendo: si risponde a una chiamata. Costo: «INCOMING TRANSMISSION» è una scritta nuova in più.</p>`, 'console', true),
+    homeDir2('terminal', 'C · Un terminale', `<p>Le stesse cose come righe di un terminale, in linea con ASK NOVA: la stazione, le letture, e l'ultima riga in ambra, «Incoming transmission: NOVA, station AI».</p>
+      <p>Costo: è la più spoglia; due righe nuove («Station Kepler-9» e quella della trasmissione).</p>`, 'terminal'),
   ],
 };
 
@@ -637,7 +738,7 @@ const tenDir = (key, title, note, ui, rec = false) => ({
   ],
 });
 const TIME10 = {
-  id: 'time10', title: 'La finestra di 10 minuti, senza slider',
+  id: 'time10', title: 'La finestra di 10 minuti, senza slider', over: '«ask nova vorrei sia più chatbot ma in terminale» (continua nella tavola «ASK NOVA come una chat, nel terminale»)',
   quote: '«A · 10 minuti, si sposta soltanto, non mi piace lo slider»',
   context: `La finestra resta di 10 minuti e si sposta soltanto, a passi di 5: undici posizioni, da 02:00–02:10 a 02:50–03:00. Cambia il comando. In tutte e tre la domanda sotto si aggiorna come oggi. Non mi hai detto cosa non ti piace dello slider: se era solo com'era disegnato e non il gesto, dimmelo e lo ridisegno.`,
   dirs: [
@@ -822,15 +923,15 @@ const fontsBoard = `
 
 // ---------- page ----------
 
-const OPEN = [WINDOWS2, REPORTS3, BAR, TIME10];
-const NOTES = [PORTRAITS];
-const DECIDED = [TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const OPEN = [ASKTERM, MAPINFO, HOME2];
+const NOTES = [BARLED, PORTRAITS];
+const DECIDED = [REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">
     <h1>NOVA // Mock</h1>
     <p>${tidy(`Schermate vere dell'app, caso di prova ${SAMPLE}, font Jersey 10. Ogni riquadro scorre. Prima le tavole aperte: in ognuna scegli una direzione con il pallino, e in fondo trovi la raccolta. Sotto, le tavole già decise, con tutte le prove.`)}</p>
-    <nav class="mock-nav">${OPEN.map((b) => `<a href="#${b.id}">${b.title}</a>`).join('')}<a href="#summary">Raccolta</a>${NOTES.map((b) => `<a href="#${b.id}">${b.title} (fatto)</a>`).join('')}${DECIDED.map((b) => `<a href="#${b.id}">${b.title} (${b.rejected ? 'bocciata' : b.redo ? 'da rifare' : 'deciso'})</a>`).join('')}<a href="#fonts">Font (deciso)</a></nav>
+    <nav class="mock-nav">${OPEN.map((b) => `<a href="#${b.id}">${b.title}</a>`).join('')}<a href="#summary">Raccolta</a>${NOTES.map((b) => `<a href="#${b.id}">${b.title} (fatto)</a>`).join('')}${DECIDED.map((b) => `<a href="#${b.id}">${b.title} (${b.rejected ? 'bocciata' : b.redo ? 'da rifare' : b.over ? 'superata' : 'deciso'})</a>`).join('')}<a href="#fonts">Font (deciso)</a></nav>
   </div>
   ${OPEN.map(board).join('')}
   <section class="board" id="summary">
