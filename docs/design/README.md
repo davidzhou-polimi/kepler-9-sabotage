@@ -17,3 +17,7 @@ The script drives a local headless Chromium (the one Playwright installs in `~/.
 ## 2026-11-23
 
 First freeze, taken at the end of the day: the boards decided earlier in the day (reset, reports, last minute, buttons, map questions, briefing, font) were captured from that evening's code, so details that changed after their decision show the later version (for example the solution ends with NEW GAME in the buttons board, which was shown with DEBRIEF). From here on, each round is frozen when it is decided.
+
+## 2026-11-24
+
+Hologram map (C) and home (B) decided; captured from a clean copy of the commit that brings them into the game, so the boards show only decided work.
