@@ -1258,17 +1258,19 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .win-meter { display: flex; flex-direction: column; }
 .win-meter .win-body { flex: 1; display: flex; align-items: center; }
 .win-meter .status-o2, .win-meter .status-link { flex: 1; min-height: calc(var(--ds) * 30px); }
-/* a report closed: a small window with who wrote it; the mark at the top right opens and closes it */
+/* a report closed: a small window with who wrote it on two lines, and at its right the mark that opens it;
+   open, the same mark closes it from the bottom right, after the text */
 .win-report { position: relative; }
 .rep-toggle {
-  position: absolute; z-index: 1; right: 10px; top: calc(var(--ws, 0px) + 9px); width: 26px; height: 26px; padding: 0; cursor: pointer;
-  border: 1px solid var(--cyan); background: rgba(67, 217, 210, 0.1); color: var(--cyan); font: 600 16px/1 var(--font-mono);
+  flex: none; width: 30px; height: 30px; padding: 0; cursor: pointer;
+  border: 1px solid var(--cyan); background: rgba(67, 217, 210, 0.1); color: var(--cyan); font: 600 17px/1 var(--font-mono);
 }
 .rep-toggle:hover, .rep-toggle:focus-visible { background: rgba(67, 217, 210, 0.3); outline: none; }
-.win-report.is-closed .win-body { padding: 8px 14px 10px; }
-.win-report .crew-id.is-compact { grid-template-columns: 34px minmax(0, 1fr); grid-template-rows: auto; padding: 0 34px 0 0; border: 0; cursor: pointer; }
+.rep-foot { display: flex; justify-content: flex-end; margin-top: 8px; }
+.win-report.is-closed .win-body { display: flex; align-items: center; gap: 12px; padding: 8px 14px 12px; }
+.win-report .crew-id.is-compact { flex: 1; min-width: 0; grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: auto; gap: 0 12px; padding: 0; border: 0; cursor: pointer; }
 .win-report .crew-id.is-compact .crew-photo { grid-row: auto; }
-.win-report .crew-id.is-compact .crew-name { flex: 0 0 auto; font-size: calc(var(--ds) * 17px); }
+.win-report .crew-id.is-compact .crew-who { gap: 3px 8px; }
 
 /* ---------- how a window appears (proposals, mocks) ---------- */
 /* a: it opens from a line, like a tube lighting up; b: the frame first, then what is inside; c: it flickers on */
@@ -1300,3 +1302,6 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .btns-d .actions .note, .btns-d .actions .hc-tag { order: -1; margin-right: auto; }
 .btns-d .actions .btn-primary, .btns-d .actions .btn-danger { order: 2; }
 .btns-d .menu { justify-content: flex-end; }
+/* a + b: the window opens from a line, then what is inside comes in */
+.fxin-ab .win { animation: win-in-a 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.fxin-ab .win > * { animation: win-in-b-in 0.3s ease-out both; animation-delay: calc(var(--wd, 0s) + 0.3s); }

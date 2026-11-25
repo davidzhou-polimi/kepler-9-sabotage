@@ -108,11 +108,13 @@ function reportAlt(c, p, style, { open = null } = {}) {
       // a report is a small window that opens and closes (open: the list of the open ones; null = all open)
       const isOpen = !open || open.includes(p);
       const toggle = `<button type="button" class="rep-toggle" data-act="toggle-report" data-p="${p}" aria-expanded="${isOpen}" aria-label="${isOpen ? 'Close' : 'Open'} report ${n}">${isOpen ? '&minus;' : '+'}</button>`;
-      if (isOpen) return win(`REPORT ${n}`, `${toggle}${id}${body}`, { cls: 'win-report rep' });
-      return win(`REPORT ${n}`, `${toggle}<button type="button" class="crew-id is-compact" data-act="toggle-report" data-p="${p}" aria-label="Open report ${n}">
+      // the mark that opens and closes stands at the bottom right: beside who wrote it when the report is
+      // closed, after the text when it is open (2026-11-25: «il più ad esempio lo terrei in basso»)
+      if (isOpen) return win(`REPORT ${n}`, `${id}${body}<div class="rep-foot">${toggle}</div>`, { cls: 'win-report rep' });
+      return win(`REPORT ${n}`, `<button type="button" class="crew-id is-compact" data-act="toggle-report" data-p="${p}" aria-label="Open report ${n}">
           <span class="crew-photo">${portrait(p)}</span>
           <span class="crew-who"><b class="crew-name">${esc(P.short.toUpperCase())}</b><span class="crew-role">${esc(P.role)}</span><span class="crew-chip">ID ${P.id}</span></span>
-        </button>`, { cls: 'win-report rep is-closed' });
+        </button>${toggle}`, { cls: 'win-report rep is-closed' });
     }
     const top = `<div class="crew-top"><span>REPORT ${n}</span><i></i><span class="crew-dot"></span></div>`;
     return `<article class="rep rep-crew ${style === 'crewtop' ? 'is-top' : ''}">${top}${style === 'crewtop' ? id + body : body + id}</article>`;
