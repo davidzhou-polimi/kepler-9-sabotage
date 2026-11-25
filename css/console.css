@@ -1,6 +1,13 @@
 /* Mission Control console: the whole web app as the console (proposals, mocks only until chosen). See js/console.js. */
 
 .cs { position: relative; height: 100vh; height: 100dvh; overflow: hidden; color: var(--star); }
+/* In the game the console is the whole page, and the page itself never scrolls: only what is inside the screen does.
+   (2026-11-25: «Il viewport non è fisso su mobile, se scorro vedo oltre la parte fisica della console». The body was
+   at least 100vh tall and the console 100dvh: on a phone the first is taller by the address bar, so the page scrolled
+   by that much and showed what is under the console.) */
+html.is-game, .is-game body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+.is-game body { position: fixed; inset: 0; min-height: 0; }
+.is-game #app, .is-game .cs { height: 100%; }
 .cs-scroll { height: 100%; overflow: auto; scrollbar-width: none; }
 .cs-scroll::-webkit-scrollbar { display: none; }
 .cs .screen { min-height: 0; }

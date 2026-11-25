@@ -89,6 +89,7 @@ export function reportBlock(c, p) {
 //   crewtop:  the crew card first, as printed, then the text
 //   crewwin:  no frame inside a frame: each report is a window of its own, titled REPORT 01, with the crew card
 //             first and then the text; there is no CREW REPORTS window around them
+const reportName = (c, p) => `REPORT ${String(c.order.indexOf(p) + 1).padStart(2, '0')}: ${esc(PEOPLE[p].short.toUpperCase())}`;
 function reportAlt(c, p, style, { open = null, closed = '' } = {}) {
   const P = PEOPLE[p];
   const n = String(c.order.indexOf(p) + 1).padStart(2, '0');
@@ -107,19 +108,22 @@ function reportAlt(c, p, style, { open = null, closed = '' } = {}) {
     if (style === 'crewwin') {
       // a report is a small window that opens and closes (open: the list of the open ones; null = all open)
       const isOpen = !open || open.includes(p);
+      // its name, the same in its title and where NOVA attaches it (2026-11-25: «REPORT 01 · MIRA> "REPORT 01: MIRA",
+      // e "REPORT 01" > "REPORT 01: MIRA"»)
+      const name = reportName(c, p);
       const toggle = `<button type="button" class="rep-toggle" data-act="toggle-report" data-p="${p}" aria-expanded="${isOpen}" aria-label="${isOpen ? 'Close' : 'Open'} report ${n}">${isOpen ? '&minus;' : '+'}</button>`;
       // the mark that opens and closes stands at the bottom right: beside who wrote it when the report is
       // closed, after the text when it is open (2026-11-25: «il più ad esempio lo terrei in basso»)
-      if (isOpen) return win(`REPORT ${n}`, `${id}${body}<div class="rep-foot">${toggle}</div>`, { cls: 'win-report rep' });
+      if (isOpen) return win(name, `${id}${body}<div class="rep-foot">${toggle}</div>`, { cls: 'win-report rep' });
       // closed, a report is only its name and the mark that opens it; the whole strip opens it
       // (2026-11-25: «immaginavo una cosa molto più compatta, con meno dettagli, es. solo report 1, report 2»)
       const opens = `type="button" data-act="toggle-report" data-p="${p}" aria-expanded="false" aria-label="Open report ${n}"`;
       // closed, a report is a plain strip with cut corners and no tab (decided 2026-11-25, after «per i report
       // compressi è orrenda quella roba lì»). The drawings it was chosen among stay for the record: tab = the window's
       // tab squeezed into one line; line = a line of text, as an attachment in NOVA's channel; chip = the tab alone
-      if (closed === 'line') return `<button class="rep-line" ${opens}><i>+</i> REPORT ${n}</button>`;
-      if (closed === 'chip') return `<button class="rep-chip" ${opens}><b class="win-title">REPORT ${n}</b><i>+</i></button>`;
-      return win(`REPORT ${n}`, `<button class="rep-cover" ${opens}><i>+</i></button>`, { cls: `win-report rep is-closed ${closed === 'tab' ? '' : 'is-bar'}` });
+      if (closed === 'line') return `<button class="rep-line" ${opens}><i>+</i> ${name}</button>`;
+      if (closed === 'chip') return `<button class="rep-chip" ${opens}><b class="win-title">${name}</b><i>+</i></button>`;
+      return win(name, `<button class="rep-cover" ${opens}><i>+</i></button>`, { cls: `win-report rep is-closed ${closed === 'tab' ? '' : 'is-bar'}` });
     }
     const top = `<div class="crew-top"><span>REPORT ${n}</span><i></i><span class="crew-dot"></span></div>`;
     return `<article class="rep rep-crew ${style === 'crewtop' ? 'is-top' : ''}">${top}${style === 'crewtop' ? id + body : body + id}</article>`;
@@ -585,15 +589,37 @@ function askTerm(state, mode, detail, intro = null) {
     const n = Math.min(intro.stage, BRIEFING_PARTS.length - 1);
     // the reports she attaches are lines of text, as a terminal lists files, not boxes
     // (tapping one opens that report; before a case is accepted there is none to list)
-    const files = intro.c ? `<div class="atts">${intro.c.order.map((p, i) => `<button type="button" class="att" data-act="open-report" data-p="${p}">+ REPORT ${String(i + 1).padStart(2, '0')} · ${esc(PEOPLE[p].short.toUpperCase())}</button>`).join('')}</div>` : '';
-    briefing = BRIEFING_PARTS.slice(0, Math.max(0, n) + 1).map((part, i) => row('nova', `${keyed(part)}${i === n && intro.stage < 8 && intro.stage >= 0 ? '<span class="tl-cur"></span>' : ''}`, part.id === 'reports' ? files : '')).join('');
+    const files = intro.c ? `<div class="atts">${intro.c.order.map((p, i) => `<button type="button" class="att" data-act="open-report" data-p="${p}">+ ${reportName(intro.c, p)}</button>`).join('')}</div>` : '';
+    // intro.ack (proposal for her pace, ?pace=c and the board "pace"): Mission Control answers each line with COPY;
+    // { hold }: she has written the line she is on and waits for it
+    const ack = intro.ack && intro.stage >= 0 ? intro.ack : null;
+    const last = BRIEFING_PARTS.length - 1;
+    briefing = BRIEFING_PARTS.slice(0, Math.max(0, n) + 1).map((part, i) => row('nova', `${keyed(part)}${i === n && intro.stage < 8 && intro.stage >= 0 && !ack?.hold ? '<span class="tl-cur"></span>' : ''}`, part.id === 'reports' ? files : '')
+      + (ack && i > 0 && i < last && (i < n || intro.stage >= 8) ? row('mc', 'Copy.') : '')
+      + (ack?.hold && i === n ? row('mc', '<span class="tl-cur"></span>', `<div class="actions">${btn('COPY', 'ack', { cls: 'btn-primary' })}</div>`, 'tl-draft') : '')).join('');
     if (intro.stage < 0) {
       // the request: her first line, then the words on the left and the button at the far right.
       // intro.saved: a case left open is offered again above the new transmission (reset A, 2026-11-23: opening the
       // page always shows the home, with CONTINUE if a game is open). Made of pieces already decided: the case
       // number and the oxygen clock as on the old home, CONTINUE, and the row of the request
       const s = intro.saved && intro.saved.phase === 'play' ? intro.saved : null;
-      const open = s ? `<div class="tl-accept tl-open"><span class="hc-tag hc-tag-still">CASE ${esc(s.code)} · OXYGEN&nbsp;<span data-timer>${fmtClock(s.remainingMs)}</span></span>${btn('CONTINUE', 'continue', { cls: 'btn-primary' })}</div>` : '';
+      const openTag = s ? `<span class="hc-tag hc-tag-still">CASE ${esc(s.code)} · OXYGEN&nbsp;<span data-timer>${fmtClock(s.remainingMs)}</span></span>` : '';
+      const cont = btn('CONTINUE', 'continue', { cls: 'btn-primary' });
+      // intro.homeAlt (proposals, mocks only until one is chosen; 2026-11-25: «quando c'è una partita in corso, e
+      // ricarico, non è molto convincing come hai fatto, forse addirittura farei due finestre, ma come differenziamo
+      // i due kepler-9? magari ci sono più test e stanno venendo tutti sabotati allo stesso tempo?»):
+      //   'two':   two links, two windows: the one left open, with the last thing NOVA said on it, and the new call;
+      //            each carries its case number (intro.next: the number of the case that is calling)
+      //   'strip': the case left open is a window closed to a strip, as a closed report is, above the new call
+      if (s && intro.homeAlt) {
+        const call = (tag) => win('NOVA ON KEPLER-9', `<div class="term">${briefing}<div class="tl-accept"><span class="hc-tag">${tag}</span>${btn('ACCEPT', 'new-game')}</div></div>`, { cls: 'win-ask win-term' });
+        if (intro.homeAlt === 'two') {
+          return `<div class="req-two">${win('NOVA ON KEPLER-9', `<div class="term">${row('nova', esc(s.last || BRIEFING_PARTS[0].text))}<div class="tl-accept">${openTag}${cont}</div></div>`, { cls: 'win-ask win-term' })}
+            ${call(`CASE ${esc(intro.next)} · INCOMING TRANSMISSION`)}</div>`;
+        }
+        return `${win(`CASE ${esc(s.code)}`, `<div class="held-row"><span class="hc-tag hc-tag-still">OXYGEN&nbsp;<span data-timer>${fmtClock(s.remainingMs)}</span></span>${cont}</div>`, { cls: 'win-held' })}${call('INCOMING TRANSMISSION')}`;
+      }
+      const open = s ? `<div class="tl-accept tl-open">${openTag}${cont}</div>` : '';
       return win('NOVA ON KEPLER-9', `<div class="term">${briefing}${open}
         <div class="tl-accept"><span class="hc-tag">INCOMING TRANSMISSION</span>${btn('ACCEPT', 'new-game', { cls: s ? '' : 'btn-primary' })}</div></div>`, { cls: 'win-ask win-term' });
     }
@@ -868,15 +894,41 @@ const NOTES = [
 // (2026-11-25: «cambia alla mappa dai, così l'utente vede che si può cambiare, e la mappa è più scenografica»)
 export const liveSide = (tab, stage) => (tab === 'map' && stage >= 4 ? 'map' : tab === 'code' && stage >= 6 ? 'code' : tab === 'briefing' ? 'briefing' : stage >= 8 ? 'map' : 'briefing');
 
+// The archive of the cases closed on this console (proposal, mocks only until one is chosen; 2026-11-25: «sarebbe
+// interessante una history dei casi svolti, sotto forma di archivio consultabile, così regge anche il ci sono più
+// test che avvengono»). a: { style, cases: [{ code, ending, sent, asked, left }], open: the code of the one open }
+//   'list':  a window that lists them, one line each, as NOVA lists the reports she attaches; a line opens the case
+//   'files': each case a file closed to a strip, as a closed report is; open, its sheet and the way to what happened
+// The words are the app's: the titles of the endings, the labels of the case notes, SEE WHAT HAPPENED.
+export function archivePanel({ style = 'list', cases = [], open = null } = {}) {
+  const status = (e) => esc(ENDINGS[e.ending].title.toUpperCase());
+  if (style === 'files') {
+    const file = (e) => (open === e.code
+      ? win(`CASE ${esc(e.code)}`, `<dl class="notes arch-sum"><div><dt>STATUS_</dt><dd class="arch-${e.ending}">${status(e)}</dd></div><div><dt>CODE_</dt><dd>${e.sent ? esc(e.sent) : 'Not sent'}</dd></div><div><dt>QUESTIONS_</dt><dd>${e.asked} of ${MAX_QUESTIONS}</dd></div><div><dt>OXYGEN_</dt><dd>${fmtClock(e.left)}</dd></div></dl>
+          <div class="rep-foot arch-foot">${btn('SEE WHAT HAPPENED', 'archive-case', { attrs: `data-code="${esc(e.code)}"` })}<button type="button" class="rep-toggle" data-act="archive-toggle" data-code="${esc(e.code)}" aria-expanded="true" aria-label="Close case ${esc(e.code)}">&minus;</button></div>`, { cls: 'win-report rep' })
+      : win(`CASE ${esc(e.code)}`, `<button class="rep-cover" type="button" data-act="archive-toggle" data-code="${esc(e.code)}" aria-expanded="false" aria-label="Open case ${esc(e.code)}"><i>+</i></button>`, { cls: 'win-report rep is-closed is-bar' }));
+    return `<div class="reports-wins arch-files"><h2 class="win-title rw-title">ARCHIVE</h2>${cases.map(file).join('')}</div>`;
+  }
+  return win('ARCHIVE', `<div class="term arch">${cases.map((e) => `<button type="button" class="att arch-row" data-act="archive-case" data-code="${esc(e.code)}"><span>+ CASE ${esc(e.code)}</span><span class="arch-${e.ending}">${status(e)}</span></button>`).join('')}</div>`, { cls: 'win-archive' });
+}
+
 export function screenLive(view) {
   const { state, c, wide, remainingMs } = view;
   const stage = view.stage ?? 8;
   const at = (id) => BRIEFING_PARTS.findIndex((p) => p.id === id); // the line that brings each thing
   const has = (id) => stage >= at(id);
   const detail = view.mapDetail || {};
-  const chat = askTerm(state, 'thread', detail, { stage, c, saved: view.saved });
+  const chat = askTerm(state, 'thread', detail, { stage, c, saved: view.saved, ack: view.ack, homeAlt: view.homeAlt, next: view.nextCode });
   // at the start NOVA's terminal stands alone in the middle of the empty console
-  if (stage < 0) return `<main class="screen screen-live live-request"><div class="live-col">${chat}</div></main>`;
+  if (stage < 0) {
+    // view.archive (proposal, mocks only until chosen): the cases closed on this console, beside her request
+    const arch = view.archive ? archivePanel(view.archive) : '';
+    if (arch && wide) {
+      return `<main class="screen screen-live live-wide live-home arch-${view.archive.style || 'list'}">
+        <div class="live-col live-arch">${arch}</div><div class="live-col live-chat">${chat}</div></main>`;
+    }
+    return `<main class="screen screen-live live-request ${view.homeAlt === 'two' && view.saved ? 'live-request-two' : ''}"><div class="live-col">${chat}${arch}</div></main>`;
+  }
   const leftQ = MAX_QUESTIONS - state.log.length;
   const on = Math.ceil(Math.max(0, remainingMs / OXYGEN_MS) * 20);
   const oxygen = has('oxygen') ? win('OXYGEN', `<div class="status-o2"><span class="timer" data-timer>${fmtClock(remainingMs)}</span>
@@ -931,6 +983,8 @@ export function newState() {
     draft: { kind: 'hatch', what: null, a: 0, b: 60 }, // no preselected place: the app never points anywhere
     log: [], codeInput: '', confirming: false, sentCode: null, ending: null,
     timer: { elapsed: 0, since: null, speed: 1 },
-    profile: null, mapSel: null,
+    // the map comes with Life Support selected (2026-11-25: «A · Si adatta al contenuto > con life support aperto»):
+    // NOVA can't answer about it, so it points to no question
+    profile: null, mapSel: 'L',
   };
 }

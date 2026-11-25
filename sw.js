@@ -1,7 +1,7 @@
 // Offline cache: after the first visit the game loads even without network (festival wifi).
 // Network first, so a new version shows up at once; if the network fails or takes more than
 // 2.5 s, the cached copy is served.
-const CACHE = 'nova-v5';
+const CACHE = 'nova-v6';
 const TIMEOUT_MS = 2500;
 const SHELL = [
   './', './index.html', './mocks.html', './css/style.css', './css/console.css', './fonts/fonts.css',

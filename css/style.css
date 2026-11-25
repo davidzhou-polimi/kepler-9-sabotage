@@ -353,8 +353,11 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 
 /* emergency code */
 .code-input {
-  display: block; width: 6.2ch; margin: 14px 0 4px; padding: 6px 10px;
-  font: 600 40px/1 var(--font-mono); letter-spacing: 0.3em; text-align: left;
+  display: block; width: 2.3em; margin: 14px 0 4px; padding: 4px 10px 2px;
+  /* the same letters as the code when it is shown again to be confirmed (2026-11-25: «L'input del codice usa un font
+     diverso»: it was the only figure of the console in the mono) */
+  font-family: var(--fd), 'IBM Plex Mono', monospace; font-weight: 400; font-size: calc(var(--ds) * 52px); line-height: 1;
+  letter-spacing: 0.08em; text-align: left;
   color: var(--cyan); background: var(--deep); border: 2px solid var(--line-strong);
 }
 .code-input:focus { outline: none; border-color: var(--cyan); }
@@ -1247,16 +1250,18 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .live-wide { grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 .live-wide:has(> .alarm-strip) { grid-template-rows: auto minmax(0, 1fr); }
 .live-wide > .live-right { grid-column: 3; }
-/* the left column and NOVA's channel are one pair, as tall as her window (and never taller than the screen): the left
-   one does not count for that height, it takes it. So the window under the meters ends where the conversation ends,
-   on any screen (2026-11-25: «riesci ad allungare la finestra per combaciare più o meno la chat di nova?») */
+/* the left column and NOVA's channel are one pair, never taller than the screen. The windows of the left column are
+   as tall as what is in them (2026-11-25, later: «facciamo che anche i pannelli a sinistra hug content, così a destra
+   i report non tocchiamo più e lasciamo così come sono oggi»; before, the window under the meters ended where NOVA's
+   conversation ends: «riesci ad allungare la finestra per combaciare più o meno la chat di nova?»). The last one
+   scrolls inside only when the column does not fit the screen */
 .live-wide > .live-pair {
   grid-column: 1 / 3; align-self: stretch; min-height: 0;
   display: grid; grid-template-columns: subgrid; grid-template-rows: fit-content(100%); align-content: start;
 }
-.live-pair > .live-left { grid-column: 1; contain: size; display: flex; flex-direction: column; overflow: hidden; max-height: none; padding-bottom: 0; }
+.live-pair > .live-left { grid-column: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; max-height: none; padding-bottom: 0; }
 .live-pair > .live-left > * { flex: none; }
-.live-pair > .live-left > .win:last-child { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.live-pair > .live-left > .win:last-child { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .live-pair > .live-left > .win:last-child > .win-bar { flex: none; }
 .live-pair > .live-left > .win:last-child > .win-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--cyan) rgba(67, 217, 210, 0.12); }
 .live-pair > .live-left > .win:last-child > .win-body::-webkit-scrollbar { width: 8px; }
@@ -1264,7 +1269,8 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .live-pair > .live-left > .win:last-child > .win-body::-webkit-scrollbar-thumb { background: var(--cyan); }
 .live-pair > .live-chat { grid-column: 2; }
 /* NOVA's window keeps its frame in view: the conversation scrolls inside it */
-.live-pair > .live-chat { align-self: stretch; display: flex; flex-direction: column; overflow: hidden; min-height: 0; max-height: none; padding-bottom: 0; }
+/* (nothing is cut at the edge of her column: her window crosses it when it slides from the middle of the screen) */
+.live-pair > .live-chat { align-self: stretch; display: flex; flex-direction: column; overflow: visible; min-height: 0; max-height: none; padding-bottom: 0; }
 .live-cols-1 > .live-pair { align-content: center; }
 .screen-live .win-term { display: flex; flex-direction: column; flex: 0 1 auto; min-height: 0; }
 .screen-live .win-term .win-bar { flex: none; }
@@ -1505,26 +1511,34 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .rc-b .reports-wins > .win:not(.is-closed) > .win-body { flex: 1; display: flex; flex-direction: column; }
 .rc-b .reports-wins > .win:not(.is-closed) .rep-foot { margin-top: auto; }
 .rc-b .reports-wins:not(:has(> .win:not(.is-closed))) > .win:not(:first-of-type) { margin-top: auto; }
-/* The map window under the meters:
-     mf-a: as tall as what is in it (it no longer ends where NOVA's window ends)
+/* The map window under the meters. Decided 2026-11-25: «A · Si adatta al contenuto > con life support aperto»: it is
+   as tall as what is in it, as every window of the left column now is, and it comes with Life Support selected.
+   For the record board:
+     mf-0: as it was, as tall as NOVA's window whatever is in it
      mf-c: as tall as NOVA's window, the model in the middle of the room above the readout, the readout at the bottom */
-.mf-a .live-pair > .live-left > .win-map { flex: 0 0 auto; }
+:is(.mf-0, .mf-c) .live-pair > .live-left { contain: size; }
+:is(.mf-0, .mf-c) .live-pair > .live-left > .win:last-child { flex: 1 1 auto; }
 .mf-c .live-pair > .live-left > .win-map > .win-body { display: flex; flex-direction: column; }
 .mf-c .live-pair > .live-left > .win-map > .win-body::before { content: ''; flex: none; margin-bottom: auto; }
 .mf-c .live-pair > .live-left > .win-map > .win-body > .holo { flex: none; }
 .mf-c .live-pair > .live-left > .win-map > .win-body > .mread { flex: none; margin-top: auto; }
 
 /* «La scheda dei report ha le info sul membro tutte a sinistra, lasciando destra vuoto, come possiamo riorganizzare
-   quelle informazioni?» The member's block at the top of an open report:
-     rh-a: who it is on the left; the ID and the way to the personnel file on the right
+   quelle informazioni?» The member's block at the top of an open report. Decided 2026-11-25: «A · Chi è a sinistra,
+   ID e scheda a destra»: who it is on the left; the ID and the way to the personnel file on the right. */
+.win-report .crew-id { grid-template-columns: 46px minmax(0, 1fr) auto; }
+.win-report .crew-who { display: contents; }
+.win-report .crew-name { grid-column: 2; grid-row: 1; align-self: end; }
+.win-report .crew-role { grid-column: 2; grid-row: 2; align-self: start; }
+.win-report .crew-chip { grid-column: 3; grid-row: 1; justify-self: end; align-self: center; }
+.win-report .crew-file { grid-column: 3; grid-row: 2; justify-self: end; align-self: start; }
+/* For the record board:
+     rh-0: as it was, everything in a column beside the portrait
      rh-b: the ID beside the name; on the right the way to the file, drawn as the keys that open and close a report
      rh-c: the block as a sheet of fields, with the labels of the personnel card (NAME_, ROLE_) */
-:is(.rh-a, .rh-b, .rh-c) .win-report .crew-id { grid-template-columns: 46px minmax(0, 1fr) auto; }
-:is(.rh-a, .rh-c) .win-report .crew-who { display: contents; }
-:is(.rh-a, .rh-c) .win-report .crew-name { grid-column: 2; grid-row: 1; align-self: end; }
-:is(.rh-a, .rh-c) .win-report .crew-role { grid-column: 2; grid-row: 2; align-self: start; }
-:is(.rh-a, .rh-c) .win-report .crew-chip { grid-column: 3; grid-row: 1; justify-self: end; align-self: center; }
-:is(.rh-a, .rh-c) .win-report .crew-file { grid-column: 3; grid-row: 2; justify-self: end; align-self: start; }
+:is(.rh-0, .rh-b) .win-report .crew-who { display: flex; }
+:is(.rh-0, .rh-b) .win-report :is(.crew-name, .crew-role, .crew-chip, .crew-file) { grid-column: auto; grid-row: auto; justify-self: auto; align-self: auto; }
+.rh-0 .win-report .crew-id { grid-template-columns: 46px minmax(0, 1fr); }
 .rh-b .win-report .crew-who { grid-column: 2; grid-row: 1 / 3; align-self: center; align-items: center; }
 .rh-b .win-report .crew-name { flex: 0 0 auto; }
 .rh-b .win-report .crew-chip { order: 2; }
@@ -1540,3 +1554,69 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .rh-c .win-report .crew-name::before { content: 'NAME_'; }
 .rh-c .win-report .crew-role::before { content: 'ROLE_'; }
 .rh-c .win-report .crew-role { color: var(--star); }
+
+/* ---------- the station model under the pointer (2026-11-25) ---------- */
+/* «l'effetto che io volevo era che mouse hover, la mappa si raddrizza, effetto hover tipo si illuminano la zona o i
+   corridoi che hovero, poi appena mouse leave torna a ruotare» (2026-11-24: «quando c'è hover si raddrizza, e si vede
+   ortogonale»). The tilt, the sway and the height of the walls are registered properties, so the model goes from one
+   state to the other instead of jumping; the sway never stops underneath: flat, it is multiplied by zero.
+   --holo-t, set by the game each time it draws the screen, puts the sway where the page's clock says: drawing the
+   screen again (a report opened, a place tapped) no longer sends the model back to its first position. */
+@property --tilt { syntax: '<angle>'; inherits: true; initial-value: 50deg; }
+@property --sway { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
+@property --swayk { syntax: '<number>'; inherits: true; initial-value: 1; }
+@property --hs { syntax: '<number>'; inherits: true; initial-value: 1; }
+.holo-4 .holo-stage {
+  transform: rotateX(var(--tilt)) rotateZ(calc(var(--sway) * var(--swayk))) scale(var(--hs));
+  animation: holo-sway-p 10s ease-in-out var(--holo-t, 0s) infinite;
+  transition: --tilt 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), --swayk 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), --hs 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes holo-sway-p { 0%, 100% { --sway: -5deg; } 50% { --sway: 5deg; } }
+.holo-4 .h-label { transform: translate(-50%, -50%) translateZ(calc(var(--hh) + 12px)) rotateX(calc(-1 * var(--tilt))); }
+.holo-4 .h-box { transition: --hh 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.holo-4::after, .holo-4 .holo-beam { transition: opacity 0.3s; }
+/* flat: seen from above, the walls down, the projector off */
+.holo-4.is-flat .holo-stage { --tilt: 0deg; --swayk: 0; --hs: 0.86; }
+.holo-4.is-flat .h-box { --hh: 0px; }
+.holo-4.is-flat::after, .holo-4.is-flat .holo-beam { opacity: 0; }
+@media (hover: hover) {
+  .holo .map :is(.room, .hatch)[data-act] { cursor: pointer; }
+  .holo .map .room[data-act]:hover rect:first-child { fill: rgba(67, 217, 210, 0.3); stroke: var(--star); }
+  .holo .map .room.is-off[data-act]:hover rect:first-child { fill: rgba(228, 91, 97, 0.3); stroke: var(--star); }
+  .holo .map .hatch[data-act]:hover rect:first-child { fill: var(--star); }
+}
+@media (prefers-reduced-motion: reduce) { .holo-4 .holo-stage, .holo-4 .h-box { transition: none; } }
+
+/* ---------- proposals after the feedback of 2026-11-25, second set (mocks) ---------- */
+/* NOVA's pace, ?pace=b: before a line her prompt stands alone with the cursor, while the link receives it */
+.tl-lead .tl-txt::before { content: '█'; visibility: visible; color: var(--amber); animation: blink 0.8s steps(1) infinite; }
+/* A case left open when the page is opened again.
+     two: the open link and the new call, two windows of NOVA side by side (one under the other on a phone) */
+.live-request-two .live-col { width: min(1040px, 100%); }
+.req-two { display: grid; gap: 14px; align-items: start; }
+.cs.is-wide .req-two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+/*   strip: the open case is a window closed to a strip, as a closed report is, above the new call */
+.win-held .win-body { padding: 8px 14px 10px; }
+.held-row { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; }
+.held-row .btn { margin-left: auto; }
+/* The archive of the closed cases, on the empty console.
+     list: a window on the left of NOVA's request; files: strips on its right, where the reports of a case stand */
+.live-home > .live-chat { grid-column: 2; align-self: center; }
+.live-home > .live-arch { grid-column: 1; grid-row: 1; align-self: start; }
+.live-home.arch-files > .live-arch { grid-column: 3; }
+.live-request .live-col > .win-archive, .live-request .live-col > .arch-files { margin-top: 4px; }
+.arch { display: grid; gap: 1px; }
+.arch-row { justify-self: stretch; display: flex; justify-content: space-between; gap: 16px; }
+.arch-right, .arch-row .arch-right { color: var(--cyan); }
+.arch-wrong, .arch-timeout, .arch-row .arch-wrong, .arch-row .arch-timeout { color: var(--red); }
+.arch-row:hover span, .arch-row:focus-visible span { color: var(--star); }
+.arch-sum { gap: 6px 16px; }
+.arch-sum dd { font: 14px/1.5 var(--font-mono); }
+.arch-foot { justify-content: space-between; align-items: center; gap: 10px; }
+/* The font of the long texts (reports, case notes, sentences).
+     ft-a: the mono of the console everywhere; the display font stays for titles and figures */
+.ft-a { font-family: var(--font-mono); }
+.ft-a :is(.rep-body, .notes dd, .win-code p, .hint, .modal p, .idcard-list dd) { font-family: var(--font-mono); }
+.ft-a .rep-body, .ft-a .win-report .rep-body { font-size: 14px; line-height: 1.55; }
+.ft-a .notes dd { font-size: 14px; line-height: 1.55; }
+.ft-a .notes dt { padding-top: 0.36em; }

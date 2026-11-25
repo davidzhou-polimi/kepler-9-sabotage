@@ -10,7 +10,10 @@
 // Nothing moves while it is typed: every letter already holds its place, hidden, so a window has its final size
 // from the start and no line jumps.
 
-const ATOM = 'img, svg, input, select, .meter, .pips, .holo, .tl-cur';
+// What is not text is not typed: it is there, whole, when the typing reaches it. Besides pictures, bars and the map,
+// the buttons (2026-11-25: «i pulsanti, e altri elementi che non sono testo, non devono avere effetto di battitura»);
+// a line of text that can be tapped (a report NOVA attaches, a member's block) is still text.
+const ATOM = 'img, svg, input, select, .meter, .pips, .holo, .tl-cur, .btn, .chip, .rep-toggle, .rep-cover';
 const BAR = '.meter, .pips';
 const running = new WeakMap(); // first root → the function that stops the typing and leaves everything complete
 
@@ -126,8 +129,9 @@ export function typeNodes(roots, { cps = 150, max = 1100, after = [], offset = 0
 
 // A window: its title, then what is inside. The typing starts when the window has finished opening (its own
 // animation, whatever clock the browser gives it).
-export function typeWindow(win, opts = {}) {
-  const roots = [win.querySelector(':scope > .win-bar .win-title'), win.querySelector(':scope > .win-body')];
+//   titleOnly: only the title is typed; what is inside is written by whoever fills the window (the case notes)
+export function typeWindow(win, { titleOnly = false, ...opts } = {}) {
+  const roots = [win.querySelector(':scope > .win-bar .win-title'), titleOnly ? null : win.querySelector(':scope > .win-body')];
   const opening = win.getAnimations().filter((a) => a.animationName === 'win-in-a').map((a) => a.finished.catch(() => {}));
   return typeNodes(roots, { ...opts, after: opening });
 }

@@ -4,11 +4,14 @@ import { BRIEFING_PARTS } from './texts.js';
 import { screen, newState, liveSide, fmtClock, MAX_QUESTIONS, OXYGEN_MS, esc } from './ui.js';
 import { initFontSwitch } from './fonts.js';
 import { typeIn } from './typing.js';
-import { typeNodes, typeWindow } from './winfx.js';
+import { typeNodes, typeWindow, still } from './winfx.js';
 
 const STORE = 'k9-nova-state-v2'; // v1: the interface with tabs and a status bar; its saved games are not carried over
 const params = new URLSearchParams(location.search);
 const DEV = params.get('dev') === '1';
+// ?demo=1: a game that leaves no trace. Nothing is read from the browser and nothing is saved in it, so that several
+// can run side by side in the frames of a board (mocks.html plays the proposals for NOVA's pace this way)
+const DEMO = params.has('demo');
 const root = document.getElementById('app');
 const wideQuery = matchMedia('(min-width: 1000px)');
 
@@ -18,6 +21,7 @@ let theCase = state.code ? generateCase(state.code) : null;
 // ---------- persistence ----------
 
 function load() {
+  if (DEMO) return null;
   try {
     localStorage.removeItem('k9-nova-state-v1');
     const s = JSON.parse(localStorage.getItem(STORE));
@@ -25,6 +29,7 @@ function load() {
   } catch { return null; }
 }
 function save() {
+  if (DEMO) return;
   try { localStorage.setItem(STORE, JSON.stringify(state)); } catch { /* private mode: play without saving */ }
 }
 
@@ -51,6 +56,16 @@ function setSpeed(speed) {
   if (running) resumeTimer();
 }
 
+// The oxygen runs from the line in which NOVA says it does («Oxygen: 10 minutes. The countdown has already started.»),
+// not from ACCEPT (2026-11-25: «il timer di 10 min deve partire da quando nova scrive "the timer has already
+// started"»; from 2026-11-23 it ran from her first message). A briefing cut short starts it at once.
+const OXYGEN_STAGE = BRIEFING_PARTS.findIndex((p) => p.id === 'oxygen');
+function startClock() {
+  if (state.phase !== 'play' || state.clock || state.stage < OXYGEN_STAGE) return;
+  state.clock = true;
+  resumeTimer();
+}
+
 // ---------- render ----------
 
 // The whole app is Mission Control's console (the boards and David's answers are in mocks.html and docs/design):
@@ -68,6 +83,7 @@ function view() {
     reportStyle: 'crewwin', askUi: 'thread', mapDetail: { holo: 4, info: 'fields' },
     quitOpen: state.quitOpen,
     saved: state.resume ? { code: state.code, phase: state.resume, remainingMs: remaining() } : null,
+    ack: PACE.ack ? { hold: Boolean(state.hold) } : null,
   };
 }
 
@@ -84,7 +100,12 @@ function render() {
   const tops = SCROLLERS.map((s) => root.querySelector(s)?.scrollTop ?? 0);
   const chat0 = root.querySelector('.win-term .win-body');
   const was = chat0 ? { top: chat0.scrollTop, end: chat0.scrollHeight - chat0.clientHeight - chat0.scrollTop < 4, h: chat0.scrollHeight } : null;
+  const before = places();
+  startClock();
+  // the model sways on the page's clock, not from the moment it was drawn: drawing it again leaves it where it was
+  root.style.setProperty('--holo-t', `${-Math.round(performance.now() % 10000)}ms`);
   root.innerHTML = screen(view());
+  layFlat(); // (before anything reads the layout, so the new model is flat from its first frame and does not tip over)
   document.body.classList.toggle('emergency', isRed());
   // last minute: alarm frame and hazard stripes; the windows keep their colours
   document.body.classList.toggle('alarm', state.phase === 'play' && remaining() <= 60000);
@@ -95,6 +116,7 @@ function render() {
   if (chat) chat.scrollTop = keep && was && !was.end && chat.scrollHeight === was.h ? was.top : chat.scrollHeight;
   root.querySelectorAll('.win-body').forEach(markScrolled);
   arrive(quiet);
+  glide(before);
   speak(quiet);
   typeIn(root);
   if (DEV) renderDev();
@@ -124,36 +146,102 @@ function arrive(quiet) {
   const live = root.querySelector('.screen-live');
   if (!live) return;
   const now = performance.now();
-  // start(into): begins the effect `into` ms after its start, and returns how long the whole takes
-  const come = (key, start) => {
+  // start(into): begins the effect `into` ms after its start (before it, when negative), and returns how long the
+  // whole takes; wait: ms before it begins
+  // Returns how long a thing that has just come takes (0 for one that was already there).
+  const come = (key, start, wait = 0) => {
     if (!seen.has(key)) {
       seen.add(key);
-      if (!quiet) arrivals.set(key, { t0: now, ms: start(0) });
-    } else {
-      const a = arrivals.get(key);
-      if (a && now - a.t0 < a.ms) start(now - a.t0); else arrivals.delete(key);
+      if (quiet) return 0;
+      const ms = start(-wait);
+      arrivals.set(key, { t0: now + wait, ms });
+      return ms;
     }
+    const a = arrivals.get(key);
+    if (a && now - a.t0 < a.ms) start(now - a.t0); else arrivals.delete(key);
+    return 0;
   };
+  const said = state.phase === 'play' && state.stage < 8 ? BRIEFING_PARTS[state.stage] : null; // the line she is writing
+  const writing = said && (!speech || speech.key !== `${state.code}:b${state.stage}`) ? lineMs(state.stage) : 0; // (just begun)
+  let nth = 0; // the reports that come in this drawing, counted
   live.querySelectorAll('.win').forEach((w) => {
     const key = w.closest('.modal') ? null : winKey(w);
     if (!key) return;
     const fresh = !seen.has(key);
+    // The reports come one at a time (2026-11-25: «i report vorrei che compaiano uno alla volta»): while NOVA attaches
+    // them, each when she starts writing its name; otherwise (a phone, the first time REPORTS shows them) in a row
+    let wait = 0;
+    if (fresh && key.startsWith('report-')) {
+      wait = said?.id === 'reports' && writing ? PACE.lead + ((4 + said.text.length + nth * 20) / NOVA_CPS) * 1000 : nth * 240;
+      nth += 1;
+    }
     come(key, (into) => {
       w.classList.add('win-arrive');
       w.style.animationDelay = `${-Math.round(into)}ms`;
       // her request is written at the speed of her writing, not filled in like a file
       const speech = key === 'nova' ? { cps: NOVA_CPS, max: 0, cursor: true } : {};
-      return OPEN_MS + typeWindow(w, { ...speech, offset: Math.max(0, into - OPEN_MS) }).ms;
-    });
+      // the case notes are Mission Control's: the window opens with its title, each note is written on its own (below)
+      return OPEN_MS + typeWindow(w, { ...speech, titleOnly: key === 'notes', offset: Math.max(0, into - OPEN_MS) }).ms;
+    }, wait);
     if (key !== 'notes') return;
-    // the case notes: each one is typed in when NOVA says it (the first ones come with the window itself)
+    // The case notes: each one is written when NOVA has finished the line it is taken from (2026-11-25: «briefing
+    // deve scrivere dopo un po' rispetto a nova, altrimenti non sembra che stia prendendo appunti»); the notes of
+    // lines already said (a phone, the first time BRIEFING shows them) come with the window
+    let row0 = fresh ? OPEN_MS + 120 : 0; // the notes that come together are written one after the other
     w.querySelectorAll('[data-note]').forEach((row) => {
-      const k = `note-${row.dataset.note}`;
-      if (fresh || arrivals.has('notes')) { seen.add(k); return; }
-      come(k, (into) => typeNodes([...row.children], { offset: into }).ms);
+      const late = said?.id === row.dataset.note ? writing : 0;
+      const ms = come(`note-${row.dataset.note}`, (into) => typeNodes([...row.children], { offset: into }).ms, late || row0);
+      if (!late) row0 += ms;
     });
   });
 }
+
+// ---------- windows that move ----------
+
+// A window that changes place slides there instead of jumping (2026-11-25: «La finestra di Nova dal centro scatta
+// in cima, serve una transizione per le finestre se si spostano»): its place is read before the page is drawn again
+// and after, and it is carried from one to the other. Its height changes at once.
+const MOVE_MS = 360;
+const liveWins = () => [...root.querySelectorAll('.screen-live .win')].map((w) => [w.closest('.modal') ? null : winKey(w), w]).filter(([k]) => k);
+const places = () => new Map(liveWins().map(([k, w]) => [k, w.getBoundingClientRect()]));
+function glide(before) {
+  if (still() || !before.size) return;
+  for (const [k, w] of liveWins()) {
+    const a = before.get(k);
+    if (!a || w.classList.contains('win-arrive')) continue;
+    const b = w.getBoundingClientRect();
+    const dx = a.left + a.width / 2 - (b.left + b.width / 2);
+    const dy = a.top - b.top;
+    const dw = a.width - b.width;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(dw) < 1) continue;
+    // a window that also changes width (NOVA's, from her request to her column) is let out of its column by as much
+    // on each side, and brought back in: a real width, so her lines never look stretched
+    const side = Math.abs(dw) < 1 ? {} : { marginLeft: `${-dw / 2}px`, marginRight: `${-dw / 2}px` };
+    const rest = Math.abs(dw) < 1 ? {} : { marginLeft: '0px', marginRight: '0px' };
+    const body = w.querySelector(':scope > .win-body');
+    const atEnd = body && body.scrollHeight - body.clientHeight - body.scrollTop < 4;
+    const move = w.animate([{ transform: `translate(${dx}px, ${dy}px)`, ...side }, { transform: 'none', ...rest }], { duration: MOVE_MS, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+    // (wider, her lines break in fewer rows and the conversation loses its place: it is put back at its last line)
+    if (side.marginLeft && atEnd) move.finished.then(() => { body.scrollTop = body.scrollHeight; }, () => {});
+  }
+}
+
+// ---------- the station model under the pointer ----------
+
+// Under the mouse the model lies flat, seen from above, and what the pointer is on lights up; when the pointer leaves
+// it goes back to swaying (CSS: .is-flat; 2026-11-25: «mouse hover, la mappa si raddrizza, effetto hover tipo si
+// illuminano la zona o i corridoi che hovero, poi appena mouse leave torna a ruotare»). The page is drawn again at
+// every tap, so which model is flat is kept here and given to the new one before it is first painted.
+let flatHolo = null; // 'map' (the one in its window) or 'pick' (the one NOVA shows for a question)
+const holoKey = (h) => (h.closest('.win-map') ? 'map' : 'pick');
+function layFlat() { root.querySelectorAll('.holo').forEach((h) => h.classList.toggle('is-flat', holoKey(h) === flatHolo)); }
+root.addEventListener('pointerover', (e) => {
+  if (e.pointerType !== 'mouse') return;
+  const h = e.target.closest?.('.holo');
+  const key = h ? holoKey(h) : null;
+  if (key !== flatHolo) { flatHolo = key; layFlat(); }
+});
+root.addEventListener('pointerleave', () => { if (flatHolo) { flatHolo = null; layFlat(); } });
 
 // ---------- NOVA writes ----------
 
@@ -161,14 +249,30 @@ function arrive(quiet) {
 // console when she names it (state.stage: the line she is on, 8 when she has finished). Her clock is the page's, not
 // the screen's: she goes on writing while the player looks at another channel on a phone. A tap on her conversation
 // while she writes shows the rest at once, as a tap on her typing always did.
-const NOVA_CPS = 90;   // letters per second: with the pauses, the briefing takes about ten seconds
-const BEAT = 350;      // the pause between two lines
+// Her pace. 'now' is the game: with the pauses, the briefing takes about ten seconds. The others are proposals, played
+// with ?pace= in the frames of the board "pace" (2026-11-25: «siccome nova scrive tanto testo tutto in un colpo, come
+// scadenziamo e diamo tempo ai giocatori di seguire la console, anche in modo più realistico?»):
+//   cps   letters per second
+//   lead  before each line her prompt stands alone with the cursor, as long as the link takes to receive it (ms)
+//   beat  the pause between two lines (ms)
+//   wait  she goes on only when what she has brought has finished coming onto the console
+//   read  time to read a line once it is written (ms per letter)
+//   ack   she waits for Mission Control to answer COPY after each line
+const PACES = {
+  now: { cps: 90, lead: 0, beat: 350 },
+  a: { cps: 45, lead: 0, beat: 700, wait: true },
+  b: { cps: 60, lead: 900, beat: 300, wait: true, read: 14 },
+  c: { cps: 45, lead: 0, beat: 300, wait: true, ack: true },
+};
+const PACE = PACES[params.get('pace')] || PACES.now;
+const NOVA_CPS = PACE.cps;
+const BEAT = PACE.beat;
 let speech = null;     // { key, t0 }: what she is writing now and when she started
 let nextTimer = 0;
 const lineMs = (stage) => {
   if (stage === 0) return 150; // her first line is the request, already written: a beat, then she goes on
   const attached = BRIEFING_PARTS[stage].id === 'reports' ? 4 * 20 : 0; // the reports she attaches are typed too
-  return ((4 + BRIEFING_PARTS[stage].text.length + attached) / NOVA_CPS) * 1000; // 4: her name before the line
+  return PACE.lead + ((4 + BRIEFING_PARTS[stage].text.length + attached) / NOVA_CPS) * 1000; // 4: her name before the line
 };
 
 function speak(quiet) {
@@ -182,13 +286,24 @@ function speak(quiet) {
     const key = `${state.code}:b${stage}`;
     if (!speech || speech.key !== key) speech = { key, t0: now };
     const into = now - speech.t0;
-    nextTimer = setTimeout(() => {
+    if (state.hold) return; // her line is written and she waits for COPY
+    const go = () => {
       if (state.phase !== 'play' || state.stage !== stage) return;
-      state.stage = stage + 1;
+      const busy = PACE.wait ? Math.max(0, ...[...arrivals.values()].map((a) => a.t0 + a.ms - performance.now())) : 0;
+      if (busy > 0) { nextTimer = setTimeout(go, busy + BEAT); return; }
+      // (the request and the oxygen line are not answered: the first is, with ACCEPT, and after the last the clock runs)
+      if (PACE.ack && stage > 0 && stage < OXYGEN_STAGE) state.hold = true; else state.stage = stage + 1;
       render.keepScroll = true;
       render();
-    }, Math.max(0, lineMs(stage) + BEAT - into));
-    if (stage > 0 && rows.length) typeNodes([rows[rows.length - 1]], { cps: NOVA_CPS, max: 0, cursor: true, offset: into });
+    };
+    const read = stage > 0 && PACE.read ? BRIEFING_PARTS[stage].text.length * PACE.read : 0;
+    nextTimer = setTimeout(go, Math.max(0, lineMs(stage) + read + BEAT - into));
+    const row = stage > 0 && rows[rows.length - 1];
+    if (row && PACE.lead) {
+      row.classList.toggle('tl-lead', into < PACE.lead);
+      if (into < PACE.lead) setTimeout(() => row.classList.remove('tl-lead'), PACE.lead - into);
+      typeNodes([row.querySelector('.tl-txt'), row.querySelector('.tl-wide')], { cps: NOVA_CPS, max: 0, cursor: true, offset: into - PACE.lead });
+    } else if (row) typeNodes([row], { cps: NOVA_CPS, max: 0, cursor: true, offset: into });
     return;
   }
   // she has finished: her last line and Mission Control's prompt are written once; after a question, her answer is
@@ -237,16 +352,13 @@ function newGame(code) {
   state.font = keepFont;
   state.code = code || randomCode();
   theCase = generateCase(state.code);
-  // Decided 2026-11-23 (changes the brief): the oxygen runs from NOVA's first message. Confirmed 2026-11-24 against
-  // update 1, which asked for a START MISSION button. Since 2026-11-25 that moment is ACCEPT on her request: the
-  // clock runs from there, and its window comes when she names it, already showing the time gone.
+  // (the oxygen does not run yet: it starts with the line in which NOVA says it does, see startClock)
   state.phase = 'play';
   state.tab = 'ask';
   state.stage = 0;
   state.askStep = 0;
   state.openReports = [];
   state.draft = freshDraft();
-  resumeTimer();
   seen.clear(); arrivals.clear(); seen.add('nova'); // her window is already there
   speech = null;
   render();
@@ -275,6 +387,7 @@ const again = () => { render.keepScroll = true; render(); };
 
 const ACTIONS = {
   'new-game': () => newGame(), // ACCEPT on NOVA's request
+  ack: () => { state.hold = false; state.stage += 1; again(); }, // COPY after one of her lines (?pace=c)
   home: goHome,
   continue: () => { state.phase = state.resume; state.resume = null; render.quiet = true; render(); },
   quit: () => { state.quitOpen = true; again(); },
@@ -342,6 +455,7 @@ const ACTIONS = {
 // NOVA stops writing and everything she had still to bring is there
 function cutBriefing() {
   state.stage = 8;
+  state.hold = false;
   render.keepScroll = true;
   render.quiet = true;
   render();
@@ -419,7 +533,7 @@ function onDevClick(e) {
   if (k === 'fold') { devEl.classList.toggle('is-folded'); renderDev(); return; }
   if (k === 'show') state.devShow = !state.devShow;
   if (k === 'skip' && theCase && state.phase === 'play' && state.stage < 8) { cutBriefing(); return; }
-  if (k === 'pause') { if (state.timer.since) pauseTimer(); else if (state.phase === 'play') resumeTimer(); }
+  if (k === 'pause') { if (state.timer.since) pauseTimer(); else if (state.phase === 'play' && state.clock) resumeTimer(); }
   if (k === 'speed') setSpeed(Number(b.dataset.v));
   if (k === 'minus') { state.timer.elapsed += 60000; }
   if (k === 'new') { newGame(); return; }
@@ -445,6 +559,6 @@ if (state.code && state.phase !== 'home') {
 }
 render();
 
-if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !DEV) {
+if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !DEV && !DEMO) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
