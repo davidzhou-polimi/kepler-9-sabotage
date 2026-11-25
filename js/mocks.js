@@ -1,8 +1,9 @@
 // mocks.html: real screens of the app, built with the same functions as the game, on a fixed sample case.
 // Boards: open proposals first (each direction with its own pick), then the font comparison (decided).
-import { generateCase } from './generator.js';
+import { generateCase, answer, PEOPLE } from './generator.js';
+import { ENDINGS } from './texts.js';
 import { screen, newState, crewCard, profileModal, reportsPanel, askPanel } from './ui.js';
-import { playWindows } from './winfx.js';
+import { playWindows, typeWindow, typeNodes } from './winfx.js';
 import { DISPLAY_FONTS } from './fonts.js';
 
 const SAMPLE = 'K9-7UQ8';
@@ -125,7 +126,8 @@ const CRITICAL = {
 };
 
 function board(b) {
-  return `<section class="board" id="${b.id}">
+  const open = !(b.decided || b.rejected || b.redo || b.over || b.done);
+  return `<section class="board ${open ? 'is-open' : ''}" id="${b.id}">
     <header class="board-head">
       <h2>${b.title}${b.decided ? ` <span class="done">Deciso: ${b.decided}</span>` : ''}${b.rejected ? ' <span class="done done-no">Bocciata</span>' : ''}${b.redo ? ' <span class="done done-redo">Da rifare</span>' : ''}${b.done ? ` <span class="done">Fatto: ${b.done}</span>` : ''}${b.over ? ' <span class="done done-redo">Superata</span>' : ''}</h2>
       <p class="quote">${b.quote}</p>
@@ -711,7 +713,7 @@ const liveP = (label, stage, s = {}, opts = {}) => cap(label, phone(chosen({ flo
 const LIVE = {
   id: 'live', title: 'La console si popola dopo aver accettato la trasmissione', done: 'nel gioco dal 2026-11-25',
   quote: '«dovrebbe essere una richiesta di nova, che chiede a mission control di rispondere, chi apre la webapp accetta la trasmissione e nova inizia a scrivere. compare poi la schermata briefing, che si compila mentre nova scrive, come se mission control stesse prendendo in carico il caso e si appunta le cose no, e anche i report vengono aperti man mano che nova li apre (nella chat si vedono come allegati non lo so)» · «ah, e per forza di cose, anche il timer dell\'ossigeno e il numero di domande, saranno finestre, che compaiono dove che è comparso il briefing ecc. quindi vediamo veramente la console popolarsi dopo aver accettato il caso» · «change layout della console di mission control, centrato nova, a sinistra mappa, a destra report, timer e domande, sopra la mappa, sempre colonna di sinistra» · «cambia alla mappa dai, così l\'utente vede che si può cambiare, e la mappa è più scenografica» · «se riscrivi il testo riformattato, riesci ad allungare la finestra per combaciare più o meno la chat di nova?»',
-  context: `Dal 2026-11-25 è nel gioco, con tutto ciò che è deciso nelle tavole qui sotto. Tre cose che lo storyboard non diceva e che ho chiuso con pezzi già decisi, da correggere se non tornano: NOVA scrive alla velocità di chi batte (il briefing dura circa 13 secondi; il ritmo è in discussione nella tavola «Il ritmo di NOVA») e un tocco sulla sua conversazione mostra subito il resto, come è sempre stato per il suo testo; un allegato toccato nella chat apre quel rapporto; riaprendo la pagina con un caso aperto, sopra la richiesta c'è una riga con il caso, l'ossigeno e CONTINUE (ultimi due riquadri). Restano le parole di gioco «QUIT GAME» nella conferma del tasto di accensione e «NEW GAME» in fondo alla soluzione, che riporta alla console vuota. È uno storyboard: i momenti in ordine, sul laptop e sul telefono. Non ci sono scelte da fare con il pallino; dimmi cosa non torna. Come l'ho letta. La console è vuota e c'è solo la richiesta di NOVA, la sua prima frase di oggi («Mission Control, this is NOVA on Kepler-9.») con ACCEPT. Accettando, NOVA scrive il resto del briefing nel suo canale, una frase alla volta, e ogni cosa compare quando la dice: gli appunti del caso (la finestra CASE con il suo codice, una riga per ogni frase), i quattro rapporti come allegati sotto la frase che li nomina (e la colonna dei rapporti si apre), la mappa quando parla dei sensori, la finestra QUESTIONS quando dice quante domande regge il collegamento, la finestra OXYGEN quando dice l'ossigeno. Sulla barra un tasto si accende solo quando c'è ciò che apre. L'ossigeno parte con l'ultima frase di NOVA («Oxygen: 10 minutes. The countdown has already started.»), quando arriva la sua finestra, e non più da ACCEPT (2026-11-25: «il timer di 10 min deve partire da quando nova scrive "the timer has already started"»). Sul laptop, dopo il tuo ultimo messaggio, le colonne sono tre e NOVA sta in quella al centro dall'inizio alla fine, senza spostarsi: a sinistra, quando si apre il caso, arriva la colonna con domande e ossigeno in alto (le domande a sinistra perché arrivano prima) e sotto gli appunti del caso finché NOVA scrive; quando ha finito, la mappa prende il loro posto e resta, e i tasti BRIEFING e CODE riportano lì gli appunti o il codice; a destra arrivano i rapporti. Prima NOVA stava a sinistra e la colonna al centro era questa. Le finestre a sinistra sono alte quanto il loro contenuto (2026-11-25: «facciamo che anche i pannelli a sinistra hug content»; prima quella sotto domande e ossigeno finiva dove finisce la chat di NOVA), e la mappa arriva con Life Support selezionata; ogni appunto si scrive quando NOVA ha finito la frase da cui viene («briefing deve scrivere dopo un po' rispetto a nova, altrimenti non sembra che stia prendendo appunti»); negli appunti il nome sta a sinistra e ogni fatto ha la sua riga, con le stesse parole di prima. Sul telefono domande e ossigeno stanno in alto e sotto c'è un canale alla volta. La conversazione con NOVA scorre dentro la sua finestra, con la barra di scorrimento nel nostro stile: il bordo resta sempre in vista. I rapporti arrivano chiusi, uno alla volta («i report vorrei che compaiano uno alla volta»): una striscia con gli angoli smussati, il solo nome («REPORT 01: MIRA») e il segno + a destra, dove da aperto sta il −; toccandola si apre, e il − in fondo al testo la richiude; se ne possono tenere aperti quanti si vuole. Testi nuovi da approvare: ACCEPT e INCOMING TRANSMISSION; le sette righe di appunti, che sono le frasi di NOVA ridotte a parole chiave (SITUATION_ «03:00 · Recycler sabotaged · Every module sealed»; SABOTEUR_ «Whoever was in Life Support»; REPORTS_ «4 reports · One is false»; SENSORS_ «Hatch openings · Motion · No names recorded»; LINK_ «Damaged · 2 questions · Emergency code» (senza la regola sulla domanda rifiutata: quella il giocatore la scopre da sé); CODE_ «False report number + saboteur's ID · One attempt»; OXYGEN_ «10 minutes»); e gli allegati, righe di testo come in un terminale («+ REPORT 01: MIRA»). Dopo i tuoi ultimi messaggi: il canale di NOVA non ha più la linguetta, e ogni rapporto è una finestra con la sua linguetta («REPORT 01: MIRA»), sotto il titolo CREW REPORTS. Una finestra che cambia posto ci scivola invece di saltare («La finestra di Nova dal centro scatta in cima, serve una transizione per le finestre se si spostano»).`,
+  context: `Dal 2026-11-25 è nel gioco, con tutto ciò che è deciso nelle tavole qui sotto. Tre cose che lo storyboard non diceva e che ho chiuso con pezzi già decisi, da correggere se non tornano: NOVA scrive alla velocità di chi batte (il briefing dura circa 13 secondi; il ritmo è in discussione nella tavola «Il ritmo di NOVA») e un tocco sulla sua conversazione mostra subito il resto, come è sempre stato per il suo testo; un allegato toccato nella chat apre quel rapporto; riaprendo la pagina con un caso aperto, sopra la richiesta c'è il caso ridotto a striscia, con l'ossigeno e CONTINUE (ultimi due riquadri; scelta del 2026-11-26, prima era una riga dentro la finestra della richiesta). Dal 2026-11-26 la console non ha più parole di gioco: la conferma del tasto di accensione dice «POWER OFF CONSOLE», la soluzione è «INCIDENT REPORT» e si chiude con «CLOSE CASE», che riporta alla console vuota; i finali non hanno più il titolone e la loro finestra porta il numero del caso e l'esito («MISSION FAILED», «MISSION SUCCESSFUL»). È uno storyboard: i momenti in ordine, sul laptop e sul telefono. Non ci sono scelte da fare con il pallino; dimmi cosa non torna. Come l'ho letta. La console è vuota e c'è solo la richiesta di NOVA, la sua prima frase di oggi («Mission Control, this is NOVA on Kepler-9.») con ACCEPT. Accettando, NOVA scrive il resto del briefing nel suo canale, una frase alla volta, e ogni cosa compare quando la dice: gli appunti del caso (la finestra CASE con il suo codice, una riga per ogni frase), i quattro rapporti come allegati sotto la frase che li nomina (e la colonna dei rapporti si apre), la mappa quando parla dei sensori, la finestra QUESTIONS quando dice quante domande regge il collegamento, la finestra OXYGEN quando dice l'ossigeno. Sulla barra un tasto si accende solo quando c'è ciò che apre. L'ossigeno parte con l'ultima frase di NOVA («Oxygen: 10 minutes. The countdown has already started.»), quando arriva la sua finestra, e non più da ACCEPT (2026-11-25: «il timer di 10 min deve partire da quando nova scrive "the timer has already started"»). Sul laptop, dopo il tuo ultimo messaggio, le colonne sono tre e NOVA sta in quella al centro dall'inizio alla fine, senza spostarsi: a sinistra, quando si apre il caso, arriva la colonna con domande e ossigeno in alto (le domande a sinistra perché arrivano prima) e sotto gli appunti del caso finché NOVA scrive; quando ha finito, la mappa prende il loro posto e resta, e i tasti BRIEFING e CODE riportano lì gli appunti o il codice; a destra arrivano i rapporti. Prima NOVA stava a sinistra e la colonna al centro era questa. Le finestre a sinistra sono alte quanto il loro contenuto (2026-11-25: «facciamo che anche i pannelli a sinistra hug content»; prima quella sotto domande e ossigeno finiva dove finisce la chat di NOVA), e la mappa arriva con Life Support selezionata; ogni appunto si scrive quando NOVA ha finito la frase da cui viene («briefing deve scrivere dopo un po' rispetto a nova, altrimenti non sembra che stia prendendo appunti»); negli appunti il nome sta a sinistra e ogni fatto ha la sua riga, con le stesse parole di prima. Sul telefono domande e ossigeno stanno in alto e sotto c'è un canale alla volta. La conversazione con NOVA scorre dentro la sua finestra, con la barra di scorrimento nel nostro stile: il bordo resta sempre in vista. I rapporti arrivano chiusi, uno alla volta («i report vorrei che compaiano uno alla volta»): una striscia con gli angoli smussati, il solo nome («REPORT 01: MIRA») e il segno + a destra, dove da aperto sta il −; toccandola si apre, e il − in fondo al testo la richiude; se ne possono tenere aperti quanti si vuole. Testi nuovi da approvare: ACCEPT e INCOMING TRANSMISSION; le sette righe di appunti, che sono le frasi di NOVA ridotte a parole chiave (SITUATION_ «03:00 · Recycler sabotaged · Every module sealed»; SABOTEUR_ «Whoever was in Life Support»; REPORTS_ «4 reports · One is false»; SENSORS_ «Hatch openings · Motion · No names recorded»; LINK_ «Damaged · 2 questions · Emergency code» (senza la regola sulla domanda rifiutata: quella il giocatore la scopre da sé); CODE_ «False report number + saboteur's ID · One attempt»; OXYGEN_ «10 minutes»); e gli allegati, righe di testo come in un terminale («+ REPORT 01: MIRA»). Dopo i tuoi ultimi messaggi: il canale di NOVA non ha più la linguetta, e ogni rapporto è una finestra con la sua linguetta («REPORT 01: MIRA»), sotto il titolo CREW REPORTS. Una finestra che cambia posto ci scivola invece di saltare («La finestra di Nova dal centro scatta in cima, serve una transizione per le finestre se si spostano»).`,
   common: [
     liveL('1 · Laptop: la richiesta di NOVA, console vuota', -1),
     liveL('2 · Accettato: NOVA scrive, da sola al centro', 0),
@@ -728,7 +730,7 @@ const LIVE = {
     liveP('5 · Compare OXYGEN, NOVA ha finito', 8, {}, { scroll: 'bottom' }),
     liveP('6 · Tasto BRIEFING: gli appunti del caso', 8, { tab: 'briefing' }),
     liveP('7 · Tasto REPORTS: il primo rapporto aperto, gli altri chiusi', 8, { tab: 'reports', openReports: c.order.slice(0, 1) }),
-    liveL('Riapertura con un caso aperto: CONTINUE sopra la richiesta', -1, {}, { saved: { code: SAMPLE, phase: 'play', remainingMs: 7 * MIN + 42000 } }),
+    liveL('Riapertura con un caso aperto: la sua striscia sopra la richiesta', -1, {}, { saved: { code: SAMPLE, phase: 'play', remainingMs: 7 * MIN + 42000 } }),
     cap('Telefono: riapertura con un caso aperto', phone(chosen({ flow: 'live', stage: -1, state: liveState(-1), saved: { code: SAMPLE, phase: 'play', remainingMs: 7 * MIN + 42000 } }), { cls: BASE })),
   ],
   dirs: [],
@@ -893,11 +895,11 @@ const REPHEAD = {
 // ---------- after the feedback of 2026-11-25, second set: NOVA's pace, a case left open, the archive, the text font ----------
 
 // the game itself, in a frame, with one pace (?pace=) and leaving no trace (?demo=1)
-const paceFrame = (key, label) => cap(label, `<div class="mock-live"><iframe src="./?demo=1&amp;pace=${key}" loading="lazy" title="${label}"></iframe></div><button type="button" class="replay" data-replay="live">Ricomincia</button>`);
+const paceFrame = (key, label) => cap(label, `<div class="mock-live"><iframe src="./?demo=1&amp;pace=${key}" data-play="./?demo=1&amp;pace=${key}&amp;auto=1" loading="lazy" title="${label}"></iframe></div><button type="button" class="replay" data-replay="live">Avvia il briefing</button>`);
 const PACE = {
   id: 'pace', title: 'Il ritmo di NOVA mentre scrive il briefing',
-  quote: '«siccome nova scrive tanto testo tutto in un colpo, come scadenziamo e diamo tempo ai giocatori di seguire la console, anche in modo più realistico?»',
-  context: 'Ogni riquadro qui sotto è il gioco vero, non un disegno: premi ACCEPT e guarda la console riempirsi; «Ricomincia» lo riporta alla richiesta. I tempi li ho calcolati, non visti: nel mio browser le animazioni vanno a scatti, quindi il giudizio è tuo. In tutte le prove vale quello che hai appena chiesto: l\'ossigeno parte solo con l\'ultima frase (il tempo del briefing non costa ossigeno), ogni appunto si scrive quando NOVA ha finito la frase, i rapporti arrivano uno alla volta, e un tocco sulla conversazione mostra subito il resto. La mia posizione: A. Le frasi restano tutte sulla console (nella chat e negli appunti del caso), quindi il ritmo non deve dare il tempo di imparare le regole: deve dare allo sguardo il tempo di andare dalla chat a ciò che compare, e A lo fa senza aggiungere pezzi né parole.',
+  quote: '«siccome nova scrive tanto testo tutto in un colpo, come scadenziamo e diamo tempo ai giocatori di seguire la console, anche in modo più realistico?» · «certo che mi hai fatto il mock del ritmo di battitura su una frase, quando sarebbe stato utile su testi più lunghi per vedere le tue proposte in azione....»',
+  context: 'Corretta il 2026-11-26. Prima ogni riquadro restava fermo sulla richiesta di NOVA, una frase sola, finché non premevi ACCEPT dentro il riquadro: così il ritmo si vedeva su una frase. Ora «Avvia il briefing», sotto ogni riquadro, fa partire tutto il briefing a quel ritmo: otto frasi, 862 lettere, con gli appunti, i rapporti, la mappa e l\'ossigeno che arrivano mentre NOVA scrive; ripremendolo ricomincia. È il testo più lungo che NOVA scrive in un caso. Ogni riquadro è la console vera, non un disegno. I tempi li ho calcolati, non visti: nel mio browser le animazioni vanno a scatti, quindi il giudizio è tuo. In tutte le prove vale quello che hai appena chiesto: l\'ossigeno parte solo con l\'ultima frase (il tempo del briefing non costa ossigeno), ogni appunto si scrive quando NOVA ha finito la frase, i rapporti arrivano uno alla volta, e un tocco sulla conversazione mostra subito il resto. La mia posizione: A. Le frasi restano tutte sulla console (nella chat e negli appunti del caso), quindi il ritmo non deve dare il tempo di imparare le regole: deve dare allo sguardo il tempo di andare dalla chat a ciò che compare, e A lo fa senza aggiungere pezzi né parole.',
   dirs: [
     { key: 'now', title: 'Oggi · 90 lettere al secondo, un terzo di secondo tra le frasi', note: '<p>Per confronto. Il briefing dura circa 13 secondi: NOVA passa alla frase dopo anche se la finestra che ha appena portato si sta ancora scrivendo.</p>', frames: [paceFrame('now', 'Laptop: il gioco di oggi')] },
     {
@@ -928,11 +930,12 @@ const heldFrames = (homeAlt) => {
   return [cap('Laptop: riapertura con un caso aperto', laptop(v(), { cls: BASE, big: true })), cap('Telefono', phone(v(), { cls: BASE }))];
 };
 const RESUME = {
-  id: 'resume', title: 'Riaprire la pagina con un caso aperto',
+  id: 'resume', title: 'Riaprire la pagina con un caso aperto', decided: 'B, il caso aperto ridotto a striscia', chosen: 'strip',
+  answer: 'B · Il caso aperto ridotto a striscia > perfetto, però mi chiedo se accept sia il termine più adatto',
   quote: '«quando c\'è una partita in corso, e ricarico, non è molto convincing come hai fatto, forse addirittura farei due finestre, ma come differenziamo i due kepler-9? magari ci sono più test e stanno venendo tutti sabotati allo stesso tempo?»',
   context: 'Sviluppo la tua idea delle due finestre. Per distinguere i due Kepler-9 uso quello che l\'app ha già: il numero del caso. Se i test sabotati sono più d\'uno, ogni chiamata di NOVA è un caso con il suo numero, e la console può averne uno aperto mentre ne arriva un altro. Sotto cambia una cosa sola: il numero del caso nuovo deve esistere prima di ACCEPT (oggi nasce quando accetti). La parte di storia («più test, sabotati allo stesso tempo») non la scrivo io: non tengo una copia della storia, nel repository ci sono solo le frasi del briefing e della soluzione; va alla sessione che ha la storia, come hai detto. Nessuna parola nuova: CASE, OXYGEN, CONTINUE, INCOMING TRANSMISSION e ACCEPT ci sono già. Resta da decidere, in tutte e due: accettando la chiamata nuova il caso aperto si perde, come oggi, senza conferma.',
   dirs: [
-    { key: 'now', title: 'Oggi · Una riga sopra la richiesta', note: '<p>Per confronto: il caso aperto è una riga dentro la finestra della chiamata nuova.</p>', frames: heldFrames('') },
+    { key: 'now', title: 'Oggi · Una riga sopra la richiesta', note: '<p>Per confronto: il caso aperto è una riga dentro la finestra della chiamata nuova.</p>', frames: heldFrames('row') },
     {
       key: 'two', title: 'A · Due finestre: il collegamento aperto e la chiamata nuova', rec: true,
       note: `<p>A sinistra (sopra, sul telefono) il collegamento rimasto aperto: l'ultima cosa che NOVA ha detto in quel caso, il suo numero, l'ossigeno che scende e CONTINUE. A destra la chiamata nuova, con il suo numero e ACCEPT.</p>
@@ -957,6 +960,7 @@ const ARCH = [
 const archView = (style, open = null) => chosen({ flow: 'live', stage: -1, state: liveState(-1), archive: { style, cases: ARCH, open } });
 const ARCHIVE = {
   id: 'archive', title: 'L\'archivio dei casi chiusi',
+  redo: '«you did it again... mi hai messo il pulsante new game... è VIETATO, cosa devo fare per farti capire che è la console di mission control» · «per l\'archivio, l\'idea è che nella home ci sia solo al centro una finestra, tipo un inbox che gestisce i casi, e abbiamo i casi aperti e in arrivo, un archivio... [...] vorrei un mock dettagliato su cosa succede dopo aver cliccato su un caso, come e cosa si apre» (continua nelle tavole «La console vuota: i casi aperti e in arrivo» e «L\'archivio: cosa si apre toccando un caso»)',
   quote: '«sarebbe interessante una history dei casi svolti, sotto forma di archivio consultabile, così regge anche il ci sono più test che avvengono»',
   context: 'La mia posizione: sì, nella forma A. Perché: la console vuota oggi ha una sola finestra, e un elenco di casi chiusi la fa sembrare una console che lavora da tempo, che è quello che serve all\'idea dei più test; e costa poco, perché di un caso basta tenere il numero, l\'esito, il codice inviato e le domande fatte: tutto il resto si rigenera dal numero. Il costo vero è un altro: su un dispositivo condiviso (il festival) il gruppo dopo vede i casi di chi c\'era prima, con l\'esito e la soluzione. Non rovina niente, perché ogni caso è diverso, ma va deciso se l\'archivio si può svuotare e da dove. Come l\'ho letta: entrano in archivio i casi finiti (codice accettato, codice rifiutato, ossigeno finito); quelli chiusi dal tasto di accensione no, come dice già la sua conferma («Case K9-7UQ8 will be lost.»). Aprendo un caso si rivede la schermata della soluzione che c\'è già (terzo riquadro), con un modo per tornare alla console. Parole: «ARCHIVE» è nuova, ed è la tua; gli esiti sono i titoli delle schermate finali («CODE ACCEPTED», «CODE REJECTED», «OXYGEN DEPLETED»).',
   dirs: [
@@ -989,15 +993,15 @@ const ftFrames = (cls) => [
   cap('Telefono: la scheda di un membro', phone(fbView({ tab: 'reports', profile: c.order[0] }), { cls: `${BASE} ${cls}` })),
 ];
 const TEXTFONT = {
-  id: 'textfont', title: 'Il font dei testi lunghi: rapporti, appunti, frasi',
+  id: 'textfont', title: 'Il font dei testi lunghi: rapporti, appunti, frasi', decided: 'A, tutto nel mono della console', chosen: 'a', answer: 'Tutto nel mono della console',
   quote: '«me ne sono accorto solo ora, ma oltre al mono, e al font dei titoli, abbiamo un font che ci azzecca poco con una console, e viene usata nei report e nel briefing»',
   context: 'Il terzo font è IBM Plex Sans, quello dei testi da leggere: i rapporti dei tre umani, gli appunti del caso, la frase sopra il campo del codice, le schede del personale («Anche il test dei profili dei membri è col font sbagliato», 2026-11-25: ultimo riquadro), le schermate finali e la soluzione. La mia posizione: A. Su una console i testi arrivano tutti dallo stesso terminale, e i font scendono da tre a due. Il costo: il mono è più largo, quindi i rapporti si allungano di una o due righe; e oggi il rapporto di ECHO-7 si riconosce dagli umani proprio perché è l\'unico in mono: con A si riconosce solo da come scrive. Se invece vuoi che i rapporti tengano una voce diversa da quella della console, ma più adatta di oggi, servono font nuovi da scaricare: dimmelo e porto dei candidati in un altro giro.',
   dirs: [
-    { key: 'now', title: 'Oggi · IBM Plex Sans per i testi lunghi', note: '<p>Per confronto.</p>', frames: ftFrames('') },
+    { key: 'now', title: 'Oggi · IBM Plex Sans per i testi lunghi', note: '<p>Per confronto.</p>', frames: ftFrames('ft-0') },
     {
       key: 'a', title: 'A · Tutto nel mono della console', rec: true,
       note: `<p>Rapporti, appunti e frasi in IBM Plex Mono, lo stesso di NOVA e delle etichette, a 14 px come la chat. Il font dei titoli resta per titoli, nomi e cifre.</p>`,
-      frames: ftFrames('ft-a'),
+      frames: ftFrames(''),
     },
   ],
 };
@@ -1006,14 +1010,14 @@ const TEXTFONT = {
 
 const titleView = (homeTitle) => chosen({ flow: 'live', stage: -1, state: liveState(-1), homeTitle });
 const outBtn = (out) => `<button type="button" class="replay" data-replay="titleout" data-out="${out}">Guarda l'uscita</button>`;
-const titleFrames = (k, out = 'to-line') => [
-  cap('Laptop: la console vuota', `${laptop(titleView(k), { cls: BASE, big: true })}${outBtn(out)}`),
-  cap('Telefono', `${phone(titleView(k), { cls: BASE })}${outBtn(out)}`),
+const titleFrames = (k, out = '') => [
+  cap('Laptop: la console vuota', `${laptop(titleView(k), { cls: BASE, big: true })}${out ? outBtn(out) : ''}`),
+  cap('Telefono', `${phone(titleView(k), { cls: BASE })}${out ? outBtn(out) : ''}`),
 ];
 const HOMETITLE = {
   id: 'hometitle', title: 'Il titolo MISSION CONTROL sulla console vuota',
-  quote: '«come questo titolo serve all\'inizio nella home, MISSION CONTROL, magari su due righe, responsive, quando si preme accept, il titolo fades away (coerentemente con uno schermo)»',
-  context: 'Il titolo è quello dei finali («OXYGEN DEPLETED»): stesso carattere, stesse lettere sdoppiate, e sul laptop la stessa grandezza (lettere da 146 px). Una sola differenza, mia: qui la frangia è ciano e non rossa, perché nei finali il rosso dice che è andata male. È anche il titolo della carta missione del gruppo («KEPLER-9 / MISSION CONTROL»). Sta sopra la richiesta di NOVA, e i due insieme sono al centro dello schermo. Il pulsante sotto ogni riquadro fa vedere come se ne va quando accetti; in questa tavola è sempre la riga di luce, la scelta dell\'uscita è nella tavola dopo. La mia posizione: A, perché su uno schermo largo una riga sola lascia la richiesta di NOVA più vicina al centro; sul telefono le due versioni sono uguali.',
+  quote: '«come questo titolo serve all\'inizio nella home, MISSION CONTROL, magari su due righe, responsive, quando si preme accept, il titolo fades away (coerentemente con uno schermo)» · «va ridotta l\'interlinea di Mission Control»',
+  context: 'Corretta il 2026-11-26: l\'interlinea è ridotta di un quarto (da 0,95 a 0,72 volte l\'altezza del carattere), in tutte e due le versioni. Resta da scegliere fra una riga e due. Il titolo è quello che avevano i finali («OXYGEN DEPLETED»): stesso carattere, stesse lettere sdoppiate, e sul laptop la stessa grandezza (lettere da 146 px). Una sola differenza, mia: qui la frangia è ciano e non rossa, perché nei finali il rosso dice che è andata male. È anche il titolo della carta missione del gruppo («KEPLER-9 / MISSION CONTROL»). Sta sopra la richiesta di NOVA, e i due insieme sono al centro dello schermo. Come se ne va quando accetti è nella tavola dopo. La mia posizione: A, perché su uno schermo largo una riga sola lascia la richiesta di NOVA più vicina al centro; sul telefono le due versioni sono uguali.',
   dirs: [
     {
       key: 'one', title: 'A · Una riga sul laptop, due sul telefono', rec: true,
@@ -1029,7 +1033,7 @@ const HOMETITLE = {
   ],
 };
 const TITLEOUT = {
-  id: 'titleout', title: 'Come se ne va il titolo quando accetti',
+  id: 'titleout', title: 'Come se ne va il titolo quando accetti', rejected: '«non mi piacciono gli effetti di uscita»',
   quote: '«quando si preme accept, il titolo fades away (coerentemente con uno schermo)»',
   context: 'Due modi in cui uno schermo a tubo spegne una scritta; premi il pulsante sotto il riquadro per vederli (dopo un secondo e mezzo il titolo torna, per riprovare). Durano mezzo secondo. Nel gioco, mentre il titolo se ne va, la finestra di NOVA scivola al suo posto al centro, come fa già oggi. La mia posizione: A, perché è il contrario esatto di come si aprono le finestre, che nascono da una riga di luce. Non le ho viste a velocità vera: nel mio browser le animazioni vanno a scatti.',
   dirs: [
@@ -1037,14 +1041,15 @@ const TITLEOUT = {
     { key: 'dark', title: 'B · Sfarfalla e si spegne', note: '<p>Il titolo resta dov\'è e perde luce a scatti, come un tubo che cede, fino al buio.</p><p>Costo: per mezzo secondo sembra un guasto, e il guasto in questo gioco è un\'altra cosa (l\'ultimo minuto, i finali).</p>', frames: titleFrames('one', 'to-dark').slice(0, 1) },
   ],
 };
-const endView = (ending) => chosen({ state: { ...base(), phase: 'ending', ending, sentCode: ending === 'timeout' ? null : ending === 'right' ? c.emergencyCode : '255' } });
+const endView = (ending, endOld = true) => chosen({ endOld, state: { ...base(), phase: 'ending', ending, sentCode: ending === 'timeout' ? null : ending === 'right' ? c.emergencyCode : '255' } });
 const endFrames = (cls) => [
   cap('Laptop: ossigeno finito', laptop(endView('timeout'), { cls: `${BASE} emergency ${cls}`, big: true })),
   cap('Telefono: ossigeno finito', phone(endView('timeout'), { cls: `${BASE} emergency ${cls}` })),
   cap('Laptop: codice accettato', laptop(endView('right'), { cls: `${BASE} ${cls}`, big: true })),
 ];
 const ENDTITLE = {
-  id: 'endtitle', title: 'Il titolo dei finali',
+  id: 'endtitle', title: 'Il titolo dei finali', decided: 'B, senza titolone', chosen: 'none',
+  answer: '«io direi senza titolone, altrimenti in quella schermata abbiamo troppi titoli: possiamo usare il titolone come titolo della scheda, non scriverei nova, perché nova ci comunica solo da terminale, in quel caso sarebbe meglio case closed o mission success/successful» · «alla fine del gioco direi case k9-7uq8 e poi l\'esito, quindi mission failed o altro»',
   quote: '«il titolone non sono sicuro se lo teniamo, se sì però, lo vedrei un po\' più piccolo?»',
   context: 'La mia posizione: tenerlo, più piccolo (A). Tenerlo perché, se la console si apre con il titolo MISSION CONTROL, il finale chiude con un titolo della stessa famiglia, ed è l\'unico punto in cui l\'esito si legge da lontano, attorno a un tavolo. Più piccolo perché oggi sul laptop le lettere sono alte 146 px e schiacciano la finestra che dice cosa è successo. Qui cambia solo la grandezza: le parole dei riquadri sono quelle di oggi («CRITICAL ERROR», «SYSTEM FAILURE», «SEE WHAT HAPPENED»), le proposte per cambiarle te le scrivo in chat.',
   dirs: [
@@ -1057,7 +1062,10 @@ const ENDTITLE = {
     {
       key: 'none', title: 'B · Senza titolone',
       note: '<p>Resta solo la finestra, con l\'esito nelle sue righe.</p><p>Costo: da lontano «ossigeno finito» e «codice rifiutato» si distinguono solo leggendo; e l\'esito andrebbe portato nel titolo della finestra, con parole da decidere.</p>',
-      frames: endFrames('et-none').slice(0, 2),
+      frames: endFrames('et-none').slice(0, 2).concat([
+        cap('Nel gioco dal 2026-11-26: il caso nella linguetta, poi l\'esito', laptop(endView('timeout', false), { cls: `${BASE} emergency`, big: true })),
+        cap('Nel gioco: codice accettato', laptop(endView('right', false), { cls: BASE, big: true })),
+      ]),
     },
   ],
 };
@@ -1070,6 +1078,7 @@ const codeFrames = (alt) => [
 ];
 const CODEPLACE = {
   id: 'codeplace', title: 'Il codice: dove sta e come si scrive',
+  over: '«per il codice, propongo che sia un\'opzione vicino a new question, code, così si invia a nova il codice che procede a bloccare [...] quello che non mi convince è che per il codice abbiamo pulsante rosso, per le domande un pulsante nel terminale con nova... è strano e incoerente» (continua nella tavola «Il codice si manda a NOVA, e il caso si chiude»)',
   quote: '«Io questa finestra forse la metterei a destra sotto i report, quindi se avrò i report aperti [...] indipendentemente dal fatto che i report siano aperti o chiusi, mi compare alla fine e scrolla quella colonna fino verso il basso, no? E quindi compare il code lì e posso consultare l\'ID ed è più facile così.» · «Il campo di testo per inserire il codice, al posto di una casella di input, secondo me ha senso un formato da terminale, come se noi lo stessimo inviando via terminale.»',
   context: 'La mia posizione: A, le tue due idee insieme. Il codice sta in fondo alla colonna dei rapporti e si scrive su una riga di terminale: «MC>», le tre cifre in ambra, il cursore. Nelle due proposte il tasto CODE non toglie più la mappa da sinistra. Le parole sono tutte quelle di oggi («EMERGENCY CODE», «SEND CODE», «One attempt.», «Send code 355? There is only one attempt.»): i nomi nuovi te li propongo in chat, qui guardi solo posto e forma. Nei riquadri il codice è a metà («35») e poi alla conferma.',
   dirs: [
@@ -1086,6 +1095,205 @@ const CODEPLACE = {
         <p>Costo: non è a destra come avevi detto; sul laptop gli ID restano in vista nella colonna accanto, sul telefono no.</p>`,
       frames: codeFrames('chat'),
     },
+  ],
+};
+
+// ---------- after the feedback of 2026-11-26: the cases of the console, the code to NOVA, how things come and go ----------
+
+// a closed case as the console keeps it; the sample case is the first, and the one opened in the boards
+const LOG2 = [{ q: hatchQ, ans: answer(c, hatchQ) }, { q: { kind: 'motion', what: 'K', a: 40, b: 50 }, ans: answer(c, { kind: 'motion', what: 'K', a: 40, b: 50 }) }];
+const c2 = generateCase(NEXT);
+const Q2 = { kind: 'hatch', what: 'N-K', a: 20, b: 30 };
+const REC = {
+  right: { code: SAMPLE, ending: 'right', sent: c.emergencyCode, asked: 1, left: 3 * MIN + 12000, log: LOG2.slice(0, 1) },
+  wrong: { code: SAMPLE, ending: 'wrong', sent: '227', asked: 1, left: 3 * MIN + 12000, log: LOG2.slice(0, 1) },
+  timeout: { code: SAMPLE, ending: 'timeout', sent: null, asked: 2, left: 0, log: LOG2 },
+};
+const ARCH2 = [
+  REC.right,
+  { code: NEXT, ending: 'wrong', sent: '227', asked: 1, left: 5 * MIN + 40000, log: [{ q: Q2, ans: answer(c2, Q2) }] },
+  { code: 'K9-R6TW', ending: 'timeout', sent: null, asked: 2, left: 0 },
+  { code: 'K9-4HKE', ending: 'right', sent: '355', asked: 2, left: 48000 },
+];
+const CALL = { code: 'K9-W2PB' };
+const OPENCASE = { code: SAMPLE, remainingMs: 7 * MIN + 42000 };
+
+// the home with the cases of the console (the title as in the board "hometitle", one line on a laptop)
+const homeV = (cases, extra = {}) => chosen({ flow: 'live', stage: -1, state: liveState(-1), homeTitle: 'one', cases, ...extra });
+const homeL = (label, cases, extra = {}) => cap(label, laptop(homeV(cases, extra), { cls: BASE, big: true }));
+const homeP = (label, cases, extra = {}, opts = {}) => cap(label, phone(homeV(cases, extra), { cls: BASE, ...opts }));
+
+const INBOX = {
+  id: 'inbox', title: 'La console vuota: i casi aperti e in arrivo, e l\'archivio a parte',
+  quote: '«per l\'archivio, l\'idea è che nella home ci sia solo al centro una finestra, tipo un inbox che gestisce i casi, e abbiamo i casi aperti e in arrivo, un archivio... non lo so come organizzare, però volevo il caso aperto e il caso in arrivo insieme, e poi archivio separato» · «B · Il caso aperto ridotto a striscia > perfetto, però mi chiedo se accept sia il termine più adatto»',
+  context: 'Sviluppo la tua idea: una finestra sola al centro con i casi vivi (quello aperto e quello che sta chiamando), e l\'archivio separato. Ogni caso porta il suo numero, anche quello in arrivo: il numero nasce prima di ACCEPT. Sopra c\'è il titolo MISSION CONTROL (qui su una riga; la scelta fra una e due righe è nella sua tavola). La mia posizione: A, perché è l\'idea come l\'hai detta e i due casi diventano due righe della stessa lista. Ha un costo che devi vedere: la striscia che avevi trovato «perfetta» diventa una riga, e il nome «NOVA ON KEPLER-9» lascia la console vuota (torna quando accetti, sulla sua conversazione). B tiene invece tutti i pezzi di oggi così come sono; è una variante mia. Parole nuove da approvare: «CASES» (titolo della finestra, da «CASE») e «ARCHIVE» (tua). ACCEPT è ancora la parola di oggi: le alternative te le scrivo in chat. In tutte e tre, per ora, accettando un caso nuovo quello aperto resta dov\'è con l\'ossigeno che scende (non si perde più): è da decidere, lo trovi nelle domande in chat.',
+  dirs: [
+    {
+      key: 'tabs', title: 'A · Una finestra, CASES; l\'archivio è la sua seconda vista', rec: true,
+      note: `<p>Una finestra al centro, «CASES»: una riga per il caso aperto (numero, ossigeno, CONTINUE) e una per il caso in arrivo (numero, INCOMING TRANSMISSION, ACCEPT, e sotto la prima frase di NOVA). In alto a destra, nella stessa finestra, «ARCHIVE · 4»: toccandolo la finestra mostra l'archivio, e al suo posto compare «CASES» per tornare. Se l'archivio è vuoto la voce non c'è.</p>
+        <p>Perché: una finestra sola, e l'archivio resta separato senza occupare posto. Costo: per vedere l'archivio serve un tocco; la finestra non si chiama più «NOVA ON KEPLER-9».</p>`,
+      frames: [
+        homeL('Laptop: un caso aperto e uno in arrivo', { style: 'tabs', open: OPENCASE, incoming: CALL, archive: ARCH2 }),
+        homeP('Telefono', { style: 'tabs', open: OPENCASE, incoming: CALL, archive: ARCH2 }),
+        homeL('Laptop: la prima volta, solo il caso in arrivo', { style: 'tabs', incoming: CALL, archive: [] }),
+        homeL('Laptop: toccato ARCHIVE · 4', { style: 'tabs', tab: 'archive', open: OPENCASE, incoming: CALL, archive: ARCH2 }),
+        homeP('Telefono: l\'archivio', { style: 'tabs', tab: 'archive', open: OPENCASE, incoming: CALL, archive: ARCH2 }),
+      ],
+    },
+    {
+      key: 'stack', title: 'B · I pezzi di oggi in colonna: la striscia, la chiamata, l\'archivio come striscia',
+      note: `<p>Questa è una variante mia. Al centro restano la striscia del caso aperto, così come l'hai approvata, e sotto la chiamata di NOVA nella sua finestra di oggi. L'archivio è una terza striscia in fondo, «ARCHIVE», con il numero dei casi e il +: si apre sul posto, come un rapporto.</p>
+        <p>Perché: nessun pezzo cambia, e la finestra della chiamata è la stessa che dopo ACCEPT diventa la conversazione. Costo: le finestre al centro sono tre e non una, quindi non è «solo al centro una finestra»; il caso in arrivo non mostra il suo numero; e con l'archivio aperto la colonna è più alta dello schermo e si scorre (terzo riquadro).</p>`,
+      frames: [
+        homeL('Laptop: un caso aperto e uno in arrivo, archivio chiuso', { style: 'stack', archive: ARCH2 }, { saved: HELD }),
+        homeP('Telefono', { style: 'stack', archive: ARCH2 }, { saved: HELD }),
+        homeL('Laptop: l\'archivio aperto', { style: 'stack', archive: ARCH2, fold: true }, { saved: HELD }),
+      ],
+    },
+    {
+      key: 'key', title: 'C · L\'archivio su un tasto della barra',
+      note: `<p>Al centro solo i casi vivi, come in B. L'archivio è un tasto della console, «ARCHIVE», accanto a BRIEFING e MAP: acceso solo a console vuota, mette l'archivio al centro dello schermo; ripremuto, tornano i casi.</p>
+        <p>Perché: è la separazione più netta, e sulla console i tasti scelgono già cosa c'è sullo schermo. Costo: un tasto in più sulla barra, che sul telefono ne ha già cinque e va su due file (ultimo riquadro); e durante un caso resta spento.</p>`,
+      frames: [
+        homeL('Laptop: i casi, il tasto ARCHIVE sulla barra', { style: 'key', archive: ARCH2 }, { saved: HELD, archiveKey: true }),
+        homeL('Laptop: tasto ARCHIVE premuto', { style: 'key', tab: 'archive', archive: ARCH2 }, { saved: HELD, archiveKey: true }),
+        homeP('Telefono: tasto ARCHIVE premuto', { style: 'key', tab: 'archive', archive: ARCH2 }, { saved: HELD, archiveKey: true }),
+      ],
+    },
+  ],
+};
+
+// ---------- the code is sent to NOVA, and the case closes ----------
+
+const READBACK = `Report ${String(c.order.indexOf(c.sab) + 1).padStart(2, '0')}: false. Saboteur: ${PEOPLE[c.sab].name}, ID ${PEOPLE[c.sab].id}.`;
+const REPLY = {
+  right: [ENDINGS.right.lines[0], READBACK, ...ENDINGS.right.lines.slice(1)],
+  wrong: ENDINGS.wrong.lines,
+  timeout: ENDINGS.timeout.lines,
+};
+const LOG1 = LOG2.slice(0, 1);
+const flowV = (s = {}, extra = {}) => chosen({ flow: 'live', stage: 8, state: liveState(8, { openReports: [], log: LOG1, ...s }), remainingMs: 3 * MIN + 12000, codeAlt: 'nova', noCodeKey: true, ...extra });
+const flowL = (label, s, extra, cls = '') => cap(label, laptop(flowV(s, extra), { cls: `${BASE} ${cls}`, big: true }));
+const flowP = (label, s, extra, cls = '') => cap(label, phone(flowV(s, extra), { cls: `${BASE} ${cls}`, scroll: 'bottom' }));
+const sentS = (kind) => ({ codeStep: 3, sentCode: REC[kind].sent, codeInput: REC[kind].sent || '' });
+const closedV = (kind, cases = {}) => chosen({ flow: 'live', stage: -1, state: liveState(-1), noCodeKey: true, cases: { only: true, last: REC[kind], ...cases } });
+const closedL = (label, kind, cases, cls = '') => cap(label, laptop(closedV(kind, cases), { cls: `${BASE} ${cls}`, big: true }));
+// the closing, played: the windows go out one after the other, then the file of the case comes
+const closing = cap('Laptop: la chiusura, da guardare', `${laptop(flowV(sentS('right'), { reply: REPLY.right }), { cls: BASE, big: true })}<template>${laptop(closedV('right'), { cls: BASE, big: true })}</template><button type="button" class="replay" data-replay="closing">Guarda la chiusura</button>`);
+const CODEFLOW = {
+  id: 'codeflow', title: 'Il codice si manda a NOVA, e il caso si chiude',
+  quote: '«per il codice, propongo che sia un\'opzione vicino a new question, code, così si invia a nova il codice che procede a bloccare, però questa parte della storia non viene raccontata, e sarebbe utile che nova riceve il codice e dice ok procedo a bloccare l\'accesso di x e bla bla bla, infine si chiude tutto e arriva case closed, poi arriva nuovo caso sempre da nova per nuova missione... (una sorta di play again) > quello che non mi convince è che per il codice abbiamo pulsante rosso, per le domande un pulsante nel terminale con nova... è strano e incoerente» · «io direi senza titolone [...] non scriverei nova, perché nova ci comunica solo da terminale» · «alla fine del gioco direi case k9-7uq8 e poi l\'esito, quindi mission failed o altro»',
+  context: 'Sviluppo la tua proposta, un momento alla volta. Il codice parte dalla conversazione con NOVA, come una domanda: accanto a NEW QUESTION c\'è CODE, rosso come era il tasto. Il codice si scrive sulla riga «MC>» (il formato da terminale che avevi chiesto), e «SEND CODE» ora dice a chi: lo mandi a NOVA, nella sua conversazione. NOVA risponde lì, con le frasi che oggi stanno nella schermata finale; poi le finestre si spengono una dopo l\'altra, nell\'ordine inverso a quello in cui sono arrivate, e al centro arriva il fascicolo del caso: nella linguetta «CASE K9-7UQ8», sotto l\'esito («MISSION SUCCESSFUL» o «MISSION FAILED»), poi codice, domande e ossigeno, il segno «CASE CLOSED» e INCIDENT REPORT. Dopo qualche secondo, sotto arriva la chiamata nuova. Non ci sono più la schermata finale a parte né il titolone. Cose che la tua frase non diceva e che ho chiuso così, da correggere se non tornano: mentre scrivi il codice c\'è CANCEL per tornare alle domande (prima bastava ripremere il tasto); quando le domande sono finite resta solo CODE; se finisce l\'ossigeno NOVA scrive da sola le sue ultime frasi e il caso si chiude allo stesso modo. Testi: sono tutti quelli di oggi tranne quattro, da approvare. «Code», la riga che resta nella conversazione quando tocchi CODE (come «New question»). «CASE CLOSED». Le parole dopo le cifre nel fascicolo, prese dai titoli dei finali e dalle frasi sulle domande: «Accepted», «Rejected», «Depleted», «Not sent», «1 of 2 sent». E la riga in cui NOVA dice chi blocca, che ho ricavato dalle due parti del codice: «Report 04: false. Saboteur: Doyun Park, ID 27.» È una bozza: le frasi di NOVA dopo il codice appartengono alla storia e le scrive la sessione che ce l\'ha, insieme al nome del codice. Con l\'esito scritto in alto nel fascicolo, l\'ultima frase di NOVA («MISSION STATUS: SUCCESS.») lo dice due volte: anche questo va a quella sessione. La chiusura si può guardare nel riquadro «la chiusura, da guardare»; gli altri riquadri sono fermi.',
+  common: [
+    flowL('1 · Laptop: accanto a NEW QUESTION c\'è CODE; sulla barra il tasto rosso non c\'è', {}),
+    flowL('2 · Toccato CODE: NOVA ripete la regola, il codice si scrive sulla riga MC', { codeStep: 1, codeInput: '42' }),
+    flowL('3 · SEND CODE: la conferma', { codeStep: 1, codeInput: c.emergencyCode, confirming: true }),
+    flowL('4 · Inviato: NOVA risponde nella conversazione, l\'ossigeno è fermo', sentS('right'), { reply: REPLY.right }),
+    closing,
+    closedL('5 · Tutto spento: arriva il fascicolo del caso', 'right'),
+    closedL('6 · Poco dopo, sotto arriva la chiamata nuova', 'right', { only: false, style: 'tabs', incoming: CALL, archive: ARCH2 }),
+    flowL('Codice sbagliato: la risposta di NOVA', sentS('wrong'), { reply: REPLY.wrong, remainingMs: 3 * MIN + 12000 }),
+    closedL('Codice sbagliato: il fascicolo', 'wrong', {}, 'emergency'),
+    flowL('Ossigeno finito: NOVA scrive da sola', { log: LOG2 }, { reply: REPLY.timeout, remainingMs: 0 }, 'emergency'),
+    closedL('Ossigeno finito: il fascicolo', 'timeout', {}, 'emergency'),
+    flowP('Telefono · 1: CODE accanto a NEW QUESTION', {}),
+    flowP('Telefono · 2: il codice sulla riga MC', { codeStep: 1, codeInput: '42' }),
+    flowP('Telefono · 4: NOVA risponde', sentS('right'), { reply: REPLY.right }),
+    cap('Telefono · 5: il fascicolo del caso', phone(closedV('right'), { cls: BASE })),
+    cap('Telefono · 6: la chiamata nuova sotto il fascicolo', phone(closedV('right', { only: false, style: 'tabs', incoming: CALL, archive: ARCH2 }), { cls: BASE })),
+  ],
+  dirs: [
+    {
+      key: 'nokey', title: 'A · Il tasto rosso CODE si toglie dalla barra', rec: true,
+      note: `<p>È quello che vedi in tutti i riquadri qui sopra: il codice si manda solo dalla conversazione, come le domande. Sulla barra restano i tasti dei canali e l'accensione.</p>
+        <p>Perché: toglie l'incoerenza che hai notato, una cosa si fa in un modo solo. Costo: la barra perde il suo oggetto più riconoscibile, il tasto rosso sotto la protezione a strisce, che avevi scelto il 2026-11-24.</p>`,
+      frames: [],
+    },
+    {
+      key: 'key', title: 'B · Il tasto rosso resta, e fa la stessa cosa',
+      note: `<p>CODE c'è nella conversazione e anche sulla barra: premendo il tasto rosso si apre la stessa riga del codice nella conversazione con NOVA.</p>
+        <p>Costo: restano due modi per fare la stessa cosa, e uno dei due è proprio quello che hai trovato incoerente con le domande.</p>`,
+      frames: [cap('Laptop: CODE nella conversazione e sulla barra', laptop(flowV({}, { noCodeKey: false }), { cls: BASE, big: true }))],
+    },
+  ],
+};
+
+// ---------- the archive: what opens when a case is tapped ----------
+
+const archL = (label, cases, extra = {}) => cap(label, laptop(chosen({ flow: 'live', stage: -1, state: liveState(-1), cases: { style: 'tabs', tab: 'archive', archive: ARCH2, ...cases }, ...extra }), { cls: BASE, big: true }));
+const archP = (label, cases, opts = {}) => cap(label, phone(chosen({ flow: 'live', stage: -1, state: liveState(-1), cases: { style: 'tabs', tab: 'archive', archive: ARCH2, ...cases } }), { cls: BASE, ...opts }));
+const readV = (s = {}) => chosen({ flow: 'live', stage: 8, state: liveState(8, { openReports: c.order.slice(3), log: LOG1, ...sentS('right'), ...s }), remainingMs: REC.right.left, codeAlt: 'nova', noCodeKey: true, reply: REPLY.right, archived: true });
+const CASEFILE = {
+  id: 'casefile', title: 'L\'archivio: cosa si apre toccando un caso',
+  quote: '«per il design dell\'archivio... vorrei un mock dettagliato su cosa succede dopo aver cliccato su un caso, come e cosa si apre» · «you did it again... mi hai messo il pulsante new game... è VIETATO, cosa devo fare per farti capire che è la console di mission control»',
+  context: 'Un tocco alla volta, in tre modi. L\'archivio qui è nella forma A della tavola sopra (la seconda vista della finestra dei casi); quello che succede dopo il tocco vale uguale se scegli B o C. In archivio entrano i casi chiusi: codice accettato, codice rifiutato, ossigeno finito. Ogni riga ha il numero del caso e l\'esito, come hai detto per la fine del caso («case k9-7uq8 e poi l\'esito»). La mia posizione: B. Il fascicolo che si apre dall\'archivio è la stessa finestra che arriva quando il caso si chiude (tavola «Il codice si manda a NOVA»): una cosa sola, che il gruppo ha già visto, nello stesso posto. Il rapporto sull\'incidente ha le cinque parti che ha oggi la soluzione: cosa è successo, i rapporti, la domanda che lo risolveva, il codice, le tue trasmissioni. Sul pulsante NEW GAME: nella tavola di prima c\'era perché avevo riusato la schermata della soluzione con la parola vecchia. Adesso nel gioco quella parola non c\'è più, e un controllo automatico fa fallire le verifiche se «game», «player» o «quit» compaiono in una schermata. Di un caso si tengono il numero, l\'esito, il codice inviato, le domande con le risposte e l\'ossigeno rimasto: tutto il resto si rigenera dal numero.',
+  common: [
+    archL('Per tutte: l\'archivio, una riga per caso', {}),
+  ],
+  dirs: [
+    {
+      key: 'in', title: 'A · La riga si apre sul posto, il rapporto in una finestra sopra',
+      note: `<p>Toccando una riga, il + diventa − e sotto compare la scheda del caso: codice, domande, ossigeno, e INCIDENT REPORT. Le altre righe scendono. INCIDENT REPORT apre il rapporto in una finestra sopra lo schermo, come la scheda di un membro, con CLOSE.</p>
+        <p>Perché: l'elenco resta sempre in vista e si possono confrontare due casi. Costo: il rapporto sta in una finestra sovrapposta, lunga, che sul telefono copre tutto.</p>`,
+      frames: [
+        archL('1 · Toccato «+ CASE K9-M3XD»: la scheda sotto la riga', { expand: NEXT }),
+        archL('2 · INCIDENT REPORT: il rapporto in una finestra sopra', { expand: NEXT, modal: ARCH2[1], fileC: c2 }),
+        archP('Telefono · 1', { expand: NEXT }),
+      ],
+    },
+    {
+      key: 'file', title: 'B · Il fascicolo prende il posto dell\'elenco', rec: true,
+      note: `<p>Toccando una riga, la finestra dell'archivio diventa il fascicolo di quel caso: nella linguetta «CASE K9-M3XD», in alto a destra «ARCHIVE» per tornare all'elenco, poi l'esito, la scheda e INCIDENT REPORT. Il rapporto si apre dentro il fascicolo, sotto la scheda, e la finestra scorre; il − in fondo lo richiude.</p>
+        <p>Perché: è la stessa finestra della fine del caso, quindi non c'è niente di nuovo da imparare. Costo: per passare da un caso all'altro si torna all'elenco.</p>`,
+      frames: [
+        archL('1 · Toccato «+ CASE K9-M3XD»: il fascicolo al posto dell\'elenco', { file: ARCH2[1], fileC: c2 }, {}),
+        archL('2 · INCIDENT REPORT: il rapporto si apre dentro il fascicolo', { file: ARCH2[1], fileC: c2, report: true }),
+        archP('Telefono · 1', { file: ARCH2[1], fileC: c2 }),
+        archP('Telefono · 2 (scorre)', { file: ARCH2[1], fileC: c2, report: true }),
+        archL('Un caso riuscito', { file: REC.right, fileC: c }),
+      ],
+    },
+    {
+      key: 'console', title: 'C · Il caso si riapre sulla console, da leggere',
+      note: `<p>Toccando una riga la console si riempie com'era alla fine di quel caso, tutta in una volta e ferma: al centro la conversazione con NOVA, con le domande, le risposte e il codice; a destra i quattro rapporti, che si aprono; a sinistra domande e ossigeno fermi, e sotto, dove durante il caso c'è la mappa, il rapporto sull'incidente (MAP e BRIEFING rimettono lì la mappa e gli appunti). Il tasto di accensione riporta all'archivio.</p>
+        <p>Perché: il rapporto dice chi ha mentito, e qui lo leggi con i rapporti e la mappa accanto. Costo: è la più lunga da costruire; sul telefono il rapporto è un canale in più, quindi un tasto in più sulla barra; e un caso chiuso somiglia molto a uno aperto.</p>`,
+      frames: [
+        cap('Laptop: il caso K9-7UQ8 riaperto, il rapporto a sinistra', laptop(readV(), { cls: BASE, big: true })),
+        cap('Telefono: il canale di NOVA', phone(readV(), { cls: BASE, scroll: 'bottom' })),
+      ],
+    },
+  ],
+};
+
+// ---------- how a button comes ----------
+
+const btnFig = (label, view, key, last = 0) => cap(label, `${phone(view, { cls: `${BASE} btnin-${key}`, scroll: last ? 'bottom' : '' })}<button type="button" class="replay" data-replay="btnin" data-last="${last}">Riguarda</button>`);
+const btnFrames = (key) => [
+  btnFig('La richiesta di NOVA: ACCEPT', chosen({ flow: 'live', stage: -1, state: liveState(-1) }), key),
+  btnFig('Una domanda: i tasti dei 10 minuti', chosen({ flow: 'live', stage: 8, state: liveState(8, { askStep: 2, draft: { kind: 'hatch', what: 'M-K', a: null, b: null } }), remainingMs: 8 * MIN }), key, 2),
+];
+const BTNIN = {
+  id: 'btnin', title: 'Come compaiono i pulsanti',
+  quote: '«ma i pulsanti appaiono all\'improvviso? non hai pensato alle animazioni di entrata?» · prima, il 2026-11-25: «i pulsanti, e altri elementi che non sono testo, non devono avere effetto di battitura, concordi?»',
+  context: 'No, non ci avevo pensato: li avevo solo tolti dalla battitura, come avevi chiesto, e così un pulsante compare di colpo quando la scrittura arriva a lui. Qui tre entrate, da guardare con «Riguarda» sotto ogni riquadro: la finestra si apre, il testo si scrive, e il pulsante arriva al suo turno. Durano un quarto di secondo; la cosa dopo aspetta che il pulsante sia arrivato, e i tasti di una stessa fila (i 10 minuti) arrivano uno dopo l\'altro, a 45 millesimi di distanza. Vale per i pulsanti, per i tasti di scelta e per il + e il − dei rapporti. La mia posizione: B, perché le finestre nascono già da una riga di luce e così tutto ciò che non è testo arriva nello stesso modo. Non le ho viste a velocità vera: nel mio browser le animazioni vanno a scatti.',
+  dirs: [
+    { key: 'a', title: 'A · Si accende', note: '<p>Il pulsante compare con due lampi brevi e poi resta acceso, come una spia.</p><p>Costo: il lampeggio è il segno che qui usiamo per le cose che chiedono attenzione (INCOMING TRANSMISSION, l\'ultimo minuto).</p>', frames: btnFrames('a') },
+    { key: 'b', title: 'B · Si apre da una riga di luce, come le finestre', rec: true, note: '<p>Nasce da una riga chiara al centro, che si allarga in altezza fino alla forma del pulsante: la stessa entrata delle finestre, in piccolo.</p>', frames: btnFrames('b') },
+    { key: 'c', title: 'C · La cornice si apre dal centro, poi il nome', note: '<p>La cornice si allarga dal centro verso i lati; quando è quasi aperta compare il nome.</p><p>Costo: è un movimento diverso da quello delle finestre, quindi le entrate diventano due.</p>', frames: btnFrames('c') },
+  ],
+};
+
+// ---------- how the home title leaves, second round ----------
+
+const exitFig = (label, out, isPhone = false) => cap(label, `<div class="mock-live ${isPhone ? 'is-phone' : ''}"><iframe src="./?demo=1&amp;title=one&amp;out=${out}" loading="lazy" title="${label}"></iframe></div><button type="button" class="replay" data-replay="accept">Guarda l'uscita</button>`);
+const TITLEOUT2 = {
+  id: 'titleout2', title: 'Come se ne va il titolo quando accetti, seconda prova',
+  quote: '«quando si preme accept, il titolo fades away (coerentemente con uno schermo)» · «non mi piacciono gli effetti di uscita»',
+  context: 'Le due uscite di prima erano effetti (la riga di luce, lo sfarfallio) e tu avevi scritto «fades away»: qui sono tre dissolvenze. Ogni riquadro è la console vera: premi ACCEPT dentro il riquadro, oppure «Guarda l\'uscita» sotto, che lo preme per te e poi riporta la richiesta. Così l\'uscita si vede insieme a quello che succede davvero in quel momento: la finestra di NOVA sale al suo posto mentre il titolo se ne va. La mia posizione: A, la dissolvenza semplice: è quello che avevi chiesto, e dura quanto lo spostamento della finestra. Non le ho viste a velocità vera: nel mio browser le animazioni vanno a scatti.',
+  dirs: [
+    { key: 'fade', title: 'A · Dissolvenza', rec: true, note: '<p>Il titolo perde luce in modo uniforme e sparisce in quattro decimi di secondo.</p>', frames: [exitFig('Laptop', 'fade'), exitFig('Telefono', 'fade', true)] },
+    { key: 'glow', title: 'B · Persistenza: la luce cala subito, resta un alone', note: '<p>Come il fosforo di un tubo quando il segnale finisce: il bianco cala di colpo e resta la traccia ciano delle lettere, che si spegne in poco meno di un secondo.</p><p>Costo: dura il doppio, e per un attimo la traccia resta sotto la finestra di NOVA che sale.</p>', frames: [exitFig('Laptop', 'glow')] },
+    { key: 'scan', title: 'C · Si dirada fra le righe dello schermo', note: '<p>Le lettere si assottigliano riga per riga, lungo le righe del monitor, fino a sparire: mezzo secondo.</p><p>Costo: è la più vicina a un effetto, quindi alla cosa che non ti è piaciuta.</p>', frames: [exitFig('Laptop', 'scan')] },
   ],
 };
 
@@ -1478,9 +1686,9 @@ const fontsBoard = `
 // ---------- page ----------
 
 const STORY = [LIVE];
-const OPEN = [HOMETITLE, TITLEOUT, ENDTITLE, CODEPLACE, PACE, RESUME, ARCHIVE, TEXTFONT];
+const OPEN = [INBOX, HOMETITLE, TITLEOUT2, PACE, BTNIN, CODEFLOW, CASEFILE];
 const NOTES = [BTN2, MAPTEXT, PORTRAITS];
-const DECIDED = [MAPFIT, REPHEAD, REPCOL, PIXELDECK, SCROLLEDGE, WINFX, REPCLOSED, LIVELEFT, BARLED, ASKTERM2, MAPINFO, HOME2, ASKTERM, REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const DECIDED = [ENDTITLE, RESUME, TEXTFONT, TITLEOUT, CODEPLACE, ARCHIVE, MAPFIT, REPHEAD, REPCOL, PIXELDECK, SCROLLEDGE, WINFX, REPCLOSED, LIVELEFT, BARLED, ASKTERM2, MAPINFO, HOME2, ASKTERM, REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">
@@ -1502,7 +1710,44 @@ root.addEventListener('click', (e) => {
   const b = e.target.closest('[data-replay]');
   if (!b) return;
   // a frame that plays the game itself starts again from NOVA's request
-  if (b.dataset.replay === 'live') { const f = b.closest('.mock-fig').querySelector('iframe'); f.src = f.getAttribute('src'); return; }
+  // (a frame of the board "pace" plays the whole briefing, without a tap inside it)
+  if (b.dataset.replay === 'live') { const f = b.closest('.mock-fig').querySelector('iframe'); f.src = `${f.dataset.play || f.getAttribute('src')}&r=${Date.now()}`; b.textContent = f.dataset.play ? 'Ricomincia il briefing' : b.textContent; return; }
+  // the console itself: ACCEPT is pressed inside the frame, and a little later NOVA's request is back
+  if (b.dataset.replay === 'accept') {
+    const f = b.closest('.mock-fig').querySelector('iframe');
+    const press = () => f.contentDocument?.querySelector('[data-act="accept"]')?.click();
+    clearTimeout(f.backTimer);
+    const back = () => { f.backTimer = setTimeout(() => { f.src = f.getAttribute('src'); }, 2600); };
+    if (f.contentDocument?.querySelector('.home-title')) { press(); back(); } else { f.addEventListener('load', () => setTimeout(() => { press(); back(); }, 1500), { once: true }); f.src = f.getAttribute('src'); }
+    return;
+  }
+  // a button comes at its turn: NOVA's window opens and is typed again (or only its last rows), then the buttons
+  if (b.dataset.replay === 'btnin') {
+    const w = b.closest('.mock-fig').querySelector('.win-term');
+    w.querySelectorAll('.btn-in').forEach((x) => { x.classList.remove('btn-in'); x.style.animationDelay = ''; });
+    const last = Number(b.dataset.last);
+    if (last) { typeNodes([...w.querySelectorAll('.term > .tl')].slice(-last), { cps: 60, max: 0 }); return; }
+    w.classList.remove('win-arrive'); void w.offsetWidth; w.classList.add('win-arrive');
+    typeWindow(w, { cps: 60, max: 0 });
+    return;
+  }
+  // the end of a case: the windows go out one after the other, the file of the case comes, then the frame is as before
+  if (b.dataset.replay === 'closing') {
+    const fig = b.closest('.mock-fig');
+    const wrap = fig.querySelector('.mock-wide-wrap');
+    if (fig.dataset.busy) return;
+    fig.dataset.busy = '1';
+    const before = wrap.outerHTML;
+    wrap.querySelector('.mock-frame').classList.add('fx-closing');
+    setTimeout(() => {
+      wrap.outerHTML = fig.querySelector('template').innerHTML;
+      const file = fig.querySelector('.mock-wide-wrap .win-file');
+      file.classList.add('win-arrive');
+      typeWindow(file, { max: 1400 });
+    }, 2100);
+    setTimeout(() => { fig.querySelector('.mock-wide-wrap').outerHTML = before; delete fig.dataset.busy; chatEnd(); }, 7000);
+    return;
+  }
   // the home title leaves as it does when the transmission is accepted, then comes back to be tried again
   if (b.dataset.replay === 'titleout') {
     const h = b.closest('.mock-fig').querySelector('.home-title');

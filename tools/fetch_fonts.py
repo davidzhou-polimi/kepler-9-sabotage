@@ -7,7 +7,7 @@ import re, urllib.request, pathlib
 
 URL = ("https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&family=Silkscreen:wght@400;700"
        "&family=Jersey+10&family=Press+Start+2P&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400"
-       "&family=IBM+Plex+Mono:wght@400;500;600&display=swap")
+       "&family=IBM+Plex+Mono:wght@400;500;600&display=block")
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36"
 out = pathlib.Path("fonts")
 out.mkdir(exist_ok=True)

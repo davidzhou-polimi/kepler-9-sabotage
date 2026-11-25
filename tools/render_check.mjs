@@ -1,5 +1,6 @@
 // Renders every screen of the game on many cases and looks for what must never reach a player: a value that
-// was not filled in. No browser: the screens are functions from a view to a string of HTML.
+// was not filled in, and a word of a game (the console is Mission Control's). No browser: the screens are functions
+// from a view to a string of HTML.
 //   node tools/render_check.mjs            300 cases
 //   CASES=1000 node tools/render_check.mjs
 import { generateCase, randomCode, answer, HATCHES, MODULES } from '../js/generator.js';
@@ -7,6 +8,12 @@ import { screen, newState } from '../js/ui.js';
 
 const CASES = Number(process.env.CASES || 300);
 const BAD = [/undefined/, /\bNaN\b/, /\[object /, /\$\{/, />null</];
+// Words the console never says: it is Mission Control's console, not a game (2026-11-25: «noi avevamo detto che non ci
+// devono essere riferimenti al game, perché è una console»; 2026-11-26, after NEW GAME was shown again in a board:
+// «è VIETATO, cosa devo fare per farti capire che è la console di mission control»). Looked for in what a player
+// reads or hears: the text of the screen and the labels read aloud, not the names inside the markup.
+const FORBIDDEN = [/\bgames?\b/i, /\bplayers?\b/i, /\bplay again\b/i, /\bquit\b/i];
+const spoken = (html) => `${html.replace(/<[^>]*>/g, ' ')} ${[...html.matchAll(/aria-label="([^"]*)"/g)].map((m) => m[1]).join(' ')}`;
 // the view of the game (js/app.js): the console that fills up after NOVA's request is accepted
 const view = (state, c, extra = {}) => ({
   state, c, remainingMs: 6 * 60000, dev: false,
@@ -24,6 +31,8 @@ const check = (label, v) => {
     n += 1;
     const bad = BAD.find((re) => re.test(html));
     if (bad) fails.push(`${label} ${wide ? 'wide' : 'phone'}: ${bad}`);
+    const word = FORBIDDEN.find((re) => re.test(spoken(html)));
+    if (word) fails.push(`${label} ${wide ? 'wide' : 'phone'}: a word the console never says, ${word}`);
   }
 };
 
@@ -57,8 +66,8 @@ for (let i = 0; i < CASES; i += 1) {
 }
 
 if (fails.length) {
-  console.error(`${fails.length} screens with something left over, of ${n}:`);
+  console.error(`${fails.length} screens with something left over or a forbidden word, of ${n}:`);
   fails.slice(0, 20).forEach((f) => console.error('  ' + f));
   process.exit(1);
 }
-console.log(`screens rendered without leftovers: ${n}`);
+console.log(`screens rendered without leftovers or forbidden words: ${n}`);

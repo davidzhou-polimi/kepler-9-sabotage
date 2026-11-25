@@ -63,6 +63,14 @@ try {
   await evaluate('document.fonts.ready.then(() => true)');
   await sleep(500);
 
+  // The frames of the open boards never say a word of a game: the console is Mission Control's (2026-11-26, after NEW
+  // GAME was shown in a new board: «è VIETATO»). The boards already answered are the record of how things were.
+  const said = await evaluate(`[...document.querySelectorAll('.board.is-open .mock-frame')].flatMap((f) => {
+    const m = (f.innerText + ' ' + [...f.querySelectorAll('[aria-label]')].map((x) => x.getAttribute('aria-label')).join(' ')).match(/\\b(games?|players?|play again|quit)\\b/i);
+    return m ? [f.closest('.board').id + ': ' + m[0]] : [];
+  })`);
+  if (said.length) { console.error('A word the console never says, in an open board:\n  ' + said.join('\n  ')); process.exitCode = 1; }
+
   const boards = await evaluate(`[...document.querySelectorAll('.board')].map((b) => {
     const r = b.getBoundingClientRect();
     return { id: b.id, x: 0, y: r.top + scrollY, w: Math.ceil(Math.max(document.documentElement.scrollWidth, b.scrollWidth)), h: Math.ceil(r.height) };

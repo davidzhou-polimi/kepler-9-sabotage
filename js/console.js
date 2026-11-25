@@ -122,7 +122,7 @@ function dashShell(view, inner) {
 //                 'panel' on the key panel (two rows of three on a phone).
 
 // the power symbol as a drawing of lines, not of pixels («l'icona power on rendilo vettoriale, non pixel», 2026-11-25)
-const powerKey = (live) => `<button type="button" class="cs-power" ${live ? 'data-act="quit"' : 'disabled'} aria-label="Quit game">
+const powerKey = (live) => `<button type="button" class="cs-power" ${live ? 'data-act="quit"' : 'disabled'} aria-label="Power off console">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5V12"/><path d="M7.2 7.4A7.5 7.5 0 1 0 16.8 7.4"/></svg><i class="cs-power-px" aria-hidden="true"></i></button>`;
 const key2 = (label, v, { on = false, live = true, cls = '' } = {}) =>
   `<button type="button" class="cs-key cs-key2 ${on ? 'is-on' : ''} ${cls}" ${live ? `data-act="tab" data-v="${v}"` : 'disabled'}><i class="cs-led" aria-hidden="true"></i><span>${label}</span></button>`;
@@ -204,11 +204,15 @@ function deckShell(view, screenFn) {
   const filling = view.flow === 'live';
   const stage = view.stage ?? 8;
   const avail = filling ? { ask: stage >= 0, briefing: stage >= 1, reports: stage >= 3, map: stage >= 4, code: stage >= 6 } : null;
-  if (filling && view.wide) tab = liveSide(tab, stage); // the lit key is the one of what stands under the meters
+  // the lit key is the one of what stands under the meters (none while a closed case shows its incident report there)
+  if (filling && view.wide) tab = view.archived && tab !== 'map' && tab !== 'briefing' ? 'ask' : liveSide(tab, stage);
   const k = (label, v) => key2(label, v, { on: playing && tab === v && (!avail || avail[v]), live: avail ? playing && avail[v] : playing, cls: `cs-key-${v}` });
   const keys = filling && view.wide ? k('BRIEFING', 'briefing') + k('MAP', 'map')
     : (view.wide ? '' : k('REPORTS', 'reports')) + k('MAP', 'map') + k('NOVA', 'ask') + k('BRIEFING', 'briefing');
-  const code = `<div class="cs-guard">${key2('CODE', 'code', { on: playing && tab === 'code', live: avail ? playing && avail.code : playing, cls: 'cs-key-red' })}</div>`;
+  // view.noCodeKey (proposal): the code is sent from NOVA's conversation, so the bar has no red key
+  // view.archiveKey (proposal): the archive of the closed cases is on a key, lit while it is on the screen
+  const code = view.noCodeKey ? '' : `<div class="cs-guard">${key2('CODE', 'code', { on: playing && tab === 'code', live: avail ? playing && avail.code : playing, cls: 'cs-key-red' })}</div>`;
+  const archiveKey = view.archiveKey ? key2('ARCHIVE', 'archive', { on: view.cases?.tab === 'archive', live: !playing, cls: 'cs-key-archive' }) : '';
   const link = style === 'scifi'
     ? '<span class="cs-link"><span class="cs-o2-label">LINK</span><span class="cs-link-bars"><i class="on"></i><i class="on is-flick"></i><i></i><i></i><i></i></span></span>'
     : '<span class="cs-link"><span class="cs-gauge"><i></i></span><span class="cs-o2-label">LINK</span></span>';
@@ -231,7 +235,7 @@ function deckShell(view, screenFn) {
     ${style === 'pixel' ? '<div class="cs-bezel">' : ''}<div class="cs-screen"><div class="cs-scroll">${inner}</div><div class="cs-fx" aria-hidden="true"></div></div>${style === 'pixel' ? '</div>' : ''}
     <div class="cs-bar">
       ${bar === 'min' ? '' : `<div class="cs-instr">${instr}${powerKey(playing)}</div>`}
-      <div class="cs-keyrow">${keys}${code}${bar === 'min' ? powerKey(playing) : ''}</div>
+      <div class="cs-keyrow">${keys}${archiveKey}${code}${bar === 'min' ? powerKey(playing) : ''}</div>
     </div>
   </div>`;
 }

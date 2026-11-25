@@ -15,6 +15,12 @@
 // a line of text that can be tapped (a report NOVA attaches, a member's block) is still text.
 const ATOM = 'img, svg, input, select, .meter, .pips, .holo, .tl-cur, .btn, .chip, .rep-toggle, .rep-cover';
 const BAR = '.meter, .pips';
+// A button comes in its own way too (proposals, only where an ancestor carries one of the classes btnin-a, -b, -c:
+// the frames of the board "btnin" and ?btnin= in the game; 2026-11-26: «ma i pulsanti appaiono all'improvviso? non hai
+// pensato alle animazioni di entrata?»). The style sheet draws how; here it only gets its turn and its time: the
+// next thing waits for a button, and the keys of one row follow each other closely.
+const KEY = '.btn, .chip, .rep-toggle';
+const keyMs = (el) => (!el.closest('[class*="btnin-"]') ? 0 : el.matches('.chip') ? 45 : 200);
 const running = new WeakMap(); // first root → the function that stops the typing and leaves everything complete
 
 export const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -46,7 +52,7 @@ export function typeNodes(roots, { cps = 150, max = 1100, after = [], offset = 0
   const steps = roots.flatMap((r) => stepsOf(r));
   for (const s of steps) {
     if (s.text) s.ms = (s.text.nodeValue.length / cps) * 1000;
-    if (s.atom) s.ms = s.atom.matches(BAR) ? 90 + s.atom.querySelectorAll(':scope > .on').length * 22 : s.atom.matches('.holo') ? 260 : s.atom.matches('img, svg') ? 70 : 0;
+    if (s.atom) s.ms = s.atom.matches(BAR) ? 90 + s.atom.querySelectorAll(':scope > .on').length * 22 : s.atom.matches('.holo') ? 260 : s.atom.matches('img, svg') ? 70 : s.atom.matches(KEY) ? keyMs(s.atom) : 0;
   }
   const total = steps.reduce((a, s) => a + (s.ms || 0), 0);
   const k = max && total > max ? max / total : 1;
@@ -82,6 +88,8 @@ export function typeNodes(roots, { cps = 150, max = 1100, after = [], offset = 0
       s.atom.classList.add('fx-on-all');
       // a hologram taken up again part of the way (the page was drawn again) goes on from where it was
       if (s.atom.matches('.holo')) { s.atom.style.setProperty('--holo-off', `${-Math.round(into)}ms`); s.atom.classList.add('holo-in'); }
+      // (the class stays: its animation ends by itself, also when the typing around it is over first)
+      if (s.atom.matches(KEY) && keyMs(s.atom)) { s.atom.style.animationDelay = `${-Math.round(into)}ms`; s.atom.classList.add('btn-in'); }
     }
   };
   let at = null; // the text the cursor stands on

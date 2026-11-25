@@ -84,7 +84,28 @@ function view() {
     quitOpen: state.quitOpen,
     saved: state.resume ? { code: state.code, phase: state.resume, remainingMs: remaining() } : null,
     ack: PACE.ack ? { hold: Boolean(state.hold) } : null,
+    homeTitle: HOME_TITLE,
   };
+}
+// Proposals played in the frames of the boards "hometitle" and "titleout2" (mocks.html), not in the game:
+//   ?title=one|two  the title MISSION CONTROL on the empty console (2026-11-25: «come questo titolo serve all'inizio
+//                   nella home, MISSION CONTROL, magari su due righe, responsive, quando si preme accept, il titolo
+//                   fades away (coerentemente con uno schermo)»)
+//   ?out=fade|glow|scan  how it leaves when the transmission is accepted (CSS: .home-title.is-leaving.to-…)
+//   ?btnin=a|b|c    how a button comes (board "btnin"; CSS: .btnin-… .btn-in)
+const HOME_TITLE = ['one', 'two'].includes(params.get('title')) ? params.get('title') : null;
+const TITLE_OUT = params.get('out') || 'fade';
+if (['a', 'b', 'c'].includes(params.get('btnin'))) document.body.classList.add(`btnin-${params.get('btnin')}`);
+// The title is not on the next screen: a copy of it stays where it was for as long as it takes to leave
+function leaveTitle(old, box) {
+  const host = root.querySelector('.cs-screen');
+  if (!old || !host || root.querySelector('.home-title') || still()) return;
+  const hb = host.getBoundingClientRect();
+  const g = old.cloneNode(true);
+  g.classList.add('is-leaving', `to-${TITLE_OUT}`);
+  Object.assign(g.style, { position: 'absolute', left: `${box.left - hb.left}px`, top: `${box.top - hb.top}px`, width: `${box.width}px`, margin: '0', pointerEvents: 'none' });
+  host.insertBefore(g, host.querySelector('.cs-fx'));
+  g.addEventListener('animationend', (e) => { if (e.target === g) g.remove(); });
 }
 
 // what scrolls inside the screen, besides NOVA's conversation
@@ -101,6 +122,8 @@ function render() {
   const chat0 = root.querySelector('.win-term .win-body');
   const was = chat0 ? { top: chat0.scrollTop, end: chat0.scrollHeight - chat0.clientHeight - chat0.scrollTop < 4, h: chat0.scrollHeight } : null;
   const before = places();
+  const title0 = root.querySelector('.home-title');
+  const titleBox = title0?.getBoundingClientRect();
   startClock();
   // the model sways on the page's clock, not from the moment it was drawn: drawing it again leaves it where it was
   root.style.setProperty('--holo-t', `${-Math.round(performance.now() % 10000)}ms`);
@@ -117,6 +140,7 @@ function render() {
   root.querySelectorAll('.win-body').forEach(markScrolled);
   arrive(quiet);
   glide(before);
+  leaveTitle(title0, titleBox);
   speak(quiet);
   typeIn(root);
   if (DEV) renderDev();
@@ -138,7 +162,7 @@ function isRed() {
 const OPEN_MS = 380;
 const seen = new Set();       // what has already come in this game
 const arrivals = new Map();   // key → { t0, ms }: what is still arriving, so that drawing the page again takes it up
-const winKey = (w) => (w.matches('.win-term') ? 'nova' : w.matches('.win-notes') ? 'notes' : w.matches('.win-map') ? 'map'
+const winKey = (w) => (w.matches('.win-term') ? 'nova' : w.matches('.win-held') ? 'held' : w.matches('.win-notes') ? 'notes' : w.matches('.win-map') ? 'map'
   : w.matches('.win-code') ? 'code' : w.matches('.win-questions') ? 'questions' : w.matches('.win-oxygen') ? 'oxygen'
     : w.matches('.win-report') ? `report-${w.querySelector('[data-p]')?.dataset.p}` : null);
 
@@ -386,7 +410,7 @@ function endGame(kind) {
 const again = () => { render.keepScroll = true; render(); };
 
 const ACTIONS = {
-  'new-game': () => newGame(), // ACCEPT on NOVA's request
+  accept: () => newGame(), // ACCEPT on NOVA's request
   ack: () => { state.hold = false; state.stage += 1; again(); }, // COPY after one of her lines (?pace=c)
   home: goHome,
   continue: () => { state.phase = state.resume; state.resume = null; render.quiet = true; render(); },
@@ -557,7 +581,17 @@ if (state.code && state.phase !== 'home') {
   state.quitOpen = false;
   state.profile = null;
 }
-render();
+// The console is drawn when its fonts are there: no text is first seen in another font, and no window is measured
+// with one (2026-11-26: «c'è fout quando carico la pagina»). They start loading with the page (index.html); if the
+// link is too slow the console comes anyway after a second and a half, and the text waits for its font, unseen.
+const fd = getComputedStyle(document.documentElement).getPropertyValue('--fd').trim() || '"Jersey 10"';
+Promise.race([
+  Promise.all([`400 16px ${fd}`, '400 14px "IBM Plex Mono"', '500 14px "IBM Plex Mono"', '600 14px "IBM Plex Mono"'].map((x) => document.fonts.load(x))),
+  new Promise((r) => { setTimeout(r, 1500); }),
+]).catch(() => {}).then(() => {
+  render();
+  if (DEMO && params.has('auto')) newGame(); // a board plays the briefing without a tap (mocks.html, board "pace")
+});
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http') && !DEV && !DEMO) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});

@@ -1615,13 +1615,18 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .arch-sum { gap: 6px 16px; }
 .arch-sum dd { font: 14px/1.5 var(--font-mono); }
 .arch-foot { justify-content: space-between; align-items: center; gap: 10px; }
-/* The font of the long texts (reports, case notes, sentences).
-     ft-a: the mono of the console everywhere; the display font stays for titles and figures */
-.ft-a { font-family: var(--font-mono); }
-.ft-a :is(.rep-body, .notes dd, .win-code p, .hint, .modal p, .idcard-list dd) { font-family: var(--font-mono); }
-.ft-a .rep-body, .ft-a .win-report .rep-body { font-size: 14px; line-height: 1.55; }
-.ft-a .notes dd { font-size: 14px; line-height: 1.55; }
-.ft-a .notes dt { padding-top: 0.36em; }
+/* The font of the long texts (reports, case notes, sentences): the mono of the console everywhere, and the display
+   font for titles, names and figures (decided 2026-11-26: «Tutto nel mono della console»; before, IBM Plex Sans for
+   the texts to read: «abbiamo un font che ci azzecca poco con una console»).
+     ft-0: as it was until then, for the record */
+#app, .mock-frame { font-family: var(--font-mono); }
+.win-report .rep-body { font-size: 14px; line-height: 1.55; }
+.notes dd { font-size: 14px; line-height: 1.55; }
+.notes dt { padding-top: 0.36em; }
+.mock-frame.ft-0 { font-family: var(--font-text); }
+.ft-0 .win-report .rep-body { font-size: 15px; line-height: 1.45; }
+.ft-0 .notes dd { font-size: 15px; line-height: 1.5; }
+.ft-0 .notes dt { padding-top: 0.42em; }
 
 /* ---------- proposals after the feedback of 2026-11-25, third set (mocks) ---------- */
 /* «come questo titolo serve all'inizio nella home, MISSION CONTROL, magari su due righe, responsive, quando si preme
@@ -1631,7 +1636,8 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .live-request.has-title .live-col { width: min(1100px, 100%); justify-items: center; gap: 26px; }
 .live-request.has-title .live-col > .win { width: min(560px, 100%); }
 .home-title {
-  margin: 0; text-align: center; line-height: 0.95; text-transform: uppercase; font-weight: 400;
+  /* (2026-11-26: «va ridotta l'interlinea di Mission Control»: 0.72, it was 0.95) */
+  margin: 0; text-align: center; line-height: 0.72; text-transform: uppercase; font-weight: 400;
   font-family: var(--fd), 'IBM Plex Mono', monospace; font-size: calc(var(--ds) * clamp(34px, 11cqi, 112px));
   color: var(--star); text-shadow: 3px 0 0 rgba(67, 217, 210, 0.55), -3px 0 0 rgba(67, 217, 210, 0.2);
 }
@@ -1657,6 +1663,8 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .et-small .is-red .ending-title, .et-small.is-red .ending-title { text-shadow: 2px 0 0 rgba(228, 91, 97, 0.85), -2px 0 0 rgba(67, 217, 210, 0.25); }
 .et-none .ending-title { display: none; }
 .et-none .screen-ending .win { margin-top: 28px; }
+/* decided 2026-11-26, without the big title («io direi senza titolone»): the window alone, the case in its tab */
+.screen-ending.is-plain .win { margin-top: 28px; }
 /* The code as a terminal line: typed on Mission Control's line, no box */
 .code-term .pl { margin: 0 0 10px; }
 .code-line {
@@ -1668,3 +1676,90 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .code-sent { color: var(--amber); font: 600 22px/1.2 var(--font-mono); letter-spacing: 0.3em; }
 .code-ask { margin: 2px 0 8px; }
 .code-term .tl-wide .actions, .win-term .tl-wide .code-ask + .actions { margin-top: 6px; }
+
+/* ---------- proposals after the feedback of 2026-11-26 (mocks) ---------- */
+/* How the home title leaves, second round («non mi piacciono gli effetti di uscita»; the brief: «il titolo fades away
+   (coerentemente con uno schermo)»). to-fade: it fades; to-glow: its light drops at once and a cyan afterglow lingers,
+   as the phosphor of a tube does; to-scan: it thins out between the lines of the screen */
+.home-title.is-leaving.to-fade { animation: title-fade 0.4s ease-out both; }
+@keyframes title-fade { to { opacity: 0; } }
+.home-title.is-leaving.to-glow { animation: title-glow 0.9s linear both; }
+@keyframes title-glow {
+  0% { opacity: 1; }
+  14% { opacity: 0.5; color: var(--cyan); text-shadow: 0 0 14px rgba(67, 217, 210, 0.7); }
+  100% { opacity: 0; color: var(--cyan); text-shadow: 0 0 22px rgba(67, 217, 210, 0); }
+}
+@property --thin { syntax: '<length>'; inherits: false; initial-value: 0px; }
+.home-title.is-leaving.to-scan {
+  -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 calc(4px - var(--thin)), transparent calc(4px - var(--thin)) 4px);
+  mask-image: repeating-linear-gradient(to bottom, #000 0 calc(4px - var(--thin)), transparent calc(4px - var(--thin)) 4px);
+  animation: title-scan 0.5s ease-in both;
+}
+@keyframes title-scan { 0% { --thin: 0px; opacity: 1; } 80% { opacity: 1; } 100% { --thin: 4px; opacity: 0; } }
+/* How a button comes («ma i pulsanti appaiono all'improvviso? non hai pensato alle animazioni di entrata?»):
+     btnin-a: it lights up, as a lamp does; btnin-b: it opens from a line of light, as a window does;
+     btnin-c: its frame opens sideways from the middle, then its name is there */
+.btnin-a .btn-in { animation: btn-in-a 0.24s steps(1) both; }
+@keyframes btn-in-a { 0% { opacity: 0; } 12% { opacity: 1; filter: brightness(2.4); } 34% { opacity: 0.35; filter: none; } 56% { opacity: 1; filter: brightness(1.7); } 78%, 100% { opacity: 1; filter: none; } }
+/* (a button already has a clip-path of its own, its cut corners: what uncovers it here is a mask) */
+:is(.btnin-b, .btnin-c) .btn-in { -webkit-mask: linear-gradient(#000 0 0) center / 100% 100% no-repeat; mask: linear-gradient(#000 0 0) center / 100% 100% no-repeat; }
+.btnin-b .btn-in { animation: btn-in-b 0.26s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes btn-in-b {
+  0% { -webkit-mask-size: 100% 2px; mask-size: 100% 2px; filter: brightness(3.5) saturate(0.3); }
+  45% { -webkit-mask-size: 100% 100%; mask-size: 100% 100%; filter: brightness(1.8); }
+  100% { -webkit-mask-size: 100% 100%; mask-size: 100% 100%; filter: none; }
+}
+.btnin-c .btn-in { animation: btn-in-c 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.btnin-c .btn-in > span { animation: btn-in-c-name 0.28s steps(1) both; animation-delay: inherit; }
+@keyframes btn-in-c {
+  0% { -webkit-mask-size: 0% 100%; mask-size: 0% 100%; filter: brightness(2.6) saturate(0.4); }
+  70% { -webkit-mask-size: 100% 100%; mask-size: 100% 100%; filter: brightness(1.5); }
+  100% { -webkit-mask-size: 100% 100%; mask-size: 100% 100%; filter: none; }
+}
+@keyframes btn-in-c-name { 0% { opacity: 0; } 60%, 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .btn-in, .btn-in > span { animation: none !important; } }
+/* The cases of this console: the file of a closed case, the window of the cases alive, the archive */
+.win-alt { margin-left: auto; align-self: flex-end; padding: 0 0 3px; font: 600 12px/1.2 var(--font-mono); letter-spacing: 0.14em; color: rgba(67, 217, 210, 0.75); background: none; border: 0; border-bottom: 1px dashed rgba(67, 217, 210, 0.5); cursor: pointer; white-space: nowrap; }
+.win-alt:hover, .win-alt:focus-visible { color: var(--star); border-bottom-color: var(--star); outline: none; }
+.win-red .win-alt { color: rgba(228, 91, 97, 0.85); border-bottom-color: rgba(228, 91, 97, 0.5); }
+/* (when the column is taller than the screen it starts at the top and scrolls, instead of losing its first lines) */
+.live-cases { align-content: safe center; }
+.live-cases .live-col { width: min(600px, 100%); }
+.live-cases.has-title .live-col { width: min(1100px, 100%); }
+.live-cases.has-title .live-col > .win, .live-cases.has-title .live-col > .win-held { width: min(600px, 100%); }
+.case-rows { display: grid; }
+.case-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 16px; padding: 12px 0; }
+.case-what { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; min-width: 0; }
+.case-row + .case-row, .case-said + .case-row { border-top: 1px solid var(--line); }
+.case-row:first-child { padding-top: 4px; }
+.case-id { font-family: var(--fd), 'IBM Plex Mono', monospace; font-weight: 400; font-size: calc(var(--ds) * 17px); letter-spacing: 0.04em; line-height: 1.2; color: var(--cyan); white-space: nowrap; }
+.case-said { padding: 0 0 6px; }
+.case-said .tl { padding: 0; }
+.file-head { margin: 2px 0 12px; font-family: var(--fd), 'IBM Plex Mono', monospace; font-size: calc(var(--ds) * 30px); line-height: 1; letter-spacing: 0.04em; text-transform: uppercase; color: var(--cyan); }
+.win-file.is-red .file-head { color: var(--red); }
+.file-sum { gap: 6px 16px; }
+.file-foot { margin-top: 14px; }
+.win-file.is-red .hc-tag-still { color: var(--red); }
+.win-file.is-red .hc-tag-still::before { background: var(--red); }
+.file-report { margin-top: 14px; padding-top: 2px; border-top: 1px solid var(--line); }
+.file-report .sol-sec:first-child .sub { margin-top: 14px; }
+.file-report .big-code { font-size: calc(var(--ds) * 34px); }
+.arch .arch-row { padding: 6px 0; }
+.arch-open { margin: 2px 0 10px calc(2ch); padding: 4px 0 10px 12px; border-left: 1px solid var(--line-strong); }
+.arch-open .actions { margin-top: 10px; }
+.arch-count { position: absolute; right: 58px; top: 50%; transform: translateY(-50%); font: 600 12px var(--font-mono); letter-spacing: 0.14em; color: rgba(231, 237, 244, 0.6); }
+.win-incident .big-code { font-size: calc(var(--ds) * 34px); }
+/* the keys of the bar when one is added or taken away */
+.cs-key-archive { order: 0; }
+/* the end of a case, played in a board: the windows go out one after the other, last come first out */
+.fx-closing .win { animation: win-out 0.3s ease-in both; animation-delay: var(--od, 0s); }
+@keyframes win-out { to { opacity: 0; } }
+.fx-closing .live-right .win:nth-of-type(4) { --od: 0s; }
+.fx-closing .live-right .win:nth-of-type(3) { --od: 0.12s; }
+.fx-closing .live-right .win:nth-of-type(2) { --od: 0.24s; }
+.fx-closing .live-right .win:nth-of-type(1) { --od: 0.36s; }
+.fx-closing .live-right .rw-title { animation: win-out 0.3s ease-in 0.36s both; }
+.fx-closing .win-map, .fx-closing .win-notes { --od: 0.6s; }
+.fx-closing .win-oxygen { --od: 0.8s; }
+.fx-closing .win-questions { --od: 0.95s; }
+.fx-closing .win-term { --od: 1.4s; }

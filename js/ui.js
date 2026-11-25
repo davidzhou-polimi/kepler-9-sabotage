@@ -13,9 +13,10 @@ export const OXYGEN_MS = 10 * 60 * 1000;
 
 // ---------- building blocks ----------
 
-export function win(title, body, { cls = '', tone = '', id = '' } = {}) {
+// bar: what stands at the right of the title (the way to the other view of a window, proposals)
+export function win(title, body, { cls = '', tone = '', id = '', bar = '' } = {}) {
   return `<section class="win ${tone ? `win-${tone}` : ''} ${cls}" ${id ? `id="${id}"` : ''}>
-    <header class="win-bar"><h2 class="win-title">${title}</h2>
+    <header class="win-bar"><h2 class="win-title">${title}</h2>${bar}
       <span class="win-ctl" aria-hidden="true"><i class="ctl ctl-min"></i><i class="ctl ctl-max"></i><i class="ctl ctl-close"></i></span>
     </header>
     <div class="win-body">${body}</div>
@@ -350,10 +351,16 @@ export const mcIcon = () => pixels([
 ], { a: 'var(--amber)' }, 'who-icon');
 
 const keyed = (part) => {
-  let s = esc(part.text);
-  for (const k of part.keys) s = s.replace(esc(k), `<b class="key">${esc(k)}</b>`);
-  // "Kepler-9" never breaks at its hyphen, and the last two words of a part stay together
-  return s.replace(/Kepler-9/g, '<span class="nw">Kepler-9</span>').replace(/ (\S+)$/, '&nbsp;$1');
+  // "Kepler-9" never breaks at its hyphen, and the last two words of a part stay together. The words are tied before
+  // any tag is written: tied afterwards, the space inside a tag that ends the line was taken for the last one, and
+  // her first line lost both rules (seen 2026-11-26: «Kepler-» at the end of a row and «9.» alone on the next)
+  const tie = (x) => x.replace(/ (\S+)$/, '&nbsp;$1');
+  let s = tie(esc(part.text));
+  for (const k of part.keys) {
+    const e = s.includes(esc(k)) ? esc(k) : tie(esc(k));
+    s = s.replace(e, `<b class="key">${e}</b>`);
+  }
+  return s.replace(/Kepler-9/g, '<span class="nw">Kepler-9</span>');
 };
 const BPARTS = Object.fromEntries(BRIEFING_PARTS.map((p) => [p.id, p]));
 
@@ -611,9 +618,12 @@ function askTerm(state, mode, detail, intro = null) {
       //   'two':   two links, two windows: the one left open, with the last thing NOVA said on it, and the new call;
       //            each carries its case number (intro.next: the number of the case that is calling)
       //   'strip': the case left open is a window closed to a strip, as a closed report is, above the new call
-      if (s && intro.homeAlt) {
-        const call = (tag) => win('NOVA ON KEPLER-9', `<div class="term">${briefing}<div class="tl-accept"><span class="hc-tag">${tag}</span>${btn('ACCEPT', 'new-game')}</div></div>`, { cls: 'win-ask win-term' });
-        if (intro.homeAlt === 'two') {
+      // Decided 2026-11-26: the strip («B · Il caso aperto ridotto a striscia > perfetto»). 'row' is how it was until
+      // then, a row inside the window of the new call, for the record
+      const homeAlt = intro.homeAlt || 'strip';
+      if (s && homeAlt !== 'row') {
+        const call = (tag) => win('NOVA ON KEPLER-9', `<div class="term">${briefing}<div class="tl-accept"><span class="hc-tag">${tag}</span>${btn('ACCEPT', 'accept')}</div></div>`, { cls: 'win-ask win-term' });
+        if (homeAlt === 'two') {
           return `<div class="req-two">${win('NOVA ON KEPLER-9', `<div class="term">${row('nova', esc(s.last || BRIEFING_PARTS[0].text))}<div class="tl-accept">${openTag}${cont}</div></div>`, { cls: 'win-ask win-term' })}
             ${call(`CASE ${esc(intro.next)} · INCOMING TRANSMISSION`)}</div>`;
         }
@@ -621,17 +631,30 @@ function askTerm(state, mode, detail, intro = null) {
       }
       const open = s ? `<div class="tl-accept tl-open">${openTag}${cont}</div>` : '';
       return win('NOVA ON KEPLER-9', `<div class="term">${briefing}${open}
-        <div class="tl-accept"><span class="hc-tag">INCOMING TRANSMISSION</span>${btn('ACCEPT', 'new-game', { cls: s ? '' : 'btn-primary' })}</div></div>`, { cls: 'win-ask win-term' });
+        <div class="tl-accept"><span class="hc-tag">INCOMING TRANSMISSION</span>${btn('ACCEPT', 'accept', { cls: s ? '' : 'btn-primary' })}</div></div>`, { cls: 'win-ask win-term' });
     }
     if (intro.stage < 8) return win('NOVA ON KEPLER-9', `<div class="term">${briefing}</div>`, { cls: 'win-ask win-term' });
   }
+  // intro.codeNova (proposal, mocks only until chosen; 2026-11-26: «per il codice, propongo che sia un'opzione vicino a
+  // new question, code, così si invia a nova il codice che procede a bloccare [...] sarebbe utile che nova riceve il
+  // codice e dice ok procedo a bloccare l'accesso di x [...] infine si chiude tutto e arriva case closed»): the code
+  // is sent from her conversation, as a question is. state.codeStep: 1 it is being typed (2 with state.confirming),
+  // 3 it is sent and she answers (intro.reply: her lines); a draft can be left with CANCEL
+  const codeNova = Boolean(intro?.codeNova);
+  const codeBtn = codeNova ? btn('CODE', 'code-step', { cls: 'btn-danger', attrs: 'data-v="1"' }) : '';
+  // (an ID never breaks from its number, and the last two words of a line stay together)
+  const reply = (intro?.reply || []).map((l) => row('nova', esc(l).replace(/ID (\d+)/g, 'ID&nbsp;$1').replace(/ (\S+)$/, '&nbsp;$1'))).join('');
   const quiet = row('nova', `The link will carry ${left} ${left === 1 ? 'question' : 'questions'} and the emergency code.`)
-    + row('mc', '<span class="tl-cur"></span>', `<div class="actions">${btn('NEW QUESTION', 'ask-step', { cls: 'btn-primary', attrs: 'data-v="1"' })}</div>`, 'tl-draft');
+    + row('mc', '<span class="tl-cur"></span>', `<div class="actions">${btn('NEW QUESTION', 'ask-step', { cls: 'btn-primary', attrs: 'data-v="1"' })}${codeBtn}</div>`, 'tl-draft');
   const hint = 'Tap a hatch to ask if it opened, or a module to ask about motion.';
   let live;
   // intro.codeHere (proposal, mocks only until chosen): the CODE key starts the code in her conversation
   if (intro?.codeHere) live = row('nova', 'The number of the false report, followed by the saboteur\'s ID. One attempt.') + codeLine(state);
-  else if (left <= 0) live = row('nova', 'Link capacity reached. Only the emergency code can still be sent.');
+  else if (codeNova && state.codeStep) {
+    live = row('mc', 'Code') + row('nova', 'The number of the false report, followed by the saboteur\'s ID. One attempt.')
+      + (state.codeStep >= 3 ? row('mc', `<b class="code-sent">${esc(state.sentCode)}</b>`) + reply : codeLine(state, { cancel: true }));
+  } else if (intro?.archived || (codeNova && reply)) live = reply; // the oxygen ran out, or a closed case read again: nothing more to send
+  else if (left <= 0) live = row('nova', 'Link capacity reached. Only the emergency code can still be sent.') + (codeNova ? row('mc', '<span class="tl-cur"></span>', `<div class="actions">${codeBtn}</div>`, 'tl-draft') : '');
   else if (mode === 'cmd') {
     const line = d.what
       ? esc(questionText(q)).replace(esc(place), (m) => `<b class="slot">${m}</b>`)
@@ -653,14 +676,14 @@ function askTerm(state, mode, detail, intro = null) {
 // ui 'term' (proposal, mocks only until chosen; 2026-11-25: «al posto di una casella di input, secondo me ha senso un
 // formato da terminale, come se noi lo stessimo inviando via terminale»): the code is typed on Mission Control's
 // line, as a command; the words are today's
-export const codeLine = (state) => {
+export const codeLine = (state, { cancel = false } = {}) => {
   const v = state.codeInput || '';
   const ok = /^\d{3}$/.test(v);
   const mc = (html, wide) => `<div class="tl tl-mc tl-draft"><span class="tl-who">MC</span><div class="tl-txt">${html}</div><div class="tl-wide">${wide}</div></div>`;
   return state.confirming && ok
     ? mc(`<b class="code-sent">${esc(v)}</b>`, `<p class="code-ask">Send code <b>${esc(v)}</b>? There is only one attempt.</p><div class="actions">${btn('CONFIRM', 'confirm-code', { cls: 'btn-danger' })}${btn('CANCEL', 'cancel-code')}</div>`)
     : mc(`<input class="code-line" data-field="code" inputmode="numeric" autocomplete="off" maxlength="3" pattern="[0-9]*" placeholder="___" value="${esc(v)}" style="--n:${v.length || 3}" aria-label="Emergency code"><span class="tl-cur"></span>`,
-      `<div class="actions">${btn('SEND CODE', 'send-code', { cls: 'btn-primary', disabled: !ok })}<span class="note">One attempt.</span></div>`);
+      `<div class="actions">${cancel ? btn('CANCEL', 'code-step', { attrs: 'data-v="0"' }) : ''}${btn('SEND CODE', 'send-code', { cls: 'btn-primary', disabled: !ok })}<span class="note">One attempt.</span></div>`);
 };
 export function codePanel(state, { ui = '' } = {}) {
   if (ui === 'term') {
@@ -719,7 +742,7 @@ export function screenHome(view = {}) {
     ${info}
     <div class="menu">
       ${open ? btn('CONTINUE', 'continue', { cls: 'btn-primary' }) : ''}
-      ${btn('NEW GAME', 'new-game', { cls: open ? '' : 'btn-primary' })}
+      ${btn('NEW GAME', 'accept', { cls: open ? '' : 'btn-primary' })}
     </div>
   </main>`;
 }
@@ -745,7 +768,7 @@ export function screenBriefing(view) {
 //   'terminal': the same as the lines of a terminal
 function consoleHome({ rows, lines, open, style }) {
   const resume = open ? btn('RESUME', 'continue', { cls: 'btn-primary' }) : '';
-  const answer = btn('ANSWER', 'new-game', { cls: open ? '' : 'btn-primary' });
+  const answer = btn('ANSWER', 'accept', { cls: open ? '' : 'btn-primary' });
   const prompt = (l, cls = '') => `<p class="pl ${cls}"><span class="prompt">&gt;</span> ${l}</p>`;
   if (style === 'plain') {
     return `<main class="screen screen-home">
@@ -805,13 +828,15 @@ export function statusBar(view) {
   </div>`;
 }
 
-// Reset B: QUIT in the status bar, with a confirmation inside the page.
+// Reset B: the power button, with a confirmation inside the page. Its words are a console's, never a game's
+// (2026-11-25: «c'è scritto quit game, ma noi avevamo detto che non ci devono essere riferimenti al game, perché è
+// una console e quindi anche quit diventa, ad esempio, power off console»; approved 2026-11-26)
 export function quitModal(c) {
   return `<div class="modal" data-act="cancel-quit">
     <div class="modal-inner" data-stop>
-      ${win('QUIT GAME', `
+      ${win('POWER OFF CONSOLE', `
         <p>Case ${esc(c.code)} will be lost.</p>
-        <div class="actions">${btn('QUIT', 'confirm-quit', { cls: 'btn-danger' })}${btn('CANCEL', 'cancel-quit')}</div>`, { tone: 'amber' })}
+        <div class="actions">${btn('POWER OFF', 'confirm-quit', { cls: 'btn-danger' })}${btn('CANCEL', 'cancel-quit')}</div>`, { tone: 'amber' })}
     </div>
   </div>`;
 }
@@ -846,46 +871,120 @@ export function screenPlay(view) {
   </main>`;
 }
 
+// The window is the case: its number in the tab, then the outcome (2026-11-26: «io direi senza titolone, altrimenti in
+// quella schermata abbiamo troppi titoli [...] non scriverei nova, perché nova ci comunica solo da terminale» · «alla
+// fine del gioco direi case k9-7uq8 e poi l'esito, quindi mission failed o altro»; before, 2026-11-25: «non è tanto
+// system failure e critical error, ma il caso non è stato risolto, la missione è fallita»).
+// view.endOld: the screen as it was until then, with the big title, for the board that compared its sizes
 export function screenEnding(view) {
   const { state } = view;
   const e = ENDINGS[state.ending];
   const red = state.ending !== 'right';
+  const old = Boolean(view.endOld);
+  const head = old ? (red ? 'SYSTEM FAILURE' : 'RECYCLER ONLINE') : red ? 'MISSION FAILED' : 'MISSION SUCCESSFUL';
   const body = `
     <div class="ending-body">
       ${red ? warningIcon() : '<div class="ok-mark" aria-hidden="true"></div>'}
       <div>
-        <p class="ending-head">${red ? 'SYSTEM FAILURE' : 'RECYCLER ONLINE'}</p>
+        <p class="ending-head">${head}</p>
         ${log(e.lines.map((l) => `&gt; ${esc(l)}`), 'nova type-me')}
         ${state.sentCode ? `<p class="muted">CODE SENT_ ${esc(state.sentCode)}</p>` : ''}
-        <div class="actions">${btn('SEE WHAT HAPPENED', 'solution', { cls: red ? 'btn-danger' : 'btn-primary' })}</div>
+        <div class="actions">${btn(old ? 'SEE WHAT HAPPENED' : 'INCIDENT REPORT', 'solution', { cls: red ? 'btn-danger' : 'btn-primary' })}</div>
       </div>
     </div>`;
-  return `<main class="screen screen-ending ${red ? 'is-red' : 'is-ok'}">
-    <div class="ending-top"><span>${red ? 'SYS.ERROR' : 'SYS.OK'}</span><span>CASE ${esc(view.c.code)}</span></div>
-    <h1 class="ending-title">${e.title.toUpperCase()}</h1>
-    ${win(red ? 'CRITICAL ERROR' : 'NOVA', body, { tone: red ? 'red' : '' })}
+  if (old) {
+    return `<main class="screen screen-ending ${red ? 'is-red' : 'is-ok'}">
+      <div class="ending-top"><span>${red ? 'SYS.ERROR' : 'SYS.OK'}</span><span>CASE ${esc(view.c.code)}</span></div>
+      <h1 class="ending-title">${e.title.toUpperCase()}</h1>
+      ${win(red ? 'CRITICAL ERROR' : 'NOVA', body, { tone: red ? 'red' : '' })}
+    </main>`;
+  }
+  return `<main class="screen screen-ending is-plain ${red ? 'is-red' : 'is-ok'}">
+    ${win(`CASE ${esc(view.c.code)}`, body, { tone: red ? 'red' : '' })}
   </main>`;
+}
+
+// The incident report of a case: what happened, who lied, the question that settled it, the code, and what this console
+// sent. Its sections are the same wherever it is read (the screen after an ending, the file of a closed case)
+function incidentBody(c, { log = [], sentCode = null } = {}) {
+  const s = solutionText(c);
+  const section = (h, html) => `<div class="sol-sec"><h3 class="sub">${h}</h3>${html}</div>`;
+  const ps = (arr) => arr.map((l) => `<p>${esc(l)}</p>`).join('');
+  const asked = log.length
+    ? log.map((e, i) => `<p class="pl">&gt; Q${i + 1}: ${esc(questionText(e.q))} <b>${esc(ANSWERS[e.ans].split('.')[0])}.</b></p>`).join('')
+    : '<p class="pl">&gt; No questions sent.</p>';
+  return `${section('WHAT HAPPENED', ps(s.happened))}
+      ${section('THE REPORTS', ps(s.reports))}
+      ${section('ONE QUESTION THAT SETTLED IT', `<p class="mono pl">&gt; ${esc(s.question.text)}</p><p>${esc(s.question.answer)}</p>`)}
+      ${section('THE CODE', `<p class="big-code">${esc(c.emergencyCode)}</p><p>${esc(s.code)}</p>`)}
+      ${section('YOUR TRANSMISSIONS', `<div class="log">${asked}${sentCode ? `<p class="pl">&gt; Code: ${esc(sentCode)}</p>` : '<p class="pl">&gt; Code: not sent.</p>'}</div>`)}`;
 }
 
 export function screenSolution(view) {
   const { c, state } = view;
-  const s = solutionText(c);
-  const section = (h, html) => `<div class="sol-sec"><h3 class="sub">${h}</h3>${html}</div>`;
-  const ps = (arr) => arr.map((l) => `<p>${esc(l)}</p>`).join('');
-  const asked = state.log.length
-    ? state.log.map((e, i) => `<p class="pl">&gt; Q${i + 1}: ${esc(questionText(e.q))} <b>${esc(ANSWERS[e.ans].split('.')[0])}.</b></p>`).join('')
-    : '<p class="pl">&gt; No questions sent.</p>';
   return `<main class="screen screen-solution">
     ${caseBar(c)}
-    ${win(`CASE ${esc(c.code)} // SOLUTION`, `
-      ${section('WHAT HAPPENED', ps(s.happened))}
-      ${section('THE REPORTS', ps(s.reports))}
-      ${section('ONE QUESTION THAT SETTLED IT', `<p class="mono pl">&gt; ${esc(s.question.text)}</p><p>${esc(s.question.answer)}</p>`)}
-      ${section('THE CODE', `<p class="big-code">${esc(c.emergencyCode)}</p><p>${esc(s.code)}</p>`)}
-      ${section('YOUR TRANSMISSIONS', `<div class="log">${asked}${state.sentCode ? `<p class="pl">&gt; Code: ${esc(state.sentCode)}</p>` : '<p class="pl">&gt; Code: not sent.</p>'}</div>`)}
-      <div class="actions">${btn('NEW GAME', view.flowHome ? 'home' : 'new-game', { cls: 'btn-primary' })}</div>
+    ${win(`CASE ${esc(c.code)} // INCIDENT REPORT`, `
+      ${incidentBody(c, state)}
+      <div class="actions">${btn('CLOSE CASE', view.flowHome ? 'home' : 'accept', { cls: 'btn-primary' })}</div>
     `)}
   </main>`;
+}
+
+// ---------- the cases of this console: the ones alive, the file of a closed one, the archive ----------
+// Proposals, mocks only until chosen (2026-11-26: «nella home ci sia solo al centro una finestra, tipo un inbox che
+// gestisce i casi, e abbiamo i casi aperti e in arrivo, un archivio... [...] volevo il caso aperto e il caso in arrivo
+// insieme, e poi archivio separato» · «vorrei un mock dettagliato su cosa succede dopo aver cliccato su un caso, come e
+// cosa si apre» · «alla fine del gioco direi case k9-7uq8 e poi l'esito, quindi mission failed o altro»).
+// A closed case is a record { code, ending, sent, asked, left, log }: everything else comes again from its number.
+const OUTCOME = { right: 'MISSION SUCCESSFUL', wrong: 'MISSION FAILED', timeout: 'MISSION FAILED' };
+const outcome = (e) => `<span class="arch-${e.ending}">${OUTCOME[e.ending]}</span>`;
+// the labels are the ones of the case notes and of the QUESTIONS window; the words after the figures come from the
+// titles of the endings («Code accepted», «Code rejected», «Oxygen depleted»)
+const fileSum = (e) => `<dl class="notes file-sum">
+    <div><dt>CODE_</dt><dd>${e.sent ? `${esc(e.sent)} · ${e.ending === 'right' ? 'Accepted' : 'Rejected'}` : 'Not sent'}</dd></div>
+    <div><dt>QUESTIONS_</dt><dd>${e.asked} of ${MAX_QUESTIONS} sent</dd></div>
+    <div><dt>OXYGEN_</dt><dd>${e.ending === 'timeout' ? '00:00 · Depleted' : fmtClock(e.left)}</dd></div></dl>`;
+// The file of a closed case: the window that comes when a case closes, and the same one opened again from the archive.
+//   report: its incident report is open under the sheet (c: the case, to write it)
+//   bar: what stands at the right of its title (the way back to the archive)
+export function caseFile(e, { c = null, report = false, bar = '' } = {}) {
+  const red = e.ending !== 'right';
+  const toggle = `<button type="button" class="rep-toggle" data-act="file-report" aria-expanded="true" aria-label="Close the incident report">&minus;</button>`;
+  return win(`CASE ${esc(e.code)}`, `
+    <p class="file-head">${OUTCOME[e.ending]}</p>
+    ${fileSum(e)}
+    ${report && c ? `<div class="file-report">${incidentBody(c, { log: e.log || [], sentCode: e.sent })}</div>` : ''}
+    <div class="tl-accept file-foot"><span class="hc-tag hc-tag-still">CASE CLOSED</span>${report ? toggle : btn('INCIDENT REPORT', 'file-report', { cls: red ? 'btn-danger' : 'btn-primary' })}</div>`,
+  { cls: `win-file ${red ? 'is-red' : 'is-ok'}`, tone: red ? 'red' : '', bar });
+}
+// The cases alive (the one left open, the one that is calling) and the archive.
+//   style 'tabs':  one window, CASES; ARCHIVE is its other view, reached from the right of its title
+//         'stack': today's pieces one under the other: the open case as a strip, NOVA's call, the archive as a strip
+//                  that opens (k.chat: the strip and the call, as the game draws them)
+//         'key':   as 'stack' without the archive, which is on a key of the bar
+//   tab 'cases' | 'archive'; expand: the archived case open inside the list; fold: the archive strip is open ('stack')
+export function casesPanel(k) {
+  const { style = 'tabs', tab = 'cases', open = null, incoming = null, archive = [], expand = null } = k;
+  const caseId = (code) => `<b class="case-id">CASE ${esc(code)}</b>`;
+  const list = () => `<div class="term arch">${archive.map((e) => {
+    const isOpen = expand === e.code;
+    const line = `<button type="button" class="att arch-row" data-act="archive-case" data-code="${esc(e.code)}" aria-expanded="${isOpen}"><span>${isOpen ? '&minus;' : '+'} CASE ${esc(e.code)}</span>${outcome(e)}</button>`;
+    return isOpen ? `${line}<div class="arch-open">${fileSum(e)}<div class="actions">${btn('INCIDENT REPORT', 'file-report', { cls: e.ending === 'right' ? 'btn-primary' : 'btn-danger' })}</div></div>` : line;
+  }).join('')}</div>`;
+  if (style === 'stack' || style === 'key') {
+    if (style === 'key') return tab === 'archive' ? win('ARCHIVE', list(), { cls: 'win-archive' }) : k.chat;
+    const strip = !archive.length ? '' : k.fold
+      ? win('ARCHIVE', `${list()}<div class="rep-foot"><button type="button" class="rep-toggle" data-act="archive-fold" aria-expanded="true" aria-label="Close the archive">&minus;</button></div>`, { cls: 'win-archive' })
+      : win('ARCHIVE', `<span class="arch-count">${archive.length} CASES</span><button class="rep-cover" type="button" data-act="archive-fold" aria-expanded="false" aria-label="Open the archive"><i>+</i></button>`, { cls: 'win-report rep is-closed is-bar win-archstrip' });
+    return `${k.chat}${strip}`;
+  }
+  const alt = (v, label) => `<button type="button" class="win-alt" data-act="home-tab" data-v="${v}">${label}</button>`;
+  if (tab === 'archive') return win('ARCHIVE', list(), { cls: 'win-cases win-archive', bar: alt('cases', 'CASES') });
+  const openRow = open ? `<div class="case-row"><span class="case-what">${caseId(open.code)}<span class="hc-tag hc-tag-still">OXYGEN&nbsp;<span data-timer>${fmtClock(open.remainingMs)}</span></span></span>${btn('CONTINUE', 'continue', { cls: 'btn-primary' })}</div>` : '';
+  const inRow = incoming ? `<div class="case-row"><span class="case-what">${caseId(incoming.code)}<span class="hc-tag">INCOMING TRANSMISSION</span></span>${btn('ACCEPT', 'accept', { cls: open ? '' : 'btn-primary' })}</div>
+      <div class="term case-said"><div class="tl tl-nova"><span class="tl-who">NOVA</span><div class="tl-txt">${keyed(BRIEFING_PARTS[0])}</div></div></div>` : '';
+  return win('CASES', `<div class="case-rows">${openRow}${inRow}</div>`, { cls: 'win-cases', bar: archive.length ? alt('archive', `ARCHIVE · ${archive.length}`) : '' });
 }
 
 // The debrief questions are on the scoreboard sheet, not in NOVA (decided 2026-11-23).
@@ -916,13 +1015,13 @@ export const liveSide = (tab, stage) => (tab === 'map' && stage >= 4 ? 'map' : t
 // test che avvengono»). a: { style, cases: [{ code, ending, sent, asked, left }], open: the code of the one open }
 //   'list':  a window that lists them, one line each, as NOVA lists the reports she attaches; a line opens the case
 //   'files': each case a file closed to a strip, as a closed report is; open, its sheet and the way to what happened
-// The words are the app's: the titles of the endings, the labels of the case notes, SEE WHAT HAPPENED.
+// The words are the app's: the titles of the endings, the labels of the case notes, INCIDENT REPORT.
 export function archivePanel({ style = 'list', cases = [], open = null } = {}) {
   const status = (e) => esc(ENDINGS[e.ending].title.toUpperCase());
   if (style === 'files') {
     const file = (e) => (open === e.code
       ? win(`CASE ${esc(e.code)}`, `<dl class="notes arch-sum"><div><dt>STATUS_</dt><dd class="arch-${e.ending}">${status(e)}</dd></div><div><dt>CODE_</dt><dd>${e.sent ? esc(e.sent) : 'Not sent'}</dd></div><div><dt>QUESTIONS_</dt><dd>${e.asked} of ${MAX_QUESTIONS}</dd></div><div><dt>OXYGEN_</dt><dd>${fmtClock(e.left)}</dd></div></dl>
-          <div class="rep-foot arch-foot">${btn('SEE WHAT HAPPENED', 'archive-case', { attrs: `data-code="${esc(e.code)}"` })}<button type="button" class="rep-toggle" data-act="archive-toggle" data-code="${esc(e.code)}" aria-expanded="true" aria-label="Close case ${esc(e.code)}">&minus;</button></div>`, { cls: 'win-report rep' })
+          <div class="rep-foot arch-foot">${btn('INCIDENT REPORT', 'archive-case', { attrs: `data-code="${esc(e.code)}"` })}<button type="button" class="rep-toggle" data-act="archive-toggle" data-code="${esc(e.code)}" aria-expanded="true" aria-label="Close case ${esc(e.code)}">&minus;</button></div>`, { cls: 'win-report rep' })
       : win(`CASE ${esc(e.code)}`, `<button class="rep-cover" type="button" data-act="archive-toggle" data-code="${esc(e.code)}" aria-expanded="false" aria-label="Open case ${esc(e.code)}"><i>+</i></button>`, { cls: 'win-report rep is-closed is-bar' }));
     return `<div class="reports-wins arch-files"><h2 class="win-title rw-title">ARCHIVE</h2>${cases.map(file).join('')}</div>`;
   }
@@ -940,12 +1039,25 @@ export function screenLive(view) {
   // a terminal line:
   //   'side': the CODE key puts the code window at the end of the reports (on a phone, at the end of REPORTS)
   //   'chat': the CODE key starts the code in NOVA's conversation, where everything Mission Control sends is written
+  //   'nova': there is no CODE key: CODE stands beside NEW QUESTION in her conversation, and she answers the code there
+  //           (view.reply: her lines; 2026-11-26)
   const codeAlt = stage >= 8 ? view.codeAlt || '' : '';
-  const chat = askTerm(state, 'thread', detail, { stage, c, saved: view.saved, ack: view.ack, homeAlt: view.homeAlt, next: view.nextCode, codeHere: codeAlt === 'chat' && state.tab === 'code' });
+  const chat = askTerm(state, 'thread', detail, { stage, c, saved: view.saved, ack: view.ack, homeAlt: view.homeAlt, next: view.nextCode, codeHere: codeAlt === 'chat' && state.tab === 'code', codeNova: codeAlt === 'nova', reply: view.reply, archived: Boolean(view.archived) });
   // at the start NOVA's terminal stands alone in the middle of the empty console
   if (stage < 0) {
     // view.archive (proposal, mocks only until chosen): the cases closed on this console, beside her request
     const arch = view.archive ? archivePanel(view.archive) : '';
+    // view.cases (proposals, mocks only until chosen): the home as the cases of this console. k.last: the file of the
+    // case that has just closed, alone or above the cases; k.file: a file opened from the archive, in place of the list
+    if (view.cases) {
+      const k = view.cases;
+      const title = view.homeTitle ? `<h1 class="home-title ht-${view.homeTitle}">MISSION <span>CONTROL</span></h1>` : '';
+      const back = '<button type="button" class="win-alt" data-act="home-tab" data-v="archive">ARCHIVE</button>';
+      const panel = k.file ? caseFile(k.file, { c: k.fileC, report: k.report, bar: back }) : k.only ? '' : casesPanel({ ...k, chat });
+      // k.modal: the incident report of an archived case in a window over the screen, as a member's profile is
+      const over = k.modal ? `<div class="modal" data-act="close-modal"><div class="modal-inner" data-stop>${win(`CASE ${esc(k.modal.code)} // INCIDENT REPORT`, `${incidentBody(k.fileC, { log: k.modal.log || [], sentCode: k.modal.sent })}<div class="actions">${btn('CLOSE', 'close-modal')}</div>`, { cls: 'win-incident' })}</div></div>` : '';
+      return `<main class="screen screen-live live-request live-cases ${title ? 'has-title' : ''}"><div class="live-col">${title}${k.last ? caseFile(k.last, { c: k.fileC, report: k.report }) : ''}${panel}</div>${over}</main>`;
+    }
     // view.homeTitle (proposal, mocks only until chosen; 2026-11-25: «come questo titolo serve all'inizio nella home,
     // MISSION CONTROL, magari su due righe, responsive, quando si preme accept, il titolo fades away»): the title of
     // the endings, above NOVA's request. 'one': one line where it fits, two on a phone; 'two': always two lines
@@ -972,13 +1084,16 @@ export function screenLive(view) {
   const notes = stage >= 1 ? win(`CASE ${esc(c.code)}`, `<dl class="notes">${NOTES.filter(([id]) => has(id)).map(([id, label, text]) => `<div data-note="${id}"><dt>${label}</dt><dd>${noteLines(id, text)}</dd></div>`).join('')}</dl>`, { cls: 'win-notes' }) : '';
   const reports = has('reports') ? reportsPanel(c, view.reportStyle || 'crewtop', { bare: true, open: state.openReports || [], closed: view.repClosed || '' }) : '';
   const model = has('sensors') ? mapPanel(state.mapSel, { detail }) : '';
-  const code = has('code') ? codePanel(state, { ui: codeAlt ? 'term' : '' }) : '';
+  const code = has('code') && codeAlt !== 'nova' ? codePanel(state, { ui: codeAlt ? 'term' : '' }) : '';
+  // view.archived (proposal): a closed case opened again on the console, to be read: its incident report stands
+  // under the meters, where the map is during a case
+  const incident = view.archived ? win('INCIDENT REPORT', incidentBody(c, { log: state.log, sentCode: state.sentCode }), { cls: 'win-incident' }) : '';
   const tab = state.tab || 'ask';
   const modals = `${state.profile ? profileModal(c, state.profile) : ''}${view.quitOpen ? quitModal(c) : ''}`;
   const critical = remainingMs <= 60000 && has('oxygen') ? `<div class="alarm-strip" role="alert">${warningIcon()}<span>OXYGEN CRITICAL // LESS&nbsp;THAN&nbsp;ONE&nbsp;MINUTE</span></div>` : '';
   if (wide) {
     // (with the code at the right or in her conversation, the map stays under the meters while the code is typed)
-    const side = { map: model, code, briefing: notes }[liveSide(codeAlt && tab === 'code' ? 'map' : tab, stage)] || notes;
+    const side = incident && tab !== 'map' && tab !== 'briefing' ? incident : { map: model, code, briefing: notes }[liveSide(codeAlt && tab === 'code' ? 'map' : tab, stage)] || notes;
     const codeSide = codeAlt === 'side' && tab === 'code' ? code : '';
     // three columns from the start, and NOVA's channel is the middle one: it never moves. On its left, when the
     // case opens, the meters and under them the case, the map or the code; on its right the reports (2026-11-25:
@@ -993,8 +1108,8 @@ export function screenLive(view) {
       ${reports ? `<div class="live-col live-right">${reports}${codeSide}</div>` : ''}
       ${modals}</main>`;
   }
-  const channel = codeAlt === 'side' && tab === 'code' ? reports + code : codeAlt === 'chat' && tab === 'code' ? chat
-    : { reports, map: model, code, briefing: notes, ask: chat }[tab] || chat;
+  const channel = codeAlt === 'side' && tab === 'code' ? reports + code : (codeAlt === 'chat' || codeAlt === 'nova') && tab === 'code' ? chat
+    : incident && tab === 'incident' ? incident : { reports, map: model, code, briefing: notes, ask: chat }[tab] || chat;
   return `<main class="screen screen-live">${meters}${critical}${channel}${modals}</main>`;
 }
 
