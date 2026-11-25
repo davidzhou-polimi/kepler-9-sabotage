@@ -1185,10 +1185,13 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .win-meter .timer { min-width: 0; font-size: calc(var(--ds) * 30px); }
 .win-meter .status-o2, .win-meter .status-link { gap: 10px; }
 .win-meter .meter { max-width: none; }
-.notes { margin: 0; display: grid; gap: 10px; }
-.notes > div { display: grid; gap: 2px; }
-.notes dt { font: 500 11px var(--font-mono); letter-spacing: 0.12em; color: var(--cyan); }
-.notes dd { margin: 0; font-size: 15px; line-height: 1.4; color: var(--star); }
+/* the case notes: the name of each note on the left, on its right one fact per line (2026-11-25: «se riscrivi il
+   testo riformattato...»; before, the name stood above and the facts ran on one line, parted by dots) */
+.notes { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 14px 16px; align-content: start; }
+.notes > div { display: contents; }
+.notes dt { padding-top: 0.42em; font: 500 11px/1.2 var(--font-mono); letter-spacing: 0.12em; color: var(--cyan); }
+.notes dd { margin: 0; font-size: 15px; line-height: 1.5; color: var(--star); }
+.notes dd > span { display: block; }
 /* the reports NOVA attaches to her message: lines of text, as a terminal lists files */
 .atts { display: grid; gap: 1px; margin-left: calc(3.3em + 8px); }
 .att { justify-self: start; padding: 3px 0; font: inherit; color: var(--cyan); background: none; border: 0; border-bottom: 1px dashed transparent; cursor: pointer; text-align: left; }
@@ -1243,12 +1246,26 @@ select:focus-visible { outline: 2px solid var(--cyan); }
    di sinistra»; before, NOVA stood on the left and one column became two, then three) */
 .live-wide { grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 .live-wide:has(> .alarm-strip) { grid-template-rows: auto minmax(0, 1fr); }
-.live-wide > .live-left { grid-column: 1; }
-.live-wide > .live-chat { grid-column: 2; }
 .live-wide > .live-right { grid-column: 3; }
+/* the left column and NOVA's channel are one pair, as tall as her window (and never taller than the screen): the left
+   one does not count for that height, it takes it. So the window under the meters ends where the conversation ends,
+   on any screen (2026-11-25: «riesci ad allungare la finestra per combaciare più o meno la chat di nova?») */
+.live-wide > .live-pair {
+  grid-column: 1 / 3; align-self: stretch; min-height: 0;
+  display: grid; grid-template-columns: subgrid; grid-template-rows: fit-content(100%); align-content: start;
+}
+.live-pair > .live-left { grid-column: 1; contain: size; display: flex; flex-direction: column; overflow: hidden; max-height: none; padding-bottom: 0; }
+.live-pair > .live-left > * { flex: none; }
+.live-pair > .live-left > .win:last-child { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.live-pair > .live-left > .win:last-child > .win-bar { flex: none; }
+.live-pair > .live-left > .win:last-child > .win-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--cyan) rgba(67, 217, 210, 0.12); }
+.live-pair > .live-left > .win:last-child > .win-body::-webkit-scrollbar { width: 8px; }
+.live-pair > .live-left > .win:last-child > .win-body::-webkit-scrollbar-track { background: rgba(67, 217, 210, 0.1); border-left: 1px solid rgba(67, 217, 210, 0.3); }
+.live-pair > .live-left > .win:last-child > .win-body::-webkit-scrollbar-thumb { background: var(--cyan); }
+.live-pair > .live-chat { grid-column: 2; }
 /* NOVA's window keeps its frame in view: the conversation scrolls inside it */
-.live-wide > .live-chat { align-self: stretch; display: flex; flex-direction: column; overflow: hidden; min-height: 0; max-height: none; }
-.live-cols-1 > .live-chat { justify-content: center; }
+.live-pair > .live-chat { align-self: stretch; display: flex; flex-direction: column; overflow: hidden; min-height: 0; max-height: none; padding-bottom: 0; }
+.live-cols-1 > .live-pair { align-content: center; }
 .screen-live .win-term { display: flex; flex-direction: column; flex: 0 1 auto; min-height: 0; }
 .screen-live .win-term .win-bar { flex: none; }
 .screen-live .win-term .win-body { min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--cyan) rgba(67, 217, 210, 0.12); }
@@ -1348,10 +1365,15 @@ select:focus-visible { outline: 2px solid var(--cyan); }
    bar: a plain strip with cut corners and no tab; the name on the left, the mark on the right
    line: a line of text, as the attachments in NOVA's channel
    chip: only the tab of the window, standing alone (cut at the top like the tab, flat at the bottom) */
-.win-report.is-closed.is-bar { --ws: 0px; --ch: 8px; }
-.wins-b1 .win-report.is-closed.is-bar .win-bar { padding: 8px 14px; }
+/* decided 2026-11-25 (A), with: «allinea il pulsante + a quello -, e rendili della stessa grandezza, quindi
+   ingradisci la barra report se serve, così quando si espande, il + va al posto del -». The + is the same square as
+   the − (30px), 14px from the right edge and 12px from the bottom one, where the − stands in the open report; the
+   strip is as tall as that takes (12 + 30 + 12) */
+.win-report.is-closed.is-bar { --ws: 0px; display: flex; align-items: center; min-height: 54px; }
+.wins-b1 .win-report.is-closed.is-bar .win-bar { padding: 0 14px; }
 .win-report.is-closed.is-bar .win-body { min-height: 0; }
-.win-report.is-closed.is-bar .rep-cover { align-items: center; padding: 0 7px; }
+.win-report.is-closed.is-bar .rep-cover { align-items: center; padding: 0 14px; }
+.win-report.is-closed.is-bar .rep-cover i { width: 30px; height: 30px; font: 600 17px/1 var(--font-mono); }
 .win-report.is-closed.is-bar:hover { --wfill: #0b1a22; }
 
 .rep-line {
@@ -1383,3 +1405,67 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .rep-chip:hover::after, .rep-chip:focus-visible::after { background: #0b1a22; }
 .rep-chip:focus-visible { outline: none; }
 .rep-chip + .rep-chip { margin-top: -4px; }
+
+/* ---------- the top edge of NOVA's conversation once it has been scrolled (proposals, mocks) ---------- */
+/* 2026-11-25: «se scrollo nella finestra di nova, c'è quel taglio strano, come possiamo risolvere?» (a line of text
+   sliced in half right under the title, where nothing marks an edge)
+   scr-c: what scrolls under the title fades out (only once the conversation has moved: class is-scrolled)
+   scr-b: a line under the title: what scrolls goes under an edge that can be seen
+   scr-d: the title on a filled band, as the status line of a terminal: the edge is a change of ground
+   (tried and dropped, 2026-11-25: moving one whole message at a time with scroll snapping. Measured: with the
+   conversation at its last line, which is where it rests, the top edge falls wherever the last line puts it, so
+   a line is still cut) */
+.scr-b .screen-live .win-term .win-body { border-top: 1px solid rgba(67, 217, 210, 0.55); }
+.scr-d .screen-live .win-term .win-bar { position: relative; padding-bottom: 8px; }
+.scr-d .screen-live .win-term .win-bar::before {
+  content: ''; position: absolute; inset: var(--wt) var(--wt) 0; z-index: 0; pointer-events: none;
+  background: rgba(67, 217, 210, 0.16);
+  clip-path: polygon(var(--chi) 0, calc(100% - var(--chi)) 0, 100% var(--chi), 100% 100%, 0 100%, 0 var(--chi));
+}
+.scr-d .screen-live .win-term .win-title { position: relative; z-index: 1; }
+@property --term-fade { syntax: '<length>'; inherits: false; initial-value: 0px; }
+.scr-c .screen-live .win-term .win-body {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--term-fade));
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--term-fade));
+  transition: --term-fade 0.15s linear;
+}
+.scr-c .screen-live .win-term .win-body.is-scrolled { --term-fade: 30px; }
+
+/* ---------- a window arrives: it opens from a line, then what is inside is typed in (js/winfx.js) ---------- */
+/* decided 2026-11-25 (D), with: «il testo vorrei che sembri digitato, elementi come la barra di ossigeno non ha senso
+   che abbia effetto digitato, ma che appaia da sinistra a destra come barra che si carica». While a window is being
+   typed everything in it holds its place, hidden; the script shows each thing when the typing reaches it */
+.fxin-type .win:not(.win-term) { animation: win-in-a 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+/* the mocks bring every window in a row; in the game each one comes when NOVA names it */
+.fxin-type .win-map, .fxin-type .win-notes { --wd: 0.2s; }
+.fxin-type .reports-wins .win:nth-of-type(1) { --wd: 1.9s; }
+.fxin-type .reports-wins .win:nth-of-type(2) { --wd: 3.1s; }
+.fxin-type .reports-wins .win:nth-of-type(3) { --wd: 4.3s; }
+.fxin-type .reports-wins .win:nth-of-type(4) { --wd: 4.7s; }
+.fxin-type .win-questions { --wd: 5.2s; }
+.fxin-type .win-oxygen { --wd: 5.8s; }
+.fx-typing :where(.win-title, .win-title *, .win-body, .win-body *) { visibility: hidden; }
+.fx-typing .fx-on, .fx-typing .fx-on-all, .fx-typing .fx-on-all * { visibility: visible; }
+@media (prefers-reduced-motion: reduce) { .fxin-type .win { animation: none !important; } }
+
+/* the station map comes up as a hologram («per la comparsa della mappa, beh come un ologramma»): the projector lights,
+   its beam grows, the plan flickers on the floor, then the rooms rise from it one after the other and take their names.
+   The rooms rise by their own height (--hh), so the model stays a model: nothing is faded or clipped as a whole */
+@property --hh { syntax: '<length>'; inherits: true; initial-value: 26px; }
+.holo-in::after { animation: holo-ring-in 0.3s ease-out both; }
+@keyframes holo-ring-in { 0% { opacity: 0; transform: scaleX(0.25); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+.holo-in .holo-beam { transform-origin: 50% 100%; animation: holo-beam-in 0.4s ease-out 0.2s both; }
+@keyframes holo-beam-in { 0% { opacity: 0; transform: scaleY(0); } 100% { opacity: 1; transform: none; } }
+.holo-in .holo-stage > .map { animation: holo-plan-in 0.4s steps(1) 0.45s both; }
+@keyframes holo-plan-in { 0% { opacity: 0; } 20% { opacity: 0.8; } 40% { opacity: 0.25; } 60% { opacity: 1; } 80% { opacity: 0.6; } 100% { opacity: 1; } }
+.holo-in .h-box { --rise: 0.75s; animation: holo-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) var(--rise) both; }
+.holo-in .h-box:nth-child(2) { --rise: 0.83s; }
+.holo-in .h-box:nth-child(3) { --rise: 0.91s; }
+.holo-in .h-box:nth-child(4) { --rise: 0.99s; }
+.holo-in .h-box:nth-child(5) { --rise: 1.07s; }
+.holo-in .h-box:nth-child(6) { --rise: 1.15s; }
+@keyframes holo-rise { 0% { --hh: 0px; } }
+.holo-in .h-box > :is(.h-w, .h-top) { animation: holo-part-in 0.12s steps(1) var(--rise) both; }
+.holo-in .h-box > .h-label { animation: holo-part-in 0.2s steps(2, jump-none) calc(var(--rise) + 0.35s) both; }
+@keyframes holo-part-in { 0% { opacity: 0; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .holo-in::after, .holo-in .holo-beam, .holo-in .holo-stage > .map, .holo-in .h-box, .holo-in .h-box > * { animation: none !important; } }

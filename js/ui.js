@@ -114,12 +114,12 @@ function reportAlt(c, p, style, { open = null, closed = '' } = {}) {
       // closed, a report is only its name and the mark that opens it; the whole strip opens it
       // (2026-11-25: «immaginavo una cosa molto più compatta, con meno dettagli, es. solo report 1, report 2»)
       const opens = `type="button" data-act="toggle-report" data-p="${p}" aria-expanded="false" aria-label="Open report ${n}"`;
-      // other drawings of the closed report (proposals, mocks; 2026-11-25: «per i report compressi è orrenda quella
-      // roba lì»): bar = a plain strip with cut corners, no tab; line = a line of text, as an attachment in NOVA's
-      // channel; chip = only the tab of the window
+      // closed, a report is a plain strip with cut corners and no tab (decided 2026-11-25, after «per i report
+      // compressi è orrenda quella roba lì»). The drawings it was chosen among stay for the record: tab = the window's
+      // tab squeezed into one line; line = a line of text, as an attachment in NOVA's channel; chip = the tab alone
       if (closed === 'line') return `<button class="rep-line" ${opens}><i>+</i> REPORT ${n}</button>`;
       if (closed === 'chip') return `<button class="rep-chip" ${opens}><b class="win-title">REPORT ${n}</b><i>+</i></button>`;
-      return win(`REPORT ${n}`, `<button class="rep-cover" ${opens}><i>+</i></button>`, { cls: `win-report rep is-closed ${closed === 'bar' ? 'is-bar' : ''}` });
+      return win(`REPORT ${n}`, `<button class="rep-cover" ${opens}><i>+</i></button>`, { cls: `win-report rep is-closed ${closed === 'tab' ? '' : 'is-bar'}` });
     }
     const top = `<div class="crew-top"><span>REPORT ${n}</span><i></i><span class="crew-dot"></span></div>`;
     return `<article class="rep rep-crew ${style === 'crewtop' ? 'is-top' : ''}">${top}${style === 'crewtop' ? id + body : body + id}</article>`;
@@ -857,6 +857,11 @@ const NOTES = [
   ['code', 'CODE_', 'False report number + saboteur\'s ID · One attempt'],
   ['oxygen', 'OXYGEN_', '10 minutes'],
 ];
+// On a laptop, what stands under the meters in the left column: the case while NOVA writes it; once she has finished
+// the map takes its place and stays, and BRIEFING, MAP and CODE put the case, the map or the code there
+// (2026-11-25: «cambia alla mappa dai, così l'utente vede che si può cambiare, e la mappa è più scenografica»)
+export const liveSide = (tab, stage) => (tab === 'map' && stage >= 4 ? 'map' : tab === 'code' && stage >= 6 ? 'code' : tab === 'briefing' ? 'briefing' : stage >= 8 ? 'map' : 'briefing');
+
 export function screenLive(view) {
   const { state, c, wide, remainingMs } = view;
   const stage = view.stage ?? 8;
@@ -874,7 +879,10 @@ export function screenLive(view) {
       <span class="status-num">${leftQ}/${MAX_QUESTIONS}</span></div>`, { cls: 'win-meter win-questions' }) : '';
   // the questions come first, so they stand on the left
   const meters = oxygen || questions ? `<div class="live-meters">${questions}${oxygen}</div>` : '';
-  const notes = stage >= 1 ? win(`CASE ${esc(c.code)}`, `<dl class="notes">${NOTES.filter(([id]) => has(id)).map(([id, label, text]) => `<div><dt>${label}</dt><dd>${text}${at(id) === stage ? '<span class="tl-cur"></span>' : ''}</dd></div>`).join('')}</dl>`, { cls: 'win-notes' }) : '';
+  // the case notes: the name of each note on the left, and on its right one fact per line (2026-11-25: «se riscrivi
+  // il testo riformattato, riesci ad allungare la finestra per combaciare più o meno la chat di nova?»)
+  const noteLines = (id, text) => text.split(' · ').map((l, i, all) => `<span>${l.replace(/ (\S+)$/, '&nbsp;$1')}${i === all.length - 1 && at(id) === stage ? '<span class="tl-cur"></span>' : ''}</span>`).join('');
+  const notes = stage >= 1 ? win(`CASE ${esc(c.code)}`, `<dl class="notes">${NOTES.filter(([id]) => has(id)).map(([id, label, text]) => `<div><dt>${label}</dt><dd>${noteLines(id, text)}</dd></div>`).join('')}</dl>`, { cls: 'win-notes' }) : '';
   const reports = has('reports') ? reportsPanel(c, view.reportStyle || 'crewtop', { bare: true, open: state.openReports || [], closed: view.repClosed || '' }) : '';
   const model = has('sensors') ? mapPanel(state.mapSel, { detail }) : '';
   const code = has('code') ? codePanel(state) : '';
@@ -882,14 +890,17 @@ export function screenLive(view) {
   const modals = `${state.profile ? profileModal(c, state.profile) : ''}${view.quitOpen ? quitModal(c) : ''}`;
   const critical = remainingMs <= 60000 && has('oxygen') ? `<div class="alarm-strip" role="alert">${warningIcon()}<span>OXYGEN CRITICAL // LESS&nbsp;THAN&nbsp;ONE&nbsp;MINUTE</span></div>` : '';
   if (wide) {
-    const side = tab === 'map' && model ? model : tab === 'code' && code ? code : notes;
+    const side = { map: model, code, briefing: notes }[liveSide(tab, stage)] || notes;
     // three columns from the start, and NOVA's channel is the middle one: it never moves. On its left, when the
     // case opens, the meters and under them the case, the map or the code; on its right the reports (2026-11-25:
-    // «centrato nova, a sinistra mappa, a destra report, timer e domande, sopra la mappa, sempre colonna di sinistra»)
+    // «centrato nova, a sinistra mappa, a destra report, timer e domande, sopra la mappa, sempre colonna di sinistra»).
+    // The left column and NOVA's channel are one pair: the left one is as tall as her window, whatever the screen
     const cols = 1 + (stage >= 1 ? 1 : 0) + (reports ? 1 : 0);
     return `<main class="screen screen-live live-wide live-cols-${cols}">${critical}
-      ${cols > 1 ? `<div class="live-col live-left">${meters}${side}</div>` : ''}
-      <div class="live-col live-chat">${chat}</div>
+      <div class="live-pair">
+        ${cols > 1 ? `<div class="live-col live-left">${meters}${side}</div>` : ''}
+        <div class="live-col live-chat">${chat}</div>
+      </div>
       ${reports ? `<div class="live-col live-right">${reports}</div>` : ''}
       ${modals}</main>`;
   }

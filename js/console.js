@@ -5,7 +5,7 @@
 //             'deck' fourth round: one screen with today's windows, and the physical bar (see below)
 // view.fx: whole-screen video effects, a list: 'crt' (glass, always), 'boot' (power-on), 'static' (channel change),
 //          'link' (NOVA's damaged link). In mocks a frame can be frozen on a moment with view.fxFreeze.
-import { esc, fmtClock, warningIcon, statusBar, reportsPanel, mapPanel, askPanel, briefingPanel, codePanel, profileModal, quitModal, MAX_QUESTIONS, OXYGEN_MS } from './ui.js';
+import { esc, fmtClock, warningIcon, statusBar, reportsPanel, mapPanel, askPanel, briefingPanel, codePanel, profileModal, quitModal, liveSide, MAX_QUESTIONS, OXYGEN_MS } from './ui.js';
 
 const lamp = (label, cls = '') => `<span class="cs-lamp ${cls}"><i></i>${label}</span>`;
 const sysLine = (c) => `<div class="cs-sys"><span>MC-OS // MISSION CONTROL</span><span>KEPLER-9 LINK${c ? ` · CASE ${esc(c.code)}` : ''}</span></div>`;
@@ -199,11 +199,11 @@ function deckShell(view, screenFn) {
   let tab = state.tab;
   if (view.wide && tab === 'reports') tab = 'ask'; // on a laptop the reports are always on screen
   // the console that fills up (view.flow 'live'): a key works once NOVA has brought what it opens; on a laptop
-  // NOVA and the reports are always on screen, so the keys change only the middle column
+  // NOVA and the reports are always on screen, so the keys change only what stands under the meters, on the left
   const filling = view.flow === 'live';
   const stage = view.stage ?? 8;
   const avail = filling ? { ask: stage >= 0, briefing: stage >= 1, reports: stage >= 3, map: stage >= 4, code: stage >= 6 } : null;
-  if (filling && view.wide && tab !== 'map' && tab !== 'code') tab = 'briefing';
+  if (filling && view.wide) tab = liveSide(tab, stage); // the lit key is the one of what stands under the meters
   const k = (label, v) => key2(label, v, { on: playing && tab === v && (!avail || avail[v]), live: avail ? playing && avail[v] : playing, cls: `cs-key-${v}` });
   const keys = filling && view.wide ? k('BRIEFING', 'briefing') + k('MAP', 'map')
     : (view.wide ? '' : k('REPORTS', 'reports')) + k('MAP', 'map') + k('NOVA', 'ask') + k('BRIEFING', 'briefing');

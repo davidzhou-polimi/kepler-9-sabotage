@@ -2,6 +2,7 @@
 // Boards: open proposals first (each direction with its own pick), then the font comparison (decided).
 import { generateCase } from './generator.js';
 import { screen, newState, crewCard, profileModal, reportsPanel, askPanel } from './ui.js';
+import { playWindows } from './winfx.js';
 import { DISPLAY_FONTS } from './fonts.js';
 
 const SAMPLE = 'K9-7UQ8';
@@ -709,16 +710,17 @@ const liveL = (label, stage, s = {}, extra = {}) => cap(label, laptop(chosen({ f
 const liveP = (label, stage, s = {}, opts = {}) => cap(label, phone(chosen({ flow: 'live', stage, state: liveState(stage, s), remainingMs: 10 * MIN - 9000 }), { cls: BASE, ...opts }));
 const LIVE = {
   id: 'live', title: 'La console si popola dopo aver accettato la trasmissione',
-  quote: '«dovrebbe essere una richiesta di nova, che chiede a mission control di rispondere, chi apre la webapp accetta la trasmissione e nova inizia a scrivere. compare poi la schermata briefing, che si compila mentre nova scrive, come se mission control stesse prendendo in carico il caso e si appunta le cose no, e anche i report vengono aperti man mano che nova li apre (nella chat si vedono come allegati non lo so)» · «ah, e per forza di cose, anche il timer dell\'ossigeno e il numero di domande, saranno finestre, che compaiono dove che è comparso il briefing ecc. quindi vediamo veramente la console popolarsi dopo aver accettato il caso» · «change layout della console di mission control, centrato nova, a sinistra mappa, a destra report, timer e domande, sopra la mappa, sempre colonna di sinistra»',
-  context: `È uno storyboard: i momenti in ordine, sul laptop e sul telefono. Non ci sono scelte da fare con il pallino; dimmi cosa non torna. Come l'ho letta. La console è vuota e c'è solo la richiesta di NOVA, la sua prima frase di oggi («Mission Control, this is NOVA on Kepler-9.») con ACCEPT. Accettando, NOVA scrive il resto del briefing nel suo canale, una frase alla volta, e ogni cosa compare quando la dice: gli appunti del caso (la finestra CASE con il suo codice, una riga per ogni frase), i quattro rapporti come allegati sotto la frase che li nomina (e la colonna dei rapporti si apre), la mappa quando parla dei sensori, la finestra QUESTIONS quando dice quante domande regge il collegamento, la finestra OXYGEN quando dice l'ossigeno. Sulla barra un tasto si accende solo quando c'è ciò che apre. L'ossigeno corre da quando accetti, come avevi deciso: la sua finestra arriva con l'ultima frase, una decina di secondi dopo, e mostra già il tempo sceso. Sul laptop, dopo il tuo ultimo messaggio, le colonne sono tre e NOVA sta in quella al centro dall'inizio alla fine, senza spostarsi: a sinistra, quando si apre il caso, arriva la colonna con domande e ossigeno in alto (le domande a sinistra perché arrivano prima) e sotto gli appunti, oppure la mappa o il codice con i tasti; a destra arrivano i rapporti. Prima NOVA stava a sinistra e la colonna al centro era questa. Sul telefono domande e ossigeno stanno in alto e sotto c'è un canale alla volta. La conversazione con NOVA scorre dentro la sua finestra, con la barra di scorrimento nel nostro stile: il bordo resta sempre in vista. I rapporti arrivano chiusi (il disegno del rapporto chiuso è da rifare: tavola «Il rapporto chiuso»): una striscia con il solo nome («REPORT 01») e il segno + in basso a destra; toccandola si apre, e il − in fondo al testo la richiude; se ne possono tenere aperti quanti si vuole. Testi nuovi da approvare: ACCEPT e INCOMING TRANSMISSION; le sette righe di appunti, che sono le frasi di NOVA ridotte a parole chiave (SITUATION_ «03:00 · Recycler sabotaged · Every module sealed»; SABOTEUR_ «Whoever was in Life Support»; REPORTS_ «4 reports · One is false»; SENSORS_ «Hatch openings · Motion · No names recorded»; LINK_ «Damaged · 2 questions · Emergency code» (senza la regola sulla domanda rifiutata: quella il giocatore la scopre da sé); CODE_ «False report number + saboteur's ID · One attempt»; OXYGEN_ «10 minutes»); e gli allegati, righe di testo come in un terminale («+ REPORT 01 · MIRA»). Dopo i tuoi ultimi messaggi: il canale di NOVA non ha più la linguetta, e ogni rapporto è una finestra con la sua linguetta («REPORT 01»), sotto il titolo CREW REPORTS.`,
+  quote: '«dovrebbe essere una richiesta di nova, che chiede a mission control di rispondere, chi apre la webapp accetta la trasmissione e nova inizia a scrivere. compare poi la schermata briefing, che si compila mentre nova scrive, come se mission control stesse prendendo in carico il caso e si appunta le cose no, e anche i report vengono aperti man mano che nova li apre (nella chat si vedono come allegati non lo so)» · «ah, e per forza di cose, anche il timer dell\'ossigeno e il numero di domande, saranno finestre, che compaiono dove che è comparso il briefing ecc. quindi vediamo veramente la console popolarsi dopo aver accettato il caso» · «change layout della console di mission control, centrato nova, a sinistra mappa, a destra report, timer e domande, sopra la mappa, sempre colonna di sinistra» · «cambia alla mappa dai, così l\'utente vede che si può cambiare, e la mappa è più scenografica» · «se riscrivi il testo riformattato, riesci ad allungare la finestra per combaciare più o meno la chat di nova?»',
+  context: `È uno storyboard: i momenti in ordine, sul laptop e sul telefono. Non ci sono scelte da fare con il pallino; dimmi cosa non torna. Come l'ho letta. La console è vuota e c'è solo la richiesta di NOVA, la sua prima frase di oggi («Mission Control, this is NOVA on Kepler-9.») con ACCEPT. Accettando, NOVA scrive il resto del briefing nel suo canale, una frase alla volta, e ogni cosa compare quando la dice: gli appunti del caso (la finestra CASE con il suo codice, una riga per ogni frase), i quattro rapporti come allegati sotto la frase che li nomina (e la colonna dei rapporti si apre), la mappa quando parla dei sensori, la finestra QUESTIONS quando dice quante domande regge il collegamento, la finestra OXYGEN quando dice l'ossigeno. Sulla barra un tasto si accende solo quando c'è ciò che apre. L'ossigeno corre da quando accetti, come avevi deciso: la sua finestra arriva con l'ultima frase, una decina di secondi dopo, e mostra già il tempo sceso. Sul laptop, dopo il tuo ultimo messaggio, le colonne sono tre e NOVA sta in quella al centro dall'inizio alla fine, senza spostarsi: a sinistra, quando si apre il caso, arriva la colonna con domande e ossigeno in alto (le domande a sinistra perché arrivano prima) e sotto gli appunti del caso finché NOVA scrive; quando ha finito, la mappa prende il loro posto e resta, e i tasti BRIEFING e CODE riportano lì gli appunti o il codice; a destra arrivano i rapporti. Prima NOVA stava a sinistra e la colonna al centro era questa. La finestra sotto domande e ossigeno finisce dove finisce la chat di NOVA, su uno schermo alto come su uno basso (se il testo non ci sta, scorre dentro la finestra); negli appunti il nome sta a sinistra e ogni fatto ha la sua riga, con le stesse parole di prima. Sul telefono domande e ossigeno stanno in alto e sotto c'è un canale alla volta. La conversazione con NOVA scorre dentro la sua finestra, con la barra di scorrimento nel nostro stile: il bordo resta sempre in vista. I rapporti arrivano chiusi: una striscia con gli angoli smussati, il solo nome («REPORT 01») e il segno + a destra, dove da aperto sta il −; toccandola si apre, e il − in fondo al testo la richiude; se ne possono tenere aperti quanti si vuole. Testi nuovi da approvare: ACCEPT e INCOMING TRANSMISSION; le sette righe di appunti, che sono le frasi di NOVA ridotte a parole chiave (SITUATION_ «03:00 · Recycler sabotaged · Every module sealed»; SABOTEUR_ «Whoever was in Life Support»; REPORTS_ «4 reports · One is false»; SENSORS_ «Hatch openings · Motion · No names recorded»; LINK_ «Damaged · 2 questions · Emergency code» (senza la regola sulla domanda rifiutata: quella il giocatore la scopre da sé); CODE_ «False report number + saboteur's ID · One attempt»; OXYGEN_ «10 minutes»); e gli allegati, righe di testo come in un terminale («+ REPORT 01 · MIRA»). Dopo i tuoi ultimi messaggi: il canale di NOVA non ha più la linguetta, e ogni rapporto è una finestra con la sua linguetta («REPORT 01»), sotto il titolo CREW REPORTS.`,
   common: [
     liveL('1 · Laptop: la richiesta di NOVA, console vuota', -1),
     liveL('2 · Accettato: NOVA scrive, da sola al centro', 0),
     liveL('3 · A sinistra compaiono gli appunti del caso', 1),
     liveL('4 · A destra i rapporti, che NOVA allega e arrivano chiusi', 3),
     liveL('5 · Il collegamento: compare QUESTIONS, in alto a sinistra', 5),
-    liveL('6 · L\'ossigeno: compare OXYGEN accanto a QUESTIONS; NOVA ha finito; due rapporti aperti', 8),
-    liveL('7 · Tasto MAP: la mappa sotto domande e ossigeno, al posto degli appunti', 8, { tab: 'map', mapSel: 'M-K' }),
+    liveL('6 · L\'ossigeno: compare OXYGEN accanto a QUESTIONS; gli appunti sono completi', 7),
+    liveL('7 · NOVA ha finito: la mappa prende il posto degli appunti; due rapporti aperti', 8),
+    liveL('8 · Tasto BRIEFING: tornano gli appunti', 8, { tab: 'briefing' }),
     liveP('1 · Telefono: la richiesta di NOVA', -1),
     liveP('2 · NOVA scrive', 1),
     liveP('3 · I rapporti come allegati', 3, {}, { scroll: 'bottom' }),
@@ -730,10 +732,41 @@ const LIVE = {
   dirs: [],
 };
 
+// ---------- the top edge of NOVA's conversation once it has been scrolled ----------
+
+const scrFrame = (key, label) => cap(label, laptop(chosen({ flow: 'live', stage: 8, state: liveState(8), remainingMs: 10 * MIN - 9000 }), { cls: `${BASE} scr-${key}`, big: true }));
+const SCROLLEDGE = {
+  id: 'scrolledge', title: 'La chat di NOVA quando scorre: il taglio sotto il titolo',
+  quote: '«se scrollo nella finestra di nova, c\'è quel taglio strano, come possiamo risolvere?»',
+  context: 'Come la leggo: quando la conversazione è scesa, una riga resta tagliata a metà subito sotto «NOVA ON KEPLER-9», e lì non c\'è niente che faccia da bordo: il testo sembra tagliato dal nulla (in fondo succede lo stesso, ma lì c\'è la cornice e non stona). Tre modi di risolvere, da provare scorrendo la chat dentro il riquadro: le prove partono con la conversazione a metà, dove oggi si vede il taglio. Ne ho provato un quarto e l\'ho scartato: far scorrere la chat a messaggi interi, come un terminale a righe. L\'ho misurato: con la chat all\'ultima riga, che è dove sta quasi sempre, il bordo in alto cade dove lo mette l\'ultima riga e il taglio resta.',
+  dirs: [
+    { key: '0', title: 'Oggi', note: '<p>Per confronto: la riga tagliata sotto il titolo.</p>', frames: [scrFrame('0', 'Laptop: la chat a metà')] },
+    {
+      key: 'c', title: 'A · Il testo sfuma sotto il titolo', rec: true,
+      note: `<p>Quando la conversazione è scesa, le righe che passano sotto il titolo si spengono negli ultimi 30 px invece di essere tagliate di netto. Con la chat all'inizio non sfuma niente.</p>
+        <p>Perché: a chat ferma la finestra resta identica a com'è, e vale uguale per ogni finestra che scorre dentro (anche gli appunti su uno schermo basso). Costo: la riga in alto si legge male finché non la porti più giù.</p>`,
+      frames: [scrFrame('c', 'Laptop: la chat a metà, le righe sfumano')],
+    },
+    {
+      key: 'b', title: 'B · Una linea sotto il titolo',
+      note: `<p>Una linea sottile separa il titolo dalla conversazione, da bordo a bordo: il testo passa sotto un bordo che si vede, come succede in fondo con la cornice.</p>
+        <p>Costo: la linea c'è sempre, anche a chat ferma, e sulle finestre con la linguetta la linea sotto il titolo non ti era piaciuta.</p>`,
+      frames: [scrFrame('b', 'Laptop: la chat a metà, sotto una linea')],
+    },
+    {
+      key: 'd', title: 'C · Il titolo su una fascia piena',
+      note: `<p>Dietro il titolo c'è una fascia più chiara larga quanto la finestra, come la riga di stato di un terminale: il bordo è il cambio di fondo, senza linea.</p>
+        <p>Costo: cambia il disegno della finestra anche a chat ferma, e per coerenza la fascia andrebbe alle altre finestre senza linguetta (QUESTIONS, OXYGEN, il codice).</p>`,
+      frames: [scrFrame('d', 'Laptop: la chat a metà, sotto la fascia del titolo')],
+    },
+  ],
+};
+
 // ---------- what stays under the meters, in the left column ----------
 
 const LIVELEFT = {
-  id: 'liveleft', title: 'A sinistra, sotto timer e domande',
+  id: 'liveleft', title: 'A sinistra, sotto timer e domande', decided: 'A, resta la mappa', chosen: 'map',
+  answer: 'A · Resta la mappa > cambia alla mappa dai, così l\'utente vede che si può cambiare, e la mappa è più scenografica',
   quote: '«change layout della console di mission control, centrato nova, a sinistra mappa, a destra report, timer e domande, sopra la mappa, sempre colonna di sinistra»',
   context: 'La disposizione è già quella che hai scritto: NOVA al centro, i rapporti a destra, a sinistra timer e domande e sotto di loro la mappa. Resta un punto che la tua frase non dice: in quel posto, sotto timer e domande, oggi stanno anche gli appunti del caso (la finestra CASE, che si compila mentre NOVA scrive) e il codice, uno alla volta con i tasti BRIEFING, MAP e CODE. Ti chiedo solo cosa ci resta quando NOVA ha finito di scrivere. Finché scrive, in tutte e due ci sono gli appunti che si compilano.',
   dirs: [
@@ -747,22 +780,29 @@ const LIVELEFT = {
       key: 'notes', title: 'B · Restano gli appunti, la mappa con il tasto MAP',
       note: `<p>Come nello storyboard qui sopra: a fine briefing restano gli appunti del caso, e la mappa compare lì quando premi MAP.</p>
         <p>Perché: niente cambia da solo. Costo: per avere la mappa a sinistra serve un tasto, e per la maggior parte della partita in quel posto c'è un riassunto già letto.</p>`,
-      frames: [liveL('NOVA ha finito: sotto timer e domande ci sono gli appunti', 8), liveL('Tasto MAP: la mappa al loro posto', 8, { tab: 'map' })],
+      frames: [liveL('NOVA ha finito: sotto timer e domande ci sono gli appunti', 8, { tab: 'briefing' }), liveL('Tasto MAP: la mappa al loro posto', 8, { tab: 'map' })],
     },
   ],
 };
 
 // ---------- how a window appears ----------
 
+// the frames show the console full, with the case notes under the meters: the boards were judged that way, before the
+// map took that place at the end of the briefing. The typed version (key 'type') shows both, the map first
+const fxFrame = (key, label, s = { tab: 'briefing' }) => cap(label, `${laptop(chosen({ flow: 'live', stage: 8, state: liveState(8, s), remainingMs: 10 * MIN - 9000 }), { cls: `${BASE} fxin-${key}`, big: true })}<button type="button" class="replay" data-replay="winfx">Riguarda</button>`);
 const fxDir = (key, title, note, rec = false) => ({
   key, title, rec, note,
-  frames: [cap('Laptop: la console si popola (premi «Riguarda»)', `${laptop(chosen({ flow: 'live', stage: 8, state: liveState(8), remainingMs: 10 * MIN - 9000 }), { cls: `${BASE} fxin-${key}`, big: true })}<button type="button" class="replay" data-replay="winfx">Riguarda</button>`)],
+  frames: key === 'type'
+    ? [fxFrame(key, 'Laptop: mappa, rapporti, domande e ossigeno arrivano in fila (premi «Riguarda»)', {}), fxFrame(key, 'Laptop: lo stesso con gli appunti del caso (premi «Riguarda»)')]
+    : [fxFrame(key, 'Laptop: la console si popola (premi «Riguarda»)')],
 });
 const WINFX = {
-  id: 'winfx', title: 'Come compaiono le finestre',
+  id: 'winfx', title: 'Come compaiono le finestre', decided: 'D, con il testo digitato', chosen: 'type',
+  answer: 'D · Si apre da una riga, poi il testo si stampa > il testo vorrei che sembri digitato, elementi come la barra di ossigeno non ha senso che abbia effetto digitato, ma che appaia da sinistra a destra come barra che si carica · per la comparsa della mappa, beh come un ologramma',
   quote: '«va definito effetto con cui appaiono le finestre» · «fai mock a+b per finestre» · «per la finestra a+b non mi piace come appare il testo...»',
   context: 'Secondo giro, sul testo. Leggo così: la finestra che si apre da una riga, vuota, resta; non va il modo in cui arriva quello che c\'è dentro, che in A + B sale di poco e si schiarisce. Con i nostri caratteri a pixel un testo che si sposta e sfuma si vede sgranato finché non si ferma, ed è un gesto da pagina web più che da console. Le tre prove nuove (D, E, F) tengono l\'apertura di A e cambiano solo l\'arrivo del testo, senza sfumare e senza spostarlo. Sotto restano le quattro del primo giro. Ogni riquadro rifà in tre secondi l\'arrivo di tutte le finestre in fila, per vederle una dopo l\'altra: nel gioco ognuna arriva quando NOVA la nomina. Con «riduci movimento» attivo nel sistema le finestre compaiono e basta. Nel mio browser le animazioni scorrono a scatti: ho controllato ogni prova fermandola a metà, non a velocità vera.',
   dirs: [
+    fxDir('type', 'D, come l\'hai corretta · Si apre da una riga, poi il testo viene digitato', '<p>La finestra si apre vuota da una riga di luce. Poi quello che c\'è dentro arriva nell\'ordine in cui si legge: il titolo e i testi si scrivono lettera dopo lettera; la barra dell\'ossigeno e i tasselli delle domande si caricano da sinistra a destra; un ritratto compare quando la scrittura ci arriva. La mappa arriva come un ologramma: si accende l\'anello del proiettore, sale il fascio, la pianta sfarfalla sul pavimento, poi le stanze si alzano una dopo l\'altra e prendono il nome.</p><p>Mentre si scrive niente si sposta: ogni lettera ha già il suo posto, nascosta, e la finestra ha da subito la sua misura. Una finestra non ci mette mai più di un secondo e un decimo a riempirsi, anche se ha molto testo (un rapporto aperto si scrive più in fretta di un titolo). Il canale di NOVA qui resta fermo: nel gioco le sue righe si scrivono una alla volta mentre parla. Nel mio browser le animazioni scorrono a scatti: le ho controllate fermandole a metà, non a velocità vera.</p>'),
     fxDir('d', 'D · Si apre da una riga, poi il testo si stampa', '<p>La finestra si apre vuota come in A. Poi il titolo si scrive da sinistra e il contenuto esce riga dopo riga dall\'alto, a scatti netti, come quando un terminale stampa.</p><p>Perché: è lo stesso gesto del canale di NOVA, dove il testo arriva una riga alla volta, e degli appunti del caso che si compilano mentre lei scrive. Costo: dura circa otto decimi di secondo per finestra; una finestra alta (la mappa, un rapporto aperto) esce a fasce più grosse di una bassa.</p>', true),
     fxDir('e', 'E · Si apre da una riga, poi il testo si accende', '<p>La finestra si apre vuota come in A. Poi tutto il contenuto si accende in un colpo, molto chiaro, e torna al suo colore: lo stesso lampo con cui si apre la finestra.</p><p>Perché: è il più breve, circa sei decimi di secondo. Costo: sono due lampi di fila per ogni finestra.</p>'),
     fxDir('f', 'F · Si apre da una riga, poi una riga di luce scrive il testo', '<p>La finestra si apre vuota come in A. Poi una riga di luce scende dall\'alto al fondo della finestra e si lascia dietro il contenuto.</p><p>Perché: la riga che apre la finestra è la stessa che la riempie. Costo: è il più vistoso, e con più finestre in fila si vedono più righe che scendono insieme.</p>'),
@@ -784,11 +824,12 @@ const repcFrames = (closed) => {
   ];
 };
 const REPCLOSED = {
-  id: 'repclosed', title: 'Il rapporto chiuso',
+  id: 'repclosed', title: 'Il rapporto chiuso', decided: 'A, una striscia con gli angoli smussati', chosen: 'bar',
+  answer: 'A · Una striscia con gli angoli smussati > allinea il pulsante + a quello -, e rendili della stessa grandezza, quindi ingradisci la barra report se serve, così quando si espande, il + va al posto del -',
   quote: '«i report possono compattarsi, come finestrelle» · «immaginavo una cosa molto più compatta, con meno dettagli, es. solo report 1, report 2» · «per i report compressi è orrenda quella roba lì»',
-  context: 'Leggo così: la finestra con la linguetta schiacciata in una riga non regge. La linguetta fa uno scalino su una striscia alta due dita, la coda a destra finisce a punta e il + ci sta stretto dentro. Tre modi di disegnarlo da capo, tutti con il solo nome («REPORT 02») e il segno + come avevi chiesto; il rapporto aperto non cambia (la finestra con la linguetta, la carta, il testo e il − in fondo a destra). In tutte tocchi la riga intera per aprirlo.',
+  context: 'Leggo così: la finestra con la linguetta schiacciata in una riga non regge. La linguetta fa uno scalino su una striscia alta due dita, la coda a destra finisce a punta e il + ci sta stretto dentro. Tre modi di disegnarlo da capo, tutti con il solo nome («REPORT 02») e il segno + come avevi chiesto; il rapporto aperto non cambia (la finestra con la linguetta, la carta, il testo e il − in fondo a destra). In tutte tocchi la riga intera per aprirlo. Dopo la tua scelta, in A il + è lo stesso riquadro del − (30 px), a 14 px dal bordo destro e a 12 dal fondo, cioè dove sta il − nel rapporto aperto: aprendo, il segno resta nell\'angolo in basso a destra. Per farcelo stare la striscia è alta 54 px (era 43).',
   dirs: [
-    { key: 'tab', title: 'Oggi · La linguetta in una riga', note: '<p>Quella che hai visto, per confronto.</p>', frames: repcFrames('').slice(0, 1) },
+    { key: 'tab', title: 'Oggi · La linguetta in una riga', note: '<p>Quella che hai visto, per confronto.</p>', frames: repcFrames('tab').slice(0, 1) },
     {
       key: 'bar', title: 'A · Una striscia con gli angoli smussati', rec: true,
       note: `<p>Da chiuso il rapporto è un rettangolo con gli angoli smussati, senza linguetta: il nome a sinistra, il + a destra nel suo riquadro, uguale al − che lo richiude. La linguetta compare quando lo apri.</p>
@@ -1110,9 +1151,9 @@ const fontsBoard = `
 // ---------- page ----------
 
 const STORY = [LIVE];
-const OPEN = [LIVELEFT, REPCLOSED, WINFX];
+const OPEN = [SCROLLEDGE];
 const NOTES = [BTN2, MAPTEXT, PORTRAITS];
-const DECIDED = [BARLED, ASKTERM2, MAPINFO, HOME2, ASKTERM, REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const DECIDED = [WINFX, REPCLOSED, LIVELEFT, BARLED, ASKTERM2, MAPINFO, HOME2, ASKTERM, REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">
@@ -1138,6 +1179,8 @@ root.addEventListener('click', (e) => {
     const fr = b.closest('.mock-fig').querySelector('.mock-frame');
     const cls = [...fr.classList].find((x) => x.startsWith('fxin-'));
     fr.classList.remove(cls); void fr.offsetWidth; fr.classList.add(cls);
+    // the typed version: the style sheet opens each window from a line, the script types what is inside
+    if (cls === 'fxin-type') playWindows(fr, { skip: '.win-term' });
     return;
   }
   if (b.dataset.replay === 'boot') { cs.classList.remove('fx-boot'); void cs.offsetWidth; cs.classList.add('fx-boot'); }
@@ -1145,6 +1188,18 @@ root.addEventListener('click', (e) => {
 });
 // in the filling console NOVA's channel shows its last line, as a conversation does
 root.querySelectorAll('.screen-live .win-term .win-body').forEach((b) => { b.scrollTop = b.scrollHeight; });
+// the scroll edge board starts with the conversation half way, where a line is cut under the title
+// (the third attachment line sliced in half, as in the picture David sent; set once the fonts have their measures)
+const cutLine = () => root.querySelectorAll('.mock-frame[class*="scr-"] .win-term .win-body').forEach((b) => {
+  const att = b.querySelectorAll('.att')[2];
+  const k = b.getBoundingClientRect().height / b.offsetHeight || 1; // the frame is drawn smaller than it is
+  b.scrollTop = Math.round(b.scrollTop + (att.getBoundingClientRect().top - b.getBoundingClientRect().top) / k) + 11;
+  b.classList.toggle('is-scrolled', b.scrollTop > 2);
+});
+document.fonts.ready.then(() => requestAnimationFrame(cutLine));
+root.addEventListener('scroll', (e) => {
+  if (e.target.matches?.('.win-term .win-body')) e.target.classList.toggle('is-scrolled', e.target.scrollTop > 2);
+}, true);
 root.querySelectorAll('[data-scroll]').forEach((frame) => {
   const f = frame.querySelector('.cs-screen > .cs-scroll, .cs-mon-main .cs-scroll') || frame;
   f.scrollTop = frame.dataset.scroll === 'bottom' ? f.scrollHeight : Number(frame.dataset.scroll);
