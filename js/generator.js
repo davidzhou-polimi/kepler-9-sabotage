@@ -6,7 +6,7 @@
 // Hatches: B-K, N-K, M-K, L-K, C-B. They log when they open, never who opened them.
 
 export const CREW = ['hana', 'doyun', 'mira', 'echo'];
-// ECHO-7's role is not settled yet ("Maintenance android" or "Android / Logistics Assistant"): change it here only.
+// ECHO-7's role (confirmed 2026-11-25): the label lives here only.
 export const ECHO_ROLE = 'Maintenance android';
 export const PEOPLE = {
   hana: { name: 'Hana Sato', short: 'Hana', role: 'Captain', id: 14, human: true },
