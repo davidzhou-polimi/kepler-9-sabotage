@@ -1084,7 +1084,9 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .mread .mread-s { padding-left: 2ch; }
 
 /* ---------- ASK NOVA as a chat in a terminal (proposals, mocks) ---------- */
-.win-term .win-body { background: rgba(2, 5, 9, 0.55); }
+/* (NOVA's conversation stands on the same ground as every other window. Until 2026-11-25 its body had a darker ground
+   of its own, which stopped under the title with a sharp edge, and the fade of a scrolled conversation faded it too:
+   «il bordo superiore è più chiaro, poi diventa più scuro [...] se scorro però quel taglio netto diventa sfumato») */
 .term { font-family: var(--font-mono); font-size: 14px; line-height: 1.55; }
 .tl { display: grid; grid-template-columns: 3.3em minmax(0, 1fr); gap: 0 8px; padding: 5px 0; }
 /* the names end on the same column, so every ">" stands in the same place and the messages start aligned */
@@ -1620,3 +1622,49 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .ft-a .rep-body, .ft-a .win-report .rep-body { font-size: 14px; line-height: 1.55; }
 .ft-a .notes dd { font-size: 14px; line-height: 1.55; }
 .ft-a .notes dt { padding-top: 0.36em; }
+
+/* ---------- proposals after the feedback of 2026-11-25, third set (mocks) ---------- */
+/* «come questo titolo serve all'inizio nella home, MISSION CONTROL, magari su due righe, responsive, quando si preme
+   accept, il titolo fades away (coerentemente con uno schermo)». The title of the endings above NOVA's request; calm,
+   so its fringe is cyan and not red.
+     ht-one: one line where it fits, two lines on a phone; ht-two: always two lines */
+.live-request.has-title .live-col { width: min(1100px, 100%); justify-items: center; gap: 26px; }
+.live-request.has-title .live-col > .win { width: min(560px, 100%); }
+.home-title {
+  margin: 0; text-align: center; line-height: 0.95; text-transform: uppercase; font-weight: 400;
+  font-family: var(--fd), 'IBM Plex Mono', monospace; font-size: calc(var(--ds) * clamp(34px, 11cqi, 112px));
+  color: var(--star); text-shadow: 3px 0 0 rgba(67, 217, 210, 0.55), -3px 0 0 rgba(67, 217, 210, 0.2);
+}
+.home-title span { white-space: nowrap; }
+.ht-two span { display: block; }
+.ht-two { font-size: calc(var(--ds) * clamp(44px, 14cqi, 128px)); }
+@container (max-width: 700px) { .ht-one span { display: block; } .ht-one { font-size: calc(var(--ds) * clamp(44px, 16cqi, 96px)); } .ht-two { font-size: calc(var(--ds) * clamp(44px, 16cqi, 96px)); } }
+/* how it leaves when the transmission is accepted:
+     to-line: it closes into a line of light that shrinks to a point, as a screen switched off (the reverse of how a
+              window opens); to-dark: it flickers and goes out */
+.home-title.is-leaving.to-line { animation: title-to-line 0.5s cubic-bezier(0.4, 0, 0.8, 0.4) both; }
+@keyframes title-to-line {
+  0% { transform: none; filter: none; opacity: 1; }
+  45% { transform: scaleY(0.03); filter: brightness(3) saturate(0.3); opacity: 1; }
+  100% { transform: scale(0, 0.03); filter: brightness(3) saturate(0.3); opacity: 0; }
+}
+.home-title.is-leaving.to-dark { animation: title-to-dark 0.5s steps(1) both; }
+@keyframes title-to-dark { 0% { opacity: 1; } 15% { opacity: 0.25; } 30% { opacity: 0.85; } 45% { opacity: 0.15; } 60% { opacity: 0.5; } 75% { opacity: 0.1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .home-title.is-leaving { animation: none !important; opacity: 0; } }
+/* «il titolone non sono sicuro se lo teniamo, se sì però, lo vedrei un po' più piccolo?» The title of an ending:
+     et-small: about half as tall; et-none: no title, the window alone */
+.et-small .ending-title { margin: 22px 0 18px; font-size: calc(var(--ds) * clamp(26px, 6cqi, 60px)); }
+.et-small .is-red .ending-title, .et-small.is-red .ending-title { text-shadow: 2px 0 0 rgba(228, 91, 97, 0.85), -2px 0 0 rgba(67, 217, 210, 0.25); }
+.et-none .ending-title { display: none; }
+.et-none .screen-ending .win { margin-top: 28px; }
+/* The code as a terminal line: typed on Mission Control's line, no box */
+.code-term .pl { margin: 0 0 10px; }
+.code-line {
+  /* as wide as what is typed (--n letters), so the cursor stands right after the last digit */
+  width: calc(var(--n, 3) * (1ch + 0.3em)); padding: 0; border: 0; outline: none; background: none; color: var(--amber); caret-color: transparent;
+  font: 600 22px/1.2 var(--font-mono); letter-spacing: 0.3em;
+}
+.code-line::placeholder { color: rgba(242, 184, 75, 0.45); }
+.code-sent { color: var(--amber); font: 600 22px/1.2 var(--font-mono); letter-spacing: 0.3em; }
+.code-ask { margin: 2px 0 8px; }
+.code-term .tl-wide .actions, .win-term .tl-wide .code-ask + .actions { margin-top: 6px; }

@@ -629,7 +629,9 @@ function askTerm(state, mode, detail, intro = null) {
     + row('mc', '<span class="tl-cur"></span>', `<div class="actions">${btn('NEW QUESTION', 'ask-step', { cls: 'btn-primary', attrs: 'data-v="1"' })}</div>`, 'tl-draft');
   const hint = 'Tap a hatch to ask if it opened, or a module to ask about motion.';
   let live;
-  if (left <= 0) live = row('nova', 'Link capacity reached. Only the emergency code can still be sent.');
+  // intro.codeHere (proposal, mocks only until chosen): the CODE key starts the code in her conversation
+  if (intro?.codeHere) live = row('nova', 'The number of the false report, followed by the saboteur\'s ID. One attempt.') + codeLine(state);
+  else if (left <= 0) live = row('nova', 'Link capacity reached. Only the emergency code can still be sent.');
   else if (mode === 'cmd') {
     const line = d.what
       ? esc(questionText(q)).replace(esc(place), (m) => `<b class="slot">${m}</b>`)
@@ -648,7 +650,22 @@ function askTerm(state, mode, detail, intro = null) {
 
 // ---------- emergency code ----------
 
-export function codePanel(state) {
+// ui 'term' (proposal, mocks only until chosen; 2026-11-25: «al posto di una casella di input, secondo me ha senso un
+// formato da terminale, come se noi lo stessimo inviando via terminale»): the code is typed on Mission Control's
+// line, as a command; the words are today's
+export const codeLine = (state) => {
+  const v = state.codeInput || '';
+  const ok = /^\d{3}$/.test(v);
+  const mc = (html, wide) => `<div class="tl tl-mc tl-draft"><span class="tl-who">MC</span><div class="tl-txt">${html}</div><div class="tl-wide">${wide}</div></div>`;
+  return state.confirming && ok
+    ? mc(`<b class="code-sent">${esc(v)}</b>`, `<p class="code-ask">Send code <b>${esc(v)}</b>? There is only one attempt.</p><div class="actions">${btn('CONFIRM', 'confirm-code', { cls: 'btn-danger' })}${btn('CANCEL', 'cancel-code')}</div>`)
+    : mc(`<input class="code-line" data-field="code" inputmode="numeric" autocomplete="off" maxlength="3" pattern="[0-9]*" placeholder="___" value="${esc(v)}" style="--n:${v.length || 3}" aria-label="Emergency code"><span class="tl-cur"></span>`,
+      `<div class="actions">${btn('SEND CODE', 'send-code', { cls: 'btn-primary', disabled: !ok })}<span class="note">One attempt.</span></div>`);
+};
+export function codePanel(state, { ui = '' } = {}) {
+  if (ui === 'term') {
+    return win('EMERGENCY CODE', `<div class="term code-term"><p class="pl">&gt; The number of the false report, followed by the saboteur's ID.</p>${codeLine(state)}</div>`, { cls: 'win-code', tone: state.confirming ? 'amber' : '' });
+  }
   const v = state.codeInput || '';
   const ok = /^\d{3}$/.test(v);
   const body = state.confirming && ok ? `
@@ -918,11 +935,23 @@ export function screenLive(view) {
   const at = (id) => BRIEFING_PARTS.findIndex((p) => p.id === id); // the line that brings each thing
   const has = (id) => stage >= at(id);
   const detail = view.mapDetail || {};
-  const chat = askTerm(state, 'thread', detail, { stage, c, saved: view.saved, ack: view.ack, homeAlt: view.homeAlt, next: view.nextCode });
+  // view.codeAlt (proposals, mocks only until one is chosen; 2026-11-25: «Io questa finestra forse la metterei a destra
+  // sotto i report [...] mi compare alla fine e scrolla quella colonna fino verso il basso»), both with the code as
+  // a terminal line:
+  //   'side': the CODE key puts the code window at the end of the reports (on a phone, at the end of REPORTS)
+  //   'chat': the CODE key starts the code in NOVA's conversation, where everything Mission Control sends is written
+  const codeAlt = stage >= 8 ? view.codeAlt || '' : '';
+  const chat = askTerm(state, 'thread', detail, { stage, c, saved: view.saved, ack: view.ack, homeAlt: view.homeAlt, next: view.nextCode, codeHere: codeAlt === 'chat' && state.tab === 'code' });
   // at the start NOVA's terminal stands alone in the middle of the empty console
   if (stage < 0) {
     // view.archive (proposal, mocks only until chosen): the cases closed on this console, beside her request
     const arch = view.archive ? archivePanel(view.archive) : '';
+    // view.homeTitle (proposal, mocks only until chosen; 2026-11-25: «come questo titolo serve all'inizio nella home,
+    // MISSION CONTROL, magari su due righe, responsive, quando si preme accept, il titolo fades away»): the title of
+    // the endings, above NOVA's request. 'one': one line where it fits, two on a phone; 'two': always two lines
+    if (view.homeTitle) {
+      return `<main class="screen screen-live live-request has-title"><div class="live-col"><h1 class="home-title ht-${view.homeTitle}">MISSION <span>CONTROL</span></h1>${chat}</div></main>`;
+    }
     if (arch && wide) {
       return `<main class="screen screen-live live-wide live-home arch-${view.archive.style || 'list'}">
         <div class="live-col live-arch">${arch}</div><div class="live-col live-chat">${chat}</div></main>`;
@@ -943,12 +972,14 @@ export function screenLive(view) {
   const notes = stage >= 1 ? win(`CASE ${esc(c.code)}`, `<dl class="notes">${NOTES.filter(([id]) => has(id)).map(([id, label, text]) => `<div data-note="${id}"><dt>${label}</dt><dd>${noteLines(id, text)}</dd></div>`).join('')}</dl>`, { cls: 'win-notes' }) : '';
   const reports = has('reports') ? reportsPanel(c, view.reportStyle || 'crewtop', { bare: true, open: state.openReports || [], closed: view.repClosed || '' }) : '';
   const model = has('sensors') ? mapPanel(state.mapSel, { detail }) : '';
-  const code = has('code') ? codePanel(state) : '';
+  const code = has('code') ? codePanel(state, { ui: codeAlt ? 'term' : '' }) : '';
   const tab = state.tab || 'ask';
   const modals = `${state.profile ? profileModal(c, state.profile) : ''}${view.quitOpen ? quitModal(c) : ''}`;
   const critical = remainingMs <= 60000 && has('oxygen') ? `<div class="alarm-strip" role="alert">${warningIcon()}<span>OXYGEN CRITICAL // LESS&nbsp;THAN&nbsp;ONE&nbsp;MINUTE</span></div>` : '';
   if (wide) {
-    const side = { map: model, code, briefing: notes }[liveSide(tab, stage)] || notes;
+    // (with the code at the right or in her conversation, the map stays under the meters while the code is typed)
+    const side = { map: model, code, briefing: notes }[liveSide(codeAlt && tab === 'code' ? 'map' : tab, stage)] || notes;
+    const codeSide = codeAlt === 'side' && tab === 'code' ? code : '';
     // three columns from the start, and NOVA's channel is the middle one: it never moves. On its left, when the
     // case opens, the meters and under them the case, the map or the code; on its right the reports (2026-11-25:
     // «centrato nova, a sinistra mappa, a destra report, timer e domande, sopra la mappa, sempre colonna di sinistra»).
@@ -959,10 +990,11 @@ export function screenLive(view) {
         ${cols > 1 ? `<div class="live-col live-left">${meters}${side}</div>` : ''}
         <div class="live-col live-chat">${chat}</div>
       </div>
-      ${reports ? `<div class="live-col live-right">${reports}</div>` : ''}
+      ${reports ? `<div class="live-col live-right">${reports}${codeSide}</div>` : ''}
       ${modals}</main>`;
   }
-  const channel = { reports, map: model, code, briefing: notes, ask: chat }[tab] || chat;
+  const channel = codeAlt === 'side' && tab === 'code' ? reports + code : codeAlt === 'chat' && tab === 'code' ? chat
+    : { reports, map: model, code, briefing: notes, ask: chat }[tab] || chat;
   return `<main class="screen screen-live">${meters}${critical}${channel}${modals}</main>`;
 }
 

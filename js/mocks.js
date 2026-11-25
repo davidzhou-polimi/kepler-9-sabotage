@@ -986,17 +986,105 @@ const ftFrames = (cls) => [
   fbL('Laptop: appunti del caso e due rapporti aperti', cls, { tab: 'briefing', openReports: c.order.slice(0, 2) }),
   cap('Telefono: i rapporti aperti (scorre)', phone(fbView({ tab: 'reports', openReports: c.order }), { cls: `${BASE} ${cls}` })),
   cap('Telefono: il codice', phone(fbView({ tab: 'code' }), { cls: `${BASE} ${cls}` })),
+  cap('Telefono: la scheda di un membro', phone(fbView({ tab: 'reports', profile: c.order[0] }), { cls: `${BASE} ${cls}` })),
 ];
 const TEXTFONT = {
   id: 'textfont', title: 'Il font dei testi lunghi: rapporti, appunti, frasi',
   quote: '«me ne sono accorto solo ora, ma oltre al mono, e al font dei titoli, abbiamo un font che ci azzecca poco con una console, e viene usata nei report e nel briefing»',
-  context: 'Il terzo font è IBM Plex Sans, quello dei testi da leggere: i rapporti dei tre umani, gli appunti del caso, la frase sopra il campo del codice, le schede del personale, le schermate finali e la soluzione. La mia posizione: A. Su una console i testi arrivano tutti dallo stesso terminale, e i font scendono da tre a due. Il costo: il mono è più largo, quindi i rapporti si allungano di una o due righe; e oggi il rapporto di ECHO-7 si riconosce dagli umani proprio perché è l\'unico in mono: con A si riconosce solo da come scrive. Se invece vuoi che i rapporti tengano una voce diversa da quella della console, ma più adatta di oggi, servono font nuovi da scaricare: dimmelo e porto dei candidati in un altro giro.',
+  context: 'Il terzo font è IBM Plex Sans, quello dei testi da leggere: i rapporti dei tre umani, gli appunti del caso, la frase sopra il campo del codice, le schede del personale («Anche il test dei profili dei membri è col font sbagliato», 2026-11-25: ultimo riquadro), le schermate finali e la soluzione. La mia posizione: A. Su una console i testi arrivano tutti dallo stesso terminale, e i font scendono da tre a due. Il costo: il mono è più largo, quindi i rapporti si allungano di una o due righe; e oggi il rapporto di ECHO-7 si riconosce dagli umani proprio perché è l\'unico in mono: con A si riconosce solo da come scrive. Se invece vuoi che i rapporti tengano una voce diversa da quella della console, ma più adatta di oggi, servono font nuovi da scaricare: dimmelo e porto dei candidati in un altro giro.',
   dirs: [
     { key: 'now', title: 'Oggi · IBM Plex Sans per i testi lunghi', note: '<p>Per confronto.</p>', frames: ftFrames('') },
     {
       key: 'a', title: 'A · Tutto nel mono della console', rec: true,
       note: `<p>Rapporti, appunti e frasi in IBM Plex Mono, lo stesso di NOVA e delle etichette, a 14 px come la chat. Il font dei titoli resta per titoli, nomi e cifre.</p>`,
       frames: ftFrames('ft-a'),
+    },
+  ],
+};
+
+// ---------- after the feedback of 2026-11-25, third set: the home title, the title of an ending, the code ----------
+
+const titleView = (homeTitle) => chosen({ flow: 'live', stage: -1, state: liveState(-1), homeTitle });
+const outBtn = (out) => `<button type="button" class="replay" data-replay="titleout" data-out="${out}">Guarda l'uscita</button>`;
+const titleFrames = (k, out = 'to-line') => [
+  cap('Laptop: la console vuota', `${laptop(titleView(k), { cls: BASE, big: true })}${outBtn(out)}`),
+  cap('Telefono', `${phone(titleView(k), { cls: BASE })}${outBtn(out)}`),
+];
+const HOMETITLE = {
+  id: 'hometitle', title: 'Il titolo MISSION CONTROL sulla console vuota',
+  quote: '«come questo titolo serve all\'inizio nella home, MISSION CONTROL, magari su due righe, responsive, quando si preme accept, il titolo fades away (coerentemente con uno schermo)»',
+  context: 'Il titolo è quello dei finali («OXYGEN DEPLETED»): stesso carattere, stesse lettere sdoppiate, e sul laptop la stessa grandezza (lettere da 146 px). Una sola differenza, mia: qui la frangia è ciano e non rossa, perché nei finali il rosso dice che è andata male. È anche il titolo della carta missione del gruppo («KEPLER-9 / MISSION CONTROL»). Sta sopra la richiesta di NOVA, e i due insieme sono al centro dello schermo. Il pulsante sotto ogni riquadro fa vedere come se ne va quando accetti; in questa tavola è sempre la riga di luce, la scelta dell\'uscita è nella tavola dopo. La mia posizione: A, perché su uno schermo largo una riga sola lascia la richiesta di NOVA più vicina al centro; sul telefono le due versioni sono uguali.',
+  dirs: [
+    {
+      key: 'one', title: 'A · Una riga sul laptop, due sul telefono', rec: true,
+      note: '<p>Su uno schermo largo sta su una riga, larga quanto il titolo dei finali. Sotto i 700 px va su due righe e le lettere crescono fino a riempire la larghezza (78 px su questo telefono).</p>',
+      frames: titleFrames('one'),
+    },
+    {
+      key: 'two', title: 'B · Sempre su due righe',
+      note: `<p>«MISSION» sopra, «CONTROL» sotto, anche sul laptop, con lettere un po' più grandi (166 px).</p>
+        <p>Costo: sul laptop il titolo prende quasi metà dell'altezza e la richiesta di NOVA scende sotto il centro.</p>`,
+      frames: titleFrames('two'),
+    },
+  ],
+};
+const TITLEOUT = {
+  id: 'titleout', title: 'Come se ne va il titolo quando accetti',
+  quote: '«quando si preme accept, il titolo fades away (coerentemente con uno schermo)»',
+  context: 'Due modi in cui uno schermo a tubo spegne una scritta; premi il pulsante sotto il riquadro per vederli (dopo un secondo e mezzo il titolo torna, per riprovare). Durano mezzo secondo. Nel gioco, mentre il titolo se ne va, la finestra di NOVA scivola al suo posto al centro, come fa già oggi. La mia posizione: A, perché è il contrario esatto di come si aprono le finestre, che nascono da una riga di luce. Non le ho viste a velocità vera: nel mio browser le animazioni vanno a scatti.',
+  dirs: [
+    { key: 'line', title: 'A · Si chiude in una riga di luce', rec: true, note: '<p>Il titolo si schiaccia in una riga chiara, che poi si stringe fino a un punto e sparisce: uno schermo che si spegne.</p>', frames: titleFrames('one', 'to-line').slice(0, 1) },
+    { key: 'dark', title: 'B · Sfarfalla e si spegne', note: '<p>Il titolo resta dov\'è e perde luce a scatti, come un tubo che cede, fino al buio.</p><p>Costo: per mezzo secondo sembra un guasto, e il guasto in questo gioco è un\'altra cosa (l\'ultimo minuto, i finali).</p>', frames: titleFrames('one', 'to-dark').slice(0, 1) },
+  ],
+};
+const endView = (ending) => chosen({ state: { ...base(), phase: 'ending', ending, sentCode: ending === 'timeout' ? null : ending === 'right' ? c.emergencyCode : '255' } });
+const endFrames = (cls) => [
+  cap('Laptop: ossigeno finito', laptop(endView('timeout'), { cls: `${BASE} emergency ${cls}`, big: true })),
+  cap('Telefono: ossigeno finito', phone(endView('timeout'), { cls: `${BASE} emergency ${cls}` })),
+  cap('Laptop: codice accettato', laptop(endView('right'), { cls: `${BASE} ${cls}`, big: true })),
+];
+const ENDTITLE = {
+  id: 'endtitle', title: 'Il titolo dei finali',
+  quote: '«il titolone non sono sicuro se lo teniamo, se sì però, lo vedrei un po\' più piccolo?»',
+  context: 'La mia posizione: tenerlo, più piccolo (A). Tenerlo perché, se la console si apre con il titolo MISSION CONTROL, il finale chiude con un titolo della stessa famiglia, ed è l\'unico punto in cui l\'esito si legge da lontano, attorno a un tavolo. Più piccolo perché oggi sul laptop le lettere sono alte 146 px e schiacciano la finestra che dice cosa è successo. Qui cambia solo la grandezza: le parole dei riquadri sono quelle di oggi («CRITICAL ERROR», «SYSTEM FAILURE», «SEE WHAT HAPPENED»), le proposte per cambiarle te le scrivo in chat.',
+  dirs: [
+    { key: 'now', title: 'Oggi · Lettere da 146 px sul laptop, 54 sul telefono', note: '<p>Per confronto.</p>', frames: endFrames('').slice(0, 2) },
+    {
+      key: 'small', title: 'A · Più piccolo, circa la metà', rec: true,
+      note: '<p>Lettere da 78 px sul laptop (poco più della metà) e da 34 sul telefono. Resta la cosa più grande dello schermo, ma la finestra sotto sale verso il centro.</p><p>Costo: sarebbe più piccolo del titolo MISSION CONTROL della console vuota, che nella tavola sopra ha la grandezza di oggi (146 px sul laptop).</p>',
+      frames: endFrames('et-small'),
+    },
+    {
+      key: 'none', title: 'B · Senza titolone',
+      note: '<p>Resta solo la finestra, con l\'esito nelle sue righe.</p><p>Costo: da lontano «ossigeno finito» e «codice rifiutato» si distinguono solo leggendo; e l\'esito andrebbe portato nel titolo della finestra, con parole da decidere.</p>',
+      frames: endFrames('et-none').slice(0, 2),
+    },
+  ],
+};
+const codeState = (s = {}) => liveState(8, { tab: 'code', codeInput: '35', openReports: c.order.slice(0, 2), ...s });
+const codeView = (codeAlt, s = {}) => chosen({ flow: 'live', stage: 8, state: codeState(s), remainingMs: 4 * MIN + 12000, codeAlt });
+const codeFrames = (alt) => [
+  cap('Laptop: tasto CODE premuto, due rapporti aperti', laptop(codeView(alt), { cls: `${BASE} code-${alt || 'now'}`, big: true })),
+  cap('Telefono: tasto CODE premuto', phone(codeView(alt), { cls: `${BASE} code-${alt || 'now'}`, scroll: alt ? 'bottom' : '' })),
+  cap('Laptop: la conferma', laptop(codeView(alt, { codeInput: '355', confirming: true }), { cls: `${BASE} code-${alt || 'now'}`, big: true })),
+];
+const CODEPLACE = {
+  id: 'codeplace', title: 'Il codice: dove sta e come si scrive',
+  quote: '«Io questa finestra forse la metterei a destra sotto i report, quindi se avrò i report aperti [...] indipendentemente dal fatto che i report siano aperti o chiusi, mi compare alla fine e scrolla quella colonna fino verso il basso, no? E quindi compare il code lì e posso consultare l\'ID ed è più facile così.» · «Il campo di testo per inserire il codice, al posto di una casella di input, secondo me ha senso un formato da terminale, come se noi lo stessimo inviando via terminale.»',
+  context: 'La mia posizione: A, le tue due idee insieme. Il codice sta in fondo alla colonna dei rapporti e si scrive su una riga di terminale: «MC>», le tre cifre in ambra, il cursore. Nelle due proposte il tasto CODE non toglie più la mappa da sinistra. Le parole sono tutte quelle di oggi («EMERGENCY CODE», «SEND CODE», «One attempt.», «Send code 355? There is only one attempt.»): i nomi nuovi te li propongo in chat, qui guardi solo posto e forma. Nei riquadri il codice è a metà («35») e poi alla conferma.',
+  dirs: [
+    { key: 'now', title: 'Oggi · A sinistra al posto della mappa, in una casella', note: '<p>Per confronto.</p>', frames: codeFrames('').slice(0, 2) },
+    {
+      key: 'side', title: 'A · A destra, in fondo ai rapporti, su una riga di terminale', rec: true,
+      note: `<p>Premendo CODE la finestra compare in fondo alla colonna dei rapporti, aperti o chiusi che siano, e la colonna scende fino a lei: gli ID restano lì sopra. Sul telefono CODE apre i rapporti già scesi in fondo, con il codice sotto l'ultimo.</p>
+        <p>Perché: il codice è fatto di un numero di rapporto e di un ID, e tutti e due si leggono in quella colonna. Costo: con quattro rapporti aperti, per rileggere il primo mentre scrivi devi risalire.</p>`,
+      frames: codeFrames('side'),
+    },
+    {
+      key: 'chat', title: 'B · Nella conversazione con NOVA',
+      note: `<p>Questa è una lettura mia di «come se noi lo stessimo inviando via terminale»: il terminale da cui Mission Control manda le cose è la conversazione con NOVA, quindi CODE apre lì la riga del codice, dove si scrivono già le domande. NOVA ripete la regola e sotto c'è la riga «MC>».</p>
+        <p>Costo: non è a destra come avevi detto; sul laptop gli ID restano in vista nella colonna accanto, sul telefono no.</p>`,
+      frames: codeFrames('chat'),
     },
   ],
 };
@@ -1390,7 +1478,7 @@ const fontsBoard = `
 // ---------- page ----------
 
 const STORY = [LIVE];
-const OPEN = [PACE, RESUME, ARCHIVE, TEXTFONT];
+const OPEN = [HOMETITLE, TITLEOUT, ENDTITLE, CODEPLACE, PACE, RESUME, ARCHIVE, TEXTFONT];
 const NOTES = [BTN2, MAPTEXT, PORTRAITS];
 const DECIDED = [MAPFIT, REPHEAD, REPCOL, PIXELDECK, SCROLLEDGE, WINFX, REPCLOSED, LIVELEFT, BARLED, ASKTERM2, MAPINFO, HOME2, ASKTERM, REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
@@ -1415,6 +1503,14 @@ root.addEventListener('click', (e) => {
   if (!b) return;
   // a frame that plays the game itself starts again from NOVA's request
   if (b.dataset.replay === 'live') { const f = b.closest('.mock-fig').querySelector('iframe'); f.src = f.getAttribute('src'); return; }
+  // the home title leaves as it does when the transmission is accepted, then comes back to be tried again
+  if (b.dataset.replay === 'titleout') {
+    const h = b.closest('.mock-fig').querySelector('.home-title');
+    h.classList.remove('is-leaving', 'to-line', 'to-dark'); void h.offsetWidth;
+    h.classList.add('is-leaving', b.dataset.out);
+    setTimeout(() => h.classList.remove('is-leaving', b.dataset.out), 1600);
+    return;
+  }
   const cs = b.closest('.mock-fig').querySelector('.cs');
   if (b.dataset.replay === 'winfx') {
     const fr = b.closest('.mock-fig').querySelector('.mock-frame');
@@ -1440,6 +1536,8 @@ const cutLine = () => root.querySelectorAll('.mock-frame[class*="scr-"] .win-ter
   b.classList.toggle('is-scrolled', b.scrollTop > 2);
 });
 document.fonts.ready.then(() => requestAnimationFrame(cutLine));
+const codeEnd = () => root.querySelectorAll('.mock-frame.code-side .live-right').forEach((col) => { col.scrollTop = col.scrollHeight; });
+document.fonts.ready.then(() => requestAnimationFrame(codeEnd));
 root.addEventListener('scroll', (e) => {
   if (e.target.matches?.('.win-body')) e.target.classList.toggle('is-scrolled', e.target.scrollTop > 2);
 }, true);
