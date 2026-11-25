@@ -1175,7 +1175,7 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 /* ---------- the console that fills up (storyboard, mocks) ---------- */
 .screen-live { display: grid; gap: 14px; align-content: start; }
 .screen-live .win { margin-bottom: 0; }
-.live-wide { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.9fr) minmax(0, 1.05fr); align-items: start; max-width: none; }
+.live-wide { align-items: start; max-width: none; }
 .live-wide > .alarm-strip { grid-column: 1 / -1; margin: 0; }
 .live-col { display: grid; gap: 14px; align-content: start; min-width: 0; }
 .live-meters { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 10px; }
@@ -1237,10 +1237,15 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .win-map .holo + .mread { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
 
 /* ---------- storyboard, second set of corrections (2026-11-25) ---------- */
-/* laptop: one column in the middle, then two, then three */
-.live-wide { grid-template-rows: minmax(0, 1fr); }
-.live-cols-1 { grid-template-columns: minmax(0, 480px); justify-content: center; }
-.live-cols-2 { grid-template-columns: repeat(2, minmax(0, 440px)); justify-content: center; }
+/* laptop: three columns from the start. NOVA's channel is the middle one and never moves; the left one (the meters,
+   and under them the case, the map or the code) comes when the case opens, the right one with the reports
+   (2026-11-25: «centrato nova, a sinistra mappa, a destra report, timer e domande, sopra la mappa, sempre colonna
+   di sinistra»; before, NOVA stood on the left and one column became two, then three) */
+.live-wide { grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.live-wide:has(> .alarm-strip) { grid-template-rows: auto minmax(0, 1fr); }
+.live-wide > .live-left { grid-column: 1; }
+.live-wide > .live-chat { grid-column: 2; }
+.live-wide > .live-right { grid-column: 3; }
 /* NOVA's window keeps its frame in view: the conversation scrolls inside it */
 .live-wide > .live-chat { align-self: stretch; display: flex; flex-direction: column; overflow: hidden; min-height: 0; max-height: none; }
 .live-cols-1 > .live-chat { justify-content: center; }
@@ -1307,3 +1312,74 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 /* a + b: the window opens from a line, then what is inside comes in */
 .fxin-ab .win { animation: win-in-a 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .fxin-ab .win > * { animation: win-in-b-in 0.3s ease-out both; animation-delay: calc(var(--wd, 0s) + 0.3s); }
+
+/* ---------- how the text arrives in a window that has opened (proposals, mocks) ---------- */
+/* 2026-11-25: «per la finestra a+b non mi piace come appare il testo...». The window still opens from a line,
+   empty; what is inside neither fades nor slides:
+   d: it is printed, the title first and then row after row from the top
+   e: it lights up all at once, bright, and settles
+   f: a line of light runs down the window and leaves it written behind */
+:is(.fxin-d, .fxin-e, .fxin-f) .win { animation: win-in-a 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.fxin-d .win .win-title { animation: win-type 0.16s steps(6, end) calc(var(--wd, 0s) + 0.3s) backwards; }
+.fxin-d .win .win-body { animation: win-print 0.4s steps(8, end) calc(var(--wd, 0s) + 0.44s) backwards; }
+@keyframes win-type { 0% { clip-path: inset(0 100% 0 0); } 100% { clip-path: inset(0 0 0 0); } }
+@keyframes win-print { 0% { clip-path: inset(0 0 100% 0); } 100% { clip-path: inset(0 0 0 0); } }
+.fxin-e .win :is(.win-title, .win-body) { animation: win-lit 0.36s linear calc(var(--wd, 0s) + 0.3s) backwards; }
+@keyframes win-lit {
+  0% { opacity: 0; filter: brightness(3.2) saturate(0.4); }
+  8% { opacity: 1; filter: brightness(3.2) saturate(0.4); }
+  100% { opacity: 1; filter: none; }
+}
+.fxin-f .win .win-title { animation: win-off 0.02s steps(1) calc(var(--wd, 0s) + 0.3s) backwards; }
+.fxin-f .win .win-body { animation: win-print 0.45s linear calc(var(--wd, 0s) + 0.3s) backwards; }
+.fxin-f .win .win-bar::after {
+  content: ''; position: absolute; left: 4px; right: 4px; top: 0; height: 2px; opacity: 0; pointer-events: none;
+  background: var(--star); box-shadow: 0 0 8px 1px var(--wf);
+  animation: win-scan 0.45s linear calc(var(--wd, 0s) + 0.3s);
+}
+@keyframes win-off { 0%, 100% { opacity: 0; } }
+@keyframes win-scan { 0% { top: 30px; opacity: 1; } 100% { top: calc(100% - 4px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  [class*="fxin-"] .win .win-title, [class*="fxin-"] .win .win-body, [class*="fxin-"] .win .win-bar::after { animation: none !important; }
+}
+
+/* ---------- the closed report, redrawn (proposals, mocks) ---------- */
+/* 2026-11-25: «per i report compressi è orrenda quella roba lì» (the window's tab squeezed into one line)
+   bar: a plain strip with cut corners and no tab; the name on the left, the mark on the right
+   line: a line of text, as the attachments in NOVA's channel
+   chip: only the tab of the window, standing alone (cut at the top like the tab, flat at the bottom) */
+.win-report.is-closed.is-bar { --ws: 0px; --ch: 8px; }
+.wins-b1 .win-report.is-closed.is-bar .win-bar { padding: 8px 14px; }
+.win-report.is-closed.is-bar .win-body { min-height: 0; }
+.win-report.is-closed.is-bar .rep-cover { align-items: center; padding: 0 7px; }
+.win-report.is-closed.is-bar:hover { --wfill: #0b1a22; }
+
+.rep-line {
+  justify-self: start; padding: 2px 2px; border: 0; border-bottom: 1px dashed transparent; background: none; cursor: pointer;
+  color: var(--cyan); font: 14px/1.55 var(--font-mono); text-align: left;
+}
+.rep-line i { font-style: normal; }
+.rep-line:hover, .rep-line:focus-visible { border-bottom-color: var(--cyan); color: var(--star); outline: none; }
+.rep-line + .rep-line { margin-top: -8px; }
+
+.rep-chip {
+  --ch: 8px; --cut: 14px;
+  position: relative; isolation: isolate; justify-self: start; display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  width: 228px; max-width: 100%; height: 32px; padding: 0 24px 0 16px; border: 0; background: none; cursor: pointer;
+  color: var(--cyan); font: 600 16px/1 var(--font-mono);
+}
+.rep-chip::before, .rep-chip::after { content: ''; position: absolute; z-index: -1; pointer-events: none; }
+.rep-chip::before {
+  inset: 0; background: var(--cyan);
+  clip-path: polygon(var(--ch) 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, 0 100%, 0 var(--ch));
+}
+.rep-chip::after {
+  --ci: calc(var(--ch) - 1.17px); --cu: calc(var(--cut) - 1.17px);
+  inset: 2px; background: #070b12;
+  clip-path: polygon(var(--ci) 0, calc(100% - var(--cu)) 0, 100% var(--cu), 100% 100%, 0 100%, 0 var(--ci));
+}
+.rep-chip .win-title { color: var(--cyan); }
+.rep-chip i { font-style: normal; }
+.rep-chip:hover::after, .rep-chip:focus-visible::after { background: #0b1a22; }
+.rep-chip:focus-visible { outline: none; }
+.rep-chip + .rep-chip { margin-top: -4px; }

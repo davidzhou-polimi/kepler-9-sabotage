@@ -89,7 +89,7 @@ export function reportBlock(c, p) {
 //   crewtop:  the crew card first, as printed, then the text
 //   crewwin:  no frame inside a frame: each report is a window of its own, titled REPORT 01, with the crew card
 //             first and then the text; there is no CREW REPORTS window around them
-function reportAlt(c, p, style, { open = null } = {}) {
+function reportAlt(c, p, style, { open = null, closed = '' } = {}) {
   const P = PEOPLE[p];
   const n = String(c.order.indexOf(p) + 1).padStart(2, '0');
   const body = `<p class="rep-body ${P.human ? '' : 'is-machine'}">${esc(renderReport(c, p))}</p>`;
@@ -113,7 +113,13 @@ function reportAlt(c, p, style, { open = null } = {}) {
       if (isOpen) return win(`REPORT ${n}`, `${id}${body}<div class="rep-foot">${toggle}</div>`, { cls: 'win-report rep' });
       // closed, a report is only its name and the mark that opens it; the whole strip opens it
       // (2026-11-25: «immaginavo una cosa molto più compatta, con meno dettagli, es. solo report 1, report 2»)
-      return win(`REPORT ${n}`, `<button type="button" class="rep-cover" data-act="toggle-report" data-p="${p}" aria-expanded="false" aria-label="Open report ${n}"><i>+</i></button>`, { cls: 'win-report rep is-closed' });
+      const opens = `type="button" data-act="toggle-report" data-p="${p}" aria-expanded="false" aria-label="Open report ${n}"`;
+      // other drawings of the closed report (proposals, mocks; 2026-11-25: «per i report compressi è orrenda quella
+      // roba lì»): bar = a plain strip with cut corners, no tab; line = a line of text, as an attachment in NOVA's
+      // channel; chip = only the tab of the window
+      if (closed === 'line') return `<button class="rep-line" ${opens}><i>+</i> REPORT ${n}</button>`;
+      if (closed === 'chip') return `<button class="rep-chip" ${opens}><b class="win-title">REPORT ${n}</b><i>+</i></button>`;
+      return win(`REPORT ${n}`, `<button class="rep-cover" ${opens}><i>+</i></button>`, { cls: `win-report rep is-closed ${closed === 'bar' ? 'is-bar' : ''}` });
     }
     const top = `<div class="crew-top"><span>REPORT ${n}</span><i></i><span class="crew-dot"></span></div>`;
     return `<article class="rep rep-crew ${style === 'crewtop' ? 'is-top' : ''}">${top}${style === 'crewtop' ? id + body : body + id}</article>`;
@@ -144,8 +150,8 @@ const REPORT_HINT = {
 };
 
 // bare (proposal, mocks): no window around the reports; the cards stand on the screen under the title
-export function reportsPanel(c, style = 'card', { bare = false, open = null } = {}) {
-  const block = (p) => (style === 'card' ? reportBlock(c, p) : reportAlt(c, p, style, { open }));
+export function reportsPanel(c, style = 'card', { bare = false, open = null, closed = '' } = {}) {
+  const block = (p) => (style === 'card' ? reportBlock(c, p) : reportAlt(c, p, style, { open, closed }));
   if (style === 'crewwin') return `<div class="reports-wins"><h2 class="win-title rw-title">CREW REPORTS</h2><p class="hint">${REPORT_HINT[style]}</p>${c.order.map(block).join('')}</div>`;
   return win('CREW REPORTS', `
     <p class="hint">${REPORT_HINT[style]}</p>
@@ -869,20 +875,22 @@ export function screenLive(view) {
   // the questions come first, so they stand on the left
   const meters = oxygen || questions ? `<div class="live-meters">${questions}${oxygen}</div>` : '';
   const notes = stage >= 1 ? win(`CASE ${esc(c.code)}`, `<dl class="notes">${NOTES.filter(([id]) => has(id)).map(([id, label, text]) => `<div><dt>${label}</dt><dd>${text}${at(id) === stage ? '<span class="tl-cur"></span>' : ''}</dd></div>`).join('')}</dl>`, { cls: 'win-notes' }) : '';
-  const reports = has('reports') ? reportsPanel(c, view.reportStyle || 'crewtop', { bare: true, open: state.openReports || [] }) : '';
+  const reports = has('reports') ? reportsPanel(c, view.reportStyle || 'crewtop', { bare: true, open: state.openReports || [], closed: view.repClosed || '' }) : '';
   const model = has('sensors') ? mapPanel(state.mapSel, { detail }) : '';
   const code = has('code') ? codePanel(state) : '';
   const tab = state.tab || 'ask';
   const modals = `${state.profile ? profileModal(c, state.profile) : ''}${view.quitOpen ? quitModal(c) : ''}`;
   const critical = remainingMs <= 60000 && has('oxygen') ? `<div class="alarm-strip" role="alert">${warningIcon()}<span>OXYGEN CRITICAL // LESS&nbsp;THAN&nbsp;ONE&nbsp;MINUTE</span></div>` : '';
   if (wide) {
-    const mid = tab === 'map' && model ? model : tab === 'code' && code ? code : notes;
-    // one column at first, in the middle; a second when the case opens, a third when the reports arrive
+    const side = tab === 'map' && model ? model : tab === 'code' && code ? code : notes;
+    // three columns from the start, and NOVA's channel is the middle one: it never moves. On its left, when the
+    // case opens, the meters and under them the case, the map or the code; on its right the reports (2026-11-25:
+    // «centrato nova, a sinistra mappa, a destra report, timer e domande, sopra la mappa, sempre colonna di sinistra»)
     const cols = 1 + (stage >= 1 ? 1 : 0) + (reports ? 1 : 0);
     return `<main class="screen screen-live live-wide live-cols-${cols}">${critical}
+      ${cols > 1 ? `<div class="live-col live-left">${meters}${side}</div>` : ''}
       <div class="live-col live-chat">${chat}</div>
-      ${cols > 1 ? `<div class="live-col">${meters}${mid}</div>` : ''}
-      ${reports ? `<div class="live-col">${reports}</div>` : ''}
+      ${reports ? `<div class="live-col live-right">${reports}</div>` : ''}
       ${modals}</main>`;
   }
   const channel = { reports, map: model, code, briefing: notes, ask: chat }[tab] || chat;
