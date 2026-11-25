@@ -17,17 +17,25 @@ Then open <http://localhost:8000>. It is `python3 -m http.server` with one diffe
 | `/` | The game |
 | `/?dev=1` | The game with developer tools (show the solution, skip the briefing, pause or speed up the timer, load a seed, new case) |
 | `/?font=1` … `/?font=4` | Display font candidates: 1 Pixelify Sans, 2 Silkscreen, 3 Jersey 10 (the chosen one, default), 4 Press Start 2P. On these URLs and with `?dev=1`, the F key cycles the fonts |
-| `/mocks.html` | Design boards built from the real screens: open proposals with their choices, and the decided ones (reset, reports, last minute, font) |
+| `/mocks.html` | Design boards built from the real screens: open proposals with their choices, and the decided ones with the answers they got |
 
-A game in progress is saved in the browser. Opening the page always shows the home: an open saved game is offered with `[ CONTINUE ]` next to `[ NEW GAME ]`, and during the game `[ QUIT ]` in the top bar ends it after a confirmation. The oxygen clock is wall-clock based, so it keeps running while the page is closed.
+The whole app is Mission Control's console: one screen with a video effect, and under it a physical bar with the keys, the red CODE key under its guard and the power button (decided 2026-11-24 and 2026-11-25; every board and the words of each decision are in `mocks.html`, frozen in `docs/design/`). The console is empty until NOVA's request is answered with `[ ACCEPT ]`. Then NOVA writes her briefing one line at a time and each thing comes onto the console when she names it: the case notes, the four reports (closed, each opens and closes), the station map, the questions the link will carry, the oxygen clock. A tap on her conversation shows the rest at once. On a laptop the screen has three columns (the clock, the questions and the map on the left; NOVA in the middle; the reports on the right); on a phone the clock and the questions stay on top and the keys choose one channel.
 
-`[ NEW GAME ]` opens the investigation on the BRIEFING tab, and the 10 minutes of oxygen start right away, with NOVA's first message (decided 2026-11-23 and confirmed 2026-11-24; the original brief and update 1 started them on a START MISSION button). The game ends on the solution with `[ NEW GAME ]`. The debrief questions are not in the app: they go on the scoreboard sheet (only the 3 questions), with the line asking teams to write their code and who they believed first.
+The 10 minutes of oxygen start on `[ ACCEPT ]`, with NOVA's first message (decided 2026-11-23 and confirmed 2026-11-24; the original brief and update 1 started them on a START MISSION button). A question to NOVA is built in her conversation: the place, tapped on the map, then one of the eleven 10-minute windows. The game ends on the solution, whose button leads back to the empty console. The debrief questions are not in the app: they go on the scoreboard sheet (only the 3 questions), with the line asking teams to write their code and who they believed first.
+
+A game in progress is saved in the browser. Opening the page always shows the empty console with NOVA's request: a case left open is offered above it with `[ CONTINUE ]`, and during the game the power button ends it after a confirmation. The oxygen clock is wall-clock based, so it keeps running while the page is closed.
 
 ## Tests
 
 ```bash
 node --test
 ```
+
+```bash
+node tools/render_check.mjs
+```
+
+The second one draws every screen of the game on 300 cases (the request, each line of the briefing on each channel, a question step by step, the endings, the solution; laptop and phone) and fails if a value was left unfilled.
 
 Generates 3,000 seeded cases with the Bridge console call on (`CASES=10000 node --test` for more) and checks on each one: exactly one false report; exactly 2 suspects, who are the one pair of reports that can't both be true; that pair is a precise accusation against a plain denial; every question window is 10 minutes long; solvable with 2 questions, and the decisive question really separates the two; a confirmation trap about each suspect; the liar never claims a call; every text renders without leftovers and without sensor data. It also prints the distributions: saboteur, liar form (accusing or denying, overall and per saboteur), report number, story (and liar form within each), saboteur in the Cargo Bay, visits, calls.
 
@@ -55,8 +63,10 @@ js/generator.js     case generator (port of reference/gen.py) and NOVA's answers
 js/texts.js         every in-game text: briefing, report voices, profiles, endings, solution
 js/ui.js            screens as pure functions (state -> HTML), shared by the game and the mocks
 js/app.js           state, events, timer, saving, developer tools
-js/console.js       the app as Mission Control's console (proposals in mocks.html, not in the game yet)
+js/console.js       the app as Mission Control's console: the screen and the physical bar
 css/console.css     its styles
+js/winfx.js         how things arrive: a window opens from a line and is typed in, NOVA's lines are typed
+tools/render_check.mjs  draws every screen on many cases and looks for unfilled values
 tools/serve.py      local server that never lets the browser keep old files
 tools/portraits.py  redraws the group's portraits as true pixel art (needs Pillow, numpy, scipy)
 js/portraits.js     the crew portraits (img/crew/, made by tools/portraits.py from reference/portraits/)
@@ -86,11 +96,11 @@ Update 1 (2026-11-24):
 
 - **Bias ingredients.** The saboteur (each of the 4, ECHO-7 included, a quarter of the time) and the liar's form are drawn first, then the case is resampled with them fixed until valid. The 2 suspects are always the one pair of reports that can't both be true: a precise accusation (someone heard a hatch, with a time) against a plain denial (a quiet night) from whoever was behind that hatch. The liar is the accuser or the denier, 50/50. Every case has a confirmation trap about each suspect: a question on their own module that gets the same answer whichever of the two is lying (stored in `traps`).
 - **Voices** live in `js/texts.js` (`VOICES`), built from the group's Case 01. A report is opening + Bridge call (if any) + observation + closing line, all from the character's pools, so a false report reads like a true one. Reports never quote sensor data. ECHO-7's role label is the constant `ECHO_ROLE` in `js/generator.js`.
-- **Bridge console call.** When it is on (tests only), in some cases of the *heard* story the Bridge occupant, always innocent, had a 10-minute scheduled call with Mission Control and says so in the report; the liar never claims a call. NOVA answers calls from the case data. In a world where the Bridge occupant would be the liar, the console can only have been in use before they left, so the solver never treats a call question as decisive unless it really is. **Off in the game** (`CALLS_IN_GAME` in `js/generator.js`, `callUi` in `js/app.js`) and rejected on 2026-11-24; the code is still there.
+- **Bridge console call.** When it is on (tests only), in some cases of the *heard* story the Bridge occupant, always innocent, had a 10-minute scheduled call with Mission Control and says so in the report; the liar never claims a call. NOVA answers calls from the case data. In a world where the Bridge occupant would be the liar, the console can only have been in use before they left, so the solver never treats a call question as decisive unless it really is. **Off in the game** (`CALLS_IN_GAME` in `js/generator.js`) and rejected on 2026-11-24; the code is still there.
 
 After update 1 (2026-11-24):
 
-- **Questions cover 10 minutes.** The windows a case is built and solved with are exactly 10 minutes long, moved along the hour (`QUESTION_WINDOW` in `js/generator.js`): 11 positions per sensor. The game's question builder still offers free ranges until its control is chosen.
+- **Questions cover 10 minutes.** The windows a case is built and solved with are exactly 10 minutes long, moved along the hour (`QUESTION_WINDOW` in `js/generator.js`): 11 positions per sensor. The game offers those eleven windows and nothing else.
 - **Bridge to Cargo Bay** goes through the direct hatch, no longer out into the Corridor and back.
 - **Three stories** (2026-11-25), so that cases are not all solved the same way. Each case draws one, a third of the time each (`STORIES` in `js/generator.js`), with the saboteur and the liar's form drawn as before and 50/50 within each story:
   - *heard*: someone heard the denier's corridor hatch open at a time (the shape of update 1). Solved by asking about that hatch at that time.

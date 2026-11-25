@@ -589,3 +589,181 @@
 /* no halo around the LEDs: it pulled the eye while reading («forse il glow dei led disturba mentre leggo le cose»,
    2026-11-25). The lens is still bright when lit */
 .cs-leds .cs-led2 i { --glow: transparent !important; }
+
+/* ---------- the console and its monitor in pixel art (proposal, mocks; view.deck 'pixel') ---------- */
+/* 2026-11-25: «Aggiungimi nel mock una prova con la console e monitor (non lo schermo e il contenuto) in versione
+   pixel art». Only the hardware changes: the bezel of the monitor, the bar, the keys, the CODE key and its guard,
+   the LEDs, the grille, the nameplate, the power button. The screen and what is on it stay as they are.
+   Drawn on one grid of square pixels (--px): flat fills from a short ramp of greys, a one-pixel dark outline, a
+   one-pixel light edge at the top and left and a dark one at the bottom and right, corners cut in steps, dither
+   where a surface turns away. No blur, no gradient, no round corner.
+   Each piece is two layers of the same stepped shape: the outline (with the side of a raised piece), and the face. */
+.deck-pixel {
+  --px: 3px;
+  --o: #05080d; --g1: #141a24; --g2: #232c3a; --g3: #3a4759; --g4: #5a6a82; --g5: #8a98ad;
+  --step1: polygon(var(--px) 0, calc(100% - var(--px)) 0, calc(100% - var(--px)) var(--px), 100% var(--px), 100% calc(100% - var(--px)), calc(100% - var(--px)) calc(100% - var(--px)), calc(100% - var(--px)) 100%, var(--px) 100%, var(--px) calc(100% - var(--px)), 0 calc(100% - var(--px)), 0 var(--px), var(--px) var(--px));
+  --step2: polygon(
+    calc(2 * var(--px)) 0, calc(100% - 2 * var(--px)) 0, calc(100% - 2 * var(--px)) var(--px), calc(100% - var(--px)) var(--px), calc(100% - var(--px)) calc(2 * var(--px)), 100% calc(2 * var(--px)),
+    100% calc(100% - 2 * var(--px)), calc(100% - var(--px)) calc(100% - 2 * var(--px)), calc(100% - var(--px)) calc(100% - var(--px)), calc(100% - 2 * var(--px)) calc(100% - var(--px)), calc(100% - 2 * var(--px)) 100%,
+    calc(2 * var(--px)) 100%, calc(2 * var(--px)) calc(100% - var(--px)), var(--px) calc(100% - var(--px)), var(--px) calc(100% - 2 * var(--px)), 0 calc(100% - 2 * var(--px)),
+    0 calc(2 * var(--px)), var(--px) calc(2 * var(--px)), var(--px) var(--px), calc(2 * var(--px)) var(--px));
+  /* dither: a checker of two neighbouring greys, one pixel each */
+  --dither: repeating-conic-gradient(var(--g2) 0 25%, var(--g1) 0 50%) 0 0 / calc(2 * var(--px)) calc(2 * var(--px));
+  background: var(--g1);
+}
+.cs-deck.deck-pixel:not(.is-wide) { --px: 2px; }
+
+/* the monitor: a thick bezel with stepped corners, a dark well, the glass inside with its own small steps */
+.deck-pixel .cs-bezel {
+  position: relative; isolation: isolate; flex: 1; min-height: 0; display: flex;
+  margin: calc(3 * var(--px)) calc(3 * var(--px)) 0; padding: calc(5 * var(--px));
+}
+.deck-pixel .cs-bezel::before { content: ''; position: absolute; inset: 0; z-index: -2; background: var(--o); clip-path: var(--step2); }
+.deck-pixel .cs-bezel::after {
+  content: ''; position: absolute; inset: var(--px); z-index: -1; clip-path: var(--step2);
+  background:
+    linear-gradient(var(--g5), var(--g5)) top / 100% var(--px) no-repeat,
+    linear-gradient(var(--g5), var(--g5)) left / var(--px) 100% no-repeat,
+    linear-gradient(var(--g1), var(--g1)) bottom / 100% var(--px) no-repeat,
+    linear-gradient(var(--g1), var(--g1)) right / var(--px) 100% no-repeat,
+    repeating-conic-gradient(var(--g3) 0 25%, var(--g2) 0 50%) left bottom var(--px) / calc(2 * var(--px)) calc(2 * var(--px)) repeat-x,
+    var(--g3);
+}
+.deck-pixel .cs-screen {
+  flex: 1; min-height: 0; margin: 0; border-radius: 0;
+  box-shadow: 0 0 0 var(--px) var(--o), 0 0 0 calc(2 * var(--px)) var(--g1);
+  clip-path: none;
+}
+/* the corners of the glass, cut by one step */
+.deck-pixel .cs-screen > .cs-fx::after {
+  content: ''; position: absolute; inset: 0; z-index: 30; pointer-events: none;
+  background:
+    linear-gradient(var(--o), var(--o)) top left / var(--px) var(--px) no-repeat,
+    linear-gradient(var(--o), var(--o)) top right / var(--px) var(--px) no-repeat,
+    linear-gradient(var(--o), var(--o)) bottom left / var(--px) var(--px) no-repeat,
+    linear-gradient(var(--o), var(--o)) bottom right / var(--px) var(--px) no-repeat;
+}
+
+/* the bar: a flat panel, light on its top edge, dithered where it meets the table; a pixel screw at each corner */
+.deck-pixel .cs-bar {
+  margin-top: calc(3 * var(--px)); border: 0; box-shadow: none; gap: calc(6 * var(--px)); padding: calc(5 * var(--px)) calc(7 * var(--px)) calc(6 * var(--px));
+  --screw: conic-gradient(from 0deg at 50% 50%, var(--o) 0 0) center / var(--px) var(--px) no-repeat, linear-gradient(var(--g5), var(--g5));
+  background:
+    linear-gradient(var(--o), var(--o)) left calc(2 * var(--px) + var(--px)) top calc(3 * var(--px) + var(--px)) / var(--px) var(--px) no-repeat,
+    linear-gradient(var(--g5), var(--g5)) left calc(2 * var(--px)) top calc(3 * var(--px)) / calc(3 * var(--px)) calc(3 * var(--px)) no-repeat,
+    linear-gradient(var(--o), var(--o)) right calc(2 * var(--px) + var(--px)) top calc(3 * var(--px) + var(--px)) / var(--px) var(--px) no-repeat,
+    linear-gradient(var(--g5), var(--g5)) right calc(2 * var(--px)) top calc(3 * var(--px)) / calc(3 * var(--px)) calc(3 * var(--px)) no-repeat,
+    linear-gradient(var(--o), var(--o)) left calc(2 * var(--px) + var(--px)) bottom calc(3 * var(--px) + var(--px)) / var(--px) var(--px) no-repeat,
+    linear-gradient(var(--g5), var(--g5)) left calc(2 * var(--px)) bottom calc(3 * var(--px)) / calc(3 * var(--px)) calc(3 * var(--px)) no-repeat,
+    linear-gradient(var(--o), var(--o)) right calc(2 * var(--px) + var(--px)) bottom calc(3 * var(--px) + var(--px)) / var(--px) var(--px) no-repeat,
+    linear-gradient(var(--g5), var(--g5)) right calc(2 * var(--px)) bottom calc(3 * var(--px)) / calc(3 * var(--px)) calc(3 * var(--px)) no-repeat,
+    linear-gradient(var(--o), var(--o)) top / 100% var(--px) no-repeat,
+    linear-gradient(var(--g5), var(--g5)) left 0 top var(--px) / 100% var(--px) no-repeat,
+    repeating-conic-gradient(var(--g2) 0 25%, var(--g1) 0 50%) left bottom / calc(2 * var(--px)) calc(2 * var(--px)) repeat-x,
+    var(--g2);
+}
+
+/* a key: a raised block; lit, it sinks by a pixel and its lamp and name turn cyan */
+.deck-pixel .cs-key2 {
+  position: relative; isolation: isolate; border: 0; border-radius: 0; background: none; box-shadow: none;
+  min-height: calc(17 * var(--px)); padding: calc(3 * var(--px)) calc(4 * var(--px)) calc(5 * var(--px)); gap: calc(2 * var(--px));
+  color: #d7dee8; text-shadow: none; --face: var(--g3); --hi: var(--g4); --lo: var(--g1); --side: var(--g1); --drop: calc(2 * var(--px));
+  transition: none;
+}
+.deck-pixel .cs-key2::before {
+  content: ''; position: absolute; inset: 0; z-index: -2; clip-path: var(--step1);
+  background: linear-gradient(var(--side), var(--side)) left var(--px) bottom var(--px) / calc(100% - 2 * var(--px)) var(--drop) no-repeat, var(--o);
+}
+.deck-pixel .cs-key2::after {
+  content: ''; position: absolute; inset: var(--px) var(--px) calc(var(--px) + var(--drop)); z-index: -1;
+  background:
+    linear-gradient(var(--hi), var(--hi)) top / 100% var(--px) no-repeat,
+    linear-gradient(var(--hi), var(--hi)) left / var(--px) 100% no-repeat,
+    linear-gradient(var(--lo), var(--lo)) bottom / 100% var(--px) no-repeat,
+    linear-gradient(var(--lo), var(--lo)) right / var(--px) 100% no-repeat,
+    var(--face);
+}
+.deck-pixel .cs-key2:active, .deck-pixel .cs-key2.is-on { transform: translateY(var(--px)); --drop: var(--px); box-shadow: none; }
+.deck-pixel .cs-key2.is-on { color: var(--cyan); --hi: var(--cyan); }
+.deck-pixel .cs-key2:disabled { color: #6f7c8f; transform: none; --face: var(--g2); --hi: var(--g3); filter: none; }
+.deck-pixel .cs-key2 .cs-led { width: calc(5 * var(--px)); height: var(--px); background: var(--o); box-shadow: none; }
+.deck-pixel .cs-key2.is-on .cs-led { background: var(--cyan); box-shadow: none; }
+/* the CODE key, red, under a guard of hazard stripes drawn in steps */
+.deck-pixel .cs-key-red { color: #fff; --face: #c8434a; --hi: #f08a8f; --lo: #7c2126; --side: #4a1216; }
+.deck-pixel .cs-key-red .cs-led { background: #5a1418; }
+.deck-pixel .cs-key-red.is-on { color: #fff; --hi: #fff; }
+.deck-pixel .cs-key-red.is-on .cs-led { background: #fff; }
+.deck-pixel .cs-key-red:disabled { color: #e0b4b6; --face: #8e3338; --hi: #b85a5f; }
+.deck-pixel .cs-guard {
+  position: relative; border: 0; border-image: none; padding: calc(2 * var(--px)) !important; margin-bottom: 0 !important;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='4' height='4' fill='%23101319'/%3E%3Cpath d='M0 0h2v1H0zM1 1h2v1H1zM2 2h2v1H2zM3 3h1v1H3zM0 3h1v1H0z' fill='%23F2B84B'/%3E%3C/svg%3E") 0 0 / calc(4 * var(--px)) calc(4 * var(--px));
+  box-shadow: 0 0 0 var(--px) var(--o);
+}
+
+/* the LEDs: a small block of light on a dark collar, one white pixel for the glint */
+.deck-pixel .cs-leds { gap: calc(6 * var(--px)); padding: 0; align-items: flex-end; }
+.deck-pixel .cs-led2 { gap: calc(2 * var(--px)); font-family: var(--fd), var(--font-mono); font-size: calc(var(--ds) * 12px); font-weight: 400; letter-spacing: 0.08em; color: var(--g5); }
+.deck-pixel.led-b .cs-led2 i, .deck-pixel .led-b .cs-led2 i {
+  width: calc(4 * var(--px)); height: calc(4 * var(--px)); margin: var(--px) var(--px) calc(2 * var(--px)); border-radius: 0;
+  background:
+    linear-gradient(color-mix(in srgb, #fff var(--hi), var(--led)), color-mix(in srgb, #fff var(--hi), var(--led))) left var(--px) top var(--px) / var(--px) var(--px) no-repeat,
+    linear-gradient(var(--led-dark), var(--led-dark)) bottom / 100% var(--px) no-repeat,
+    linear-gradient(var(--led-dark), var(--led-dark)) right / var(--px) 100% no-repeat,
+    var(--led);
+  box-shadow: 0 0 0 var(--px) var(--o), 0 var(--px) 0 var(--px) var(--led-side), 0 calc(2 * var(--px)) 0 var(--px) var(--o);
+}
+
+/* the grille: slots one pixel wide */
+.deck-pixel .cs-grille {
+  border-radius: 0; margin: var(--px) 0; max-width: calc(72 * var(--px));
+  background: repeating-linear-gradient(90deg, var(--o) 0 var(--px), var(--g3) var(--px) calc(3 * var(--px)));
+  box-shadow: 0 0 0 var(--px) var(--o), inset 0 var(--px) 0 var(--o);
+}
+
+/* the nameplate: a light plate with a dark edge, a pixel for each screw */
+.deck-pixel .cs-plate {
+  border-radius: 0; gap: calc(3 * var(--px)); padding: calc(2 * var(--px)) calc(3 * var(--px));
+  background:
+    linear-gradient(#e3e9f0, #e3e9f0) top / 100% var(--px) no-repeat,
+    linear-gradient(#77839a, #77839a) bottom / 100% var(--px) no-repeat,
+    #aab6c6;
+  box-shadow: 0 0 0 var(--px) var(--o);
+}
+.deck-pixel .cs-plate b { font-family: var(--fd), var(--font-mono); font-size: calc(var(--ds) * 14px); font-weight: 400; letter-spacing: 0.1em; text-shadow: none; color: #101319; }
+.deck-pixel .cs-plate i { width: calc(2 * var(--px)); height: calc(2 * var(--px)); border-radius: 0; box-shadow: none; background: linear-gradient(#101319, #101319) center / var(--px) var(--px) no-repeat, #5d6a80; }
+
+/* the power button: a round button in steps; its sign drawn in pixels like the rest of the hardware (on the console
+   in use it is a line drawing, asked on 2026-11-25: «l'icona power on rendilo vettoriale, non pixel») */
+.deck-pixel .cs-power {
+  position: relative; isolation: isolate; width: calc(15 * var(--px)); height: calc(16 * var(--px)); margin: 0; border-radius: 0; background: none; box-shadow: none;
+}
+.deck-pixel .cs-power::before {
+  content: ''; position: absolute; inset: 0; z-index: -2; clip-path: var(--step2);
+  background: linear-gradient(var(--g1), var(--g1)) left var(--px) bottom var(--px) / calc(100% - 2 * var(--px)) calc(2 * var(--px)) no-repeat, var(--o);
+}
+.deck-pixel .cs-power::after {
+  content: ''; position: absolute; inset: var(--px) var(--px) calc(3 * var(--px)); z-index: -1; clip-path: var(--step2);
+  background:
+    linear-gradient(var(--g4), var(--g4)) top / 100% var(--px) no-repeat,
+    linear-gradient(var(--g1), var(--g1)) bottom / 100% var(--px) no-repeat,
+    var(--g3);
+}
+.deck-pixel .cs-power svg { display: none; }
+.deck-pixel .cs-power > i, .deck-pixel .cs-power .cs-power-px { display: block; }
+.cs-power-px { display: none; width: calc(7 * var(--px)); height: calc(7 * var(--px)); margin-bottom: calc(2 * var(--px));
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='7' height='7' shape-rendering='crispEdges'%3E%3Cpath d='M3 0h1v4H3zM1 1h1v1H1zM5 1h1v1H5zM0 2h1v3H0zM6 2h1v3H6zM1 5h1v1H1zM5 5h1v1H5zM2 6h3v1H2z' fill='%2343D9D2'/%3E%3C/svg%3E") 0 0 / 100% 100%;
+}
+.deck-pixel .cs-power:active { transform: translateY(var(--px)); box-shadow: none; }
+.deck-pixel .cs-power:hover .cs-power-px, .deck-pixel .cs-power:focus-visible .cs-power-px { filter: hue-rotate(185deg) saturate(1.4); }
+.deck-pixel .cs-power:disabled .cs-power-px { filter: none; }
+
+/* phone: the same pieces on the smaller grid */
+.cs-deck.deck-pixel:not(.is-wide) .cs-bar { gap: calc(4 * var(--px)); padding: calc(5 * var(--px)) calc(7 * var(--px)) calc(6 * var(--px) + env(safe-area-inset-bottom)); margin-top: calc(3 * var(--px)); }
+.cs-deck.deck-pixel:not(.is-wide) .cs-keyrow { gap: calc(3 * var(--px)); }
+.cs-deck.deck-pixel:not(.is-wide) .cs-key2, .cs-deck.deck-pixel:not(.is-wide) .cs-guard .cs-key2 { padding: calc(3 * var(--px)) var(--px) calc(5 * var(--px)); min-height: calc(20 * var(--px)); }
+.cs-deck.deck-pixel:not(.is-wide) .cs-grille { height: calc(11 * var(--px)); }
+.cs-deck.deck-pixel:not(.is-wide) .cs-leds { gap: calc(6 * var(--px)); }
+.cs-deck.deck-pixel:not(.is-wide) .cs-power { width: calc(19 * var(--px)); height: calc(20 * var(--px)); }
+.cs-deck.deck-pixel:not(.is-wide) .cs-power-px { width: calc(7 * var(--px) * 1.5); height: calc(7 * var(--px) * 1.5); }
+/* the alarm of the last minute keeps to the glass */
+.alarm .deck-pixel .cs-screen::after { box-shadow: inset 0 0 0 calc(2 * var(--px)) var(--red), inset 0 0 160px 24px rgba(228, 91, 97, 0.5); }

@@ -584,12 +584,18 @@ function askTerm(state, mode, detail, intro = null) {
   if (intro) {
     const n = Math.min(intro.stage, BRIEFING_PARTS.length - 1);
     // the reports she attaches are lines of text, as a terminal lists files, not boxes
-    const files = `<div class="atts">${intro.c.order.map((p, i) => `<button type="button" class="att" data-act="tab" data-v="reports">+ REPORT ${String(i + 1).padStart(2, '0')} · ${esc(PEOPLE[p].short.toUpperCase())}</button>`).join('')}</div>`;
+    // (tapping one opens that report; before a case is accepted there is none to list)
+    const files = intro.c ? `<div class="atts">${intro.c.order.map((p, i) => `<button type="button" class="att" data-act="open-report" data-p="${p}">+ REPORT ${String(i + 1).padStart(2, '0')} · ${esc(PEOPLE[p].short.toUpperCase())}</button>`).join('')}</div>` : '';
     briefing = BRIEFING_PARTS.slice(0, Math.max(0, n) + 1).map((part, i) => row('nova', `${keyed(part)}${i === n && intro.stage < 8 && intro.stage >= 0 ? '<span class="tl-cur"></span>' : ''}`, part.id === 'reports' ? files : '')).join('');
     if (intro.stage < 0) {
-      // the request: her first line, then the words on the left and the button at the far right
-      return win('NOVA ON KEPLER-9', `<div class="term">${briefing}
-        <div class="tl-accept"><span class="hc-tag">INCOMING TRANSMISSION</span>${btn('ACCEPT', 'new-game', { cls: 'btn-primary' })}</div></div>`, { cls: 'win-ask win-term' });
+      // the request: her first line, then the words on the left and the button at the far right.
+      // intro.saved: a case left open is offered again above the new transmission (reset A, 2026-11-23: opening the
+      // page always shows the home, with CONTINUE if a game is open). Made of pieces already decided: the case
+      // number and the oxygen clock as on the old home, CONTINUE, and the row of the request
+      const s = intro.saved && intro.saved.phase === 'play' ? intro.saved : null;
+      const open = s ? `<div class="tl-accept tl-open"><span class="hc-tag hc-tag-still">CASE ${esc(s.code)} · OXYGEN&nbsp;<span data-timer>${fmtClock(s.remainingMs)}</span></span>${btn('CONTINUE', 'continue', { cls: 'btn-primary' })}</div>` : '';
+      return win('NOVA ON KEPLER-9', `<div class="term">${briefing}${open}
+        <div class="tl-accept"><span class="hc-tag">INCOMING TRANSMISSION</span>${btn('ACCEPT', 'new-game', { cls: s ? '' : 'btn-primary' })}</div></div>`, { cls: 'win-ask win-term' });
     }
     if (intro.stage < 8) return win('NOVA ON KEPLER-9', `<div class="term">${briefing}</div>`, { cls: 'win-ask win-term' });
   }
@@ -834,7 +840,7 @@ export function screenSolution(view) {
       ${section('ONE QUESTION THAT SETTLED IT', `<p class="mono pl">&gt; ${esc(s.question.text)}</p><p>${esc(s.question.answer)}</p>`)}
       ${section('THE CODE', `<p class="big-code">${esc(c.emergencyCode)}</p><p>${esc(s.code)}</p>`)}
       ${section('YOUR TRANSMISSIONS', `<div class="log">${asked}${state.sentCode ? `<p class="pl">&gt; Code: ${esc(state.sentCode)}</p>` : '<p class="pl">&gt; Code: not sent.</p>'}</div>`)}
-      <div class="actions">${btn('NEW GAME', 'new-game', { cls: 'btn-primary' })}</div>
+      <div class="actions">${btn('NEW GAME', view.flowHome ? 'home' : 'new-game', { cls: 'btn-primary' })}</div>
     `)}
   </main>`;
 }
@@ -868,7 +874,7 @@ export function screenLive(view) {
   const at = (id) => BRIEFING_PARTS.findIndex((p) => p.id === id); // the line that brings each thing
   const has = (id) => stage >= at(id);
   const detail = view.mapDetail || {};
-  const chat = askTerm(state, 'thread', detail, { stage, c });
+  const chat = askTerm(state, 'thread', detail, { stage, c, saved: view.saved });
   // at the start NOVA's terminal stands alone in the middle of the empty console
   if (stage < 0) return `<main class="screen screen-live live-request"><div class="live-col">${chat}</div></main>`;
   const leftQ = MAX_QUESTIONS - state.log.length;
@@ -882,7 +888,7 @@ export function screenLive(view) {
   // the case notes: the name of each note on the left, and on its right one fact per line (2026-11-25: «se riscrivi
   // il testo riformattato, riesci ad allungare la finestra per combaciare più o meno la chat di nova?»)
   const noteLines = (id, text) => text.split(' · ').map((l, i, all) => `<span>${l.replace(/ (\S+)$/, '&nbsp;$1')}${i === all.length - 1 && at(id) === stage ? '<span class="tl-cur"></span>' : ''}</span>`).join('');
-  const notes = stage >= 1 ? win(`CASE ${esc(c.code)}`, `<dl class="notes">${NOTES.filter(([id]) => has(id)).map(([id, label, text]) => `<div><dt>${label}</dt><dd>${noteLines(id, text)}</dd></div>`).join('')}</dl>`, { cls: 'win-notes' }) : '';
+  const notes = stage >= 1 ? win(`CASE ${esc(c.code)}`, `<dl class="notes">${NOTES.filter(([id]) => has(id)).map(([id, label, text]) => `<div data-note="${id}"><dt>${label}</dt><dd>${noteLines(id, text)}</dd></div>`).join('')}</dl>`, { cls: 'win-notes' }) : '';
   const reports = has('reports') ? reportsPanel(c, view.reportStyle || 'crewtop', { bare: true, open: state.openReports || [], closed: view.repClosed || '' }) : '';
   const model = has('sensors') ? mapPanel(state.mapSel, { detail }) : '';
   const code = has('code') ? codePanel(state) : '';
@@ -910,7 +916,8 @@ export function screenLive(view) {
 
 export function screen(view) {
   if (view.shell) return consoleScreen(view, screen); // the whole app as Mission Control's console (proposals)
-  if (view.flow === 'live') return screenLive(view);
+  // the console that fills up: the empty console and the investigation; the endings keep their own screens
+  if (view.flow === 'live' && (view.state.phase === 'home' || view.state.phase === 'play')) return screenLive(view);
   const f = {
     home: screenHome, briefing: screenBriefing, play: screenPlay,
     ending: screenEnding, solution: screenSolution,
@@ -920,7 +927,7 @@ export function screen(view) {
 
 export function newState() {
   return {
-    v: 1, phase: 'home', code: null, tab: 'reports',
+    v: 2, phase: 'home', code: null, tab: 'reports',
     draft: { kind: 'hatch', what: null, a: 0, b: 60 }, // no preselected place: the app never points anywhere
     log: [], codeInput: '', confirming: false, sentCode: null, ending: null,
     timer: { elapsed: 0, since: null, speed: 1 },

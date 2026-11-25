@@ -1409,7 +1409,7 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 /* ---------- the top edge of NOVA's conversation once it has been scrolled (proposals, mocks) ---------- */
 /* 2026-11-25: «se scrollo nella finestra di nova, c'è quel taglio strano, come possiamo risolvere?» (a line of text
    sliced in half right under the title, where nothing marks an edge)
-   scr-c: what scrolls under the title fades out (only once the conversation has moved: class is-scrolled)
+   scr-c: what scrolls under the title fades out (only once the conversation has moved: class is-scrolled); chosen
    scr-b: a line under the title: what scrolls goes under an edge that can be seen
    scr-d: the title on a filled band, as the status line of a terminal: the edge is a change of ground
    (tried and dropped, 2026-11-25: moving one whole message at a time with scroll snapping. Measured: with the
@@ -1423,13 +1423,18 @@ select:focus-visible { outline: 2px solid var(--cyan); }
   clip-path: polygon(var(--chi) 0, calc(100% - var(--chi)) 0, 100% var(--chi), 100% 100%, 0 100%, 0 var(--chi));
 }
 .scr-d .screen-live .win-term .win-title { position: relative; z-index: 1; }
+/* decided 2026-11-25: «Per l'intestazione che taglia il contenuto, vai con lo sfumato». What scrolls under the title
+   of a window fades out over its last 30px; nothing fades while the window is at its first line (class is-scrolled,
+   set by the script that listens to the scrolling). It holds for every window that scrolls inside: NOVA's
+   conversation, and the window under the meters when its text does not fit. The other proposals stay in their board */
 @property --term-fade { syntax: '<length>'; inherits: false; initial-value: 0px; }
-.scr-c .screen-live .win-term .win-body {
+.screen-live .win-term .win-body, .live-pair > .live-left > .win:last-child > .win-body {
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--term-fade));
   mask-image: linear-gradient(to bottom, transparent 0, #000 var(--term-fade));
   transition: --term-fade 0.15s linear;
 }
-.scr-c .screen-live .win-term .win-body.is-scrolled { --term-fade: 30px; }
+.screen-live .win-body.is-scrolled { --term-fade: 30px; }
+:is(.scr-0, .scr-b, .scr-d) .screen-live .win-term .win-body { -webkit-mask-image: none; mask-image: none; }
 
 /* ---------- a window arrives: it opens from a line, then what is inside is typed in (js/winfx.js) ---------- */
 /* decided 2026-11-25 (D), with: «il testo vorrei che sembri digitato, elementi come la barra di ossigeno non ha senso
@@ -1444,28 +1449,94 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .fxin-type .reports-wins .win:nth-of-type(4) { --wd: 4.7s; }
 .fxin-type .win-questions { --wd: 5.2s; }
 .fxin-type .win-oxygen { --wd: 5.8s; }
-.fx-typing :where(.win-title, .win-title *, .win-body, .win-body *) { visibility: hidden; }
-.fx-typing .fx-on, .fx-typing .fx-on-all, .fx-typing .fx-on-all * { visibility: visible; }
-@media (prefers-reduced-motion: reduce) { .fxin-type .win { animation: none !important; } }
+/* what is being typed holds its place, hidden (no weight, so anything that shows it wins); the script shows each
+   thing when the typing reaches it, and the cursor stands after the last letter of a line NOVA is writing */
+:where(.fx-root, .fx-root *) { visibility: hidden; }
+.fx-on, .fx-on-all, .fx-on-all * { visibility: visible; }
+.fx-cur::after { content: '█'; margin-left: 2px; color: var(--amber); }
+/* in the game a window opens from a line when it comes (js/app.js gives it the class once) */
+.win-arrive { animation: win-in-a 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) { .fxin-type .win, .win-arrive { animation: none !important; } }
 
 /* the station map comes up as a hologram («per la comparsa della mappa, beh come un ologramma»): the projector lights,
    its beam grows, the plan flickers on the floor, then the rooms rise from it one after the other and take their names.
-   The rooms rise by their own height (--hh), so the model stays a model: nothing is faded or clipped as a whole */
+   The rooms rise by their own height (--hh), so the model stays a model: nothing is faded or clipped as a whole.
+   --holo-off (negative) takes it up part of the way, when the page is drawn again while it is building */
 @property --hh { syntax: '<length>'; inherits: true; initial-value: 26px; }
-.holo-in::after { animation: holo-ring-in 0.3s ease-out both; }
+.holo-in::after { animation: holo-ring-in 0.3s ease-out var(--holo-off, 0s) both; }
 @keyframes holo-ring-in { 0% { opacity: 0; transform: scaleX(0.25); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
-.holo-in .holo-beam { transform-origin: 50% 100%; animation: holo-beam-in 0.4s ease-out 0.2s both; }
+.holo-in .holo-beam { transform-origin: 50% 100%; animation: holo-beam-in 0.4s ease-out calc(0.2s + var(--holo-off, 0s)) both; }
 @keyframes holo-beam-in { 0% { opacity: 0; transform: scaleY(0); } 100% { opacity: 1; transform: none; } }
-.holo-in .holo-stage > .map { animation: holo-plan-in 0.4s steps(1) 0.45s both; }
+.holo-in .holo-stage > .map { animation: holo-plan-in 0.4s steps(1) calc(0.45s + var(--holo-off, 0s)) both; }
 @keyframes holo-plan-in { 0% { opacity: 0; } 20% { opacity: 0.8; } 40% { opacity: 0.25; } 60% { opacity: 1; } 80% { opacity: 0.6; } 100% { opacity: 1; } }
-.holo-in .h-box { --rise: 0.75s; animation: holo-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) var(--rise) both; }
+.holo-in .h-box { --rise: 0.75s; animation: holo-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--rise) + var(--holo-off, 0s)) both; }
 .holo-in .h-box:nth-child(2) { --rise: 0.83s; }
 .holo-in .h-box:nth-child(3) { --rise: 0.91s; }
 .holo-in .h-box:nth-child(4) { --rise: 0.99s; }
 .holo-in .h-box:nth-child(5) { --rise: 1.07s; }
 .holo-in .h-box:nth-child(6) { --rise: 1.15s; }
 @keyframes holo-rise { 0% { --hh: 0px; } }
-.holo-in .h-box > :is(.h-w, .h-top) { animation: holo-part-in 0.12s steps(1) var(--rise) both; }
-.holo-in .h-box > .h-label { animation: holo-part-in 0.2s steps(2, jump-none) calc(var(--rise) + 0.35s) both; }
+.holo-in .h-box > :is(.h-w, .h-top) { animation: holo-part-in 0.12s steps(1) calc(var(--rise) + var(--holo-off, 0s)) both; }
+.holo-in .h-box > .h-label { animation: holo-part-in 0.2s steps(2, jump-none) calc(var(--rise) + 0.35s + var(--holo-off, 0s)) both; }
 @keyframes holo-part-in { 0% { opacity: 0; } 100% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .holo-in::after, .holo-in .holo-beam, .holo-in .holo-stage > .map, .holo-in .h-box, .holo-in .h-box > * { animation: none !important; } }
+
+/* ---------- the game on the console (2026-11-25) ---------- */
+/* a case left open, offered again above NOVA's request: its row is steady and cyan, the request keeps its amber blink */
+.hc-tag-still { color: var(--cyan); }
+.hc-tag-still::before { background: var(--cyan); animation: none; }
+.tl-open + .tl-accept { margin-top: 12px; }
+/* the button of a request row stays at the right when the row breaks in two on a phone (the buttons stand at the
+   right of their row, 2026-11-25) */
+.tl-accept .btn { margin-left: auto; }
+
+/* ---------- proposals after the feedback of 2026-11-25 (mocks) ---------- */
+/* «Se la prima colonna è sempre lunga quanto nova, tanto vale sistemare gli spazi dei report e avere pannello che
+   finisce giusto. Però ha più senso che la scheda della mappa si adatti al contenuto, es. quando è vuota, oppure
+   mostra già selezionata Life Support?»
+   The reports column against NOVA's height:
+     rc-a: the gaps between the reports grow until the last one ends where NOVA's window ends
+     rc-b: the open reports take the room that is left; with all of them closed the gaps grow as in rc-a */
+:is(.rc-a, .rc-b) .live-wide > .live-right { align-self: stretch; display: flex; flex-direction: column; padding-bottom: 0; }
+:is(.rc-a, .rc-b) .live-right > .reports-wins { flex: 1 0 auto; display: flex; flex-direction: column; }
+:is(.rc-a, .rc-b) .reports-wins > .win { flex: none; }
+.rc-a .reports-wins > .win:not(:first-of-type) { margin-top: auto; }
+.rc-b .reports-wins > .win:not(.is-closed) { flex: 1 0 auto; display: flex; flex-direction: column; }
+.rc-b .reports-wins > .win:not(.is-closed) > .win-body { flex: 1; display: flex; flex-direction: column; }
+.rc-b .reports-wins > .win:not(.is-closed) .rep-foot { margin-top: auto; }
+.rc-b .reports-wins:not(:has(> .win:not(.is-closed))) > .win:not(:first-of-type) { margin-top: auto; }
+/* The map window under the meters:
+     mf-a: as tall as what is in it (it no longer ends where NOVA's window ends)
+     mf-c: as tall as NOVA's window, the model in the middle of the room above the readout, the readout at the bottom */
+.mf-a .live-pair > .live-left > .win-map { flex: 0 0 auto; }
+.mf-c .live-pair > .live-left > .win-map > .win-body { display: flex; flex-direction: column; }
+.mf-c .live-pair > .live-left > .win-map > .win-body::before { content: ''; flex: none; margin-bottom: auto; }
+.mf-c .live-pair > .live-left > .win-map > .win-body > .holo { flex: none; }
+.mf-c .live-pair > .live-left > .win-map > .win-body > .mread { flex: none; margin-top: auto; }
+
+/* «La scheda dei report ha le info sul membro tutte a sinistra, lasciando destra vuoto, come possiamo riorganizzare
+   quelle informazioni?» The member's block at the top of an open report:
+     rh-a: who it is on the left; the ID and the way to the personnel file on the right
+     rh-b: the ID beside the name; on the right the way to the file, drawn as the keys that open and close a report
+     rh-c: the block as a sheet of fields, with the labels of the personnel card (NAME_, ROLE_) */
+:is(.rh-a, .rh-b, .rh-c) .win-report .crew-id { grid-template-columns: 46px minmax(0, 1fr) auto; }
+:is(.rh-a, .rh-c) .win-report .crew-who { display: contents; }
+:is(.rh-a, .rh-c) .win-report .crew-name { grid-column: 2; grid-row: 1; align-self: end; }
+:is(.rh-a, .rh-c) .win-report .crew-role { grid-column: 2; grid-row: 2; align-self: start; }
+:is(.rh-a, .rh-c) .win-report .crew-chip { grid-column: 3; grid-row: 1; justify-self: end; align-self: center; }
+:is(.rh-a, .rh-c) .win-report .crew-file { grid-column: 3; grid-row: 2; justify-self: end; align-self: start; }
+.rh-b .win-report .crew-who { grid-column: 2; grid-row: 1 / 3; align-self: center; align-items: center; }
+.rh-b .win-report .crew-name { flex: 0 0 auto; }
+.rh-b .win-report .crew-chip { order: 2; }
+.rh-b .win-report .crew-role { order: 3; flex: 0 0 100%; }
+.rh-b .win-report .crew-file {
+  grid-column: 3; grid-row: 1 / 3; align-self: center; min-height: 30px; padding: 0 10px;
+  border: 1px solid var(--cyan); background: rgba(67, 217, 210, 0.1); color: var(--cyan);
+}
+.rh-b .rep button.crew-id:hover .crew-file { background: rgba(67, 217, 210, 0.3); }
+.rh-c .win-report .crew-id { gap: 5px 12px; }
+.rh-c .win-report :is(.crew-name, .crew-role) { display: flex; align-items: baseline; gap: 8px; }
+.rh-c .win-report :is(.crew-name, .crew-role)::before { flex: none; width: 3.6em; font: 500 10px/1 var(--font-mono); letter-spacing: 0.12em; color: var(--cyan); text-transform: none; }
+.rh-c .win-report .crew-name::before { content: 'NAME_'; }
+.rh-c .win-report .crew-role::before { content: 'ROLE_'; }
+.rh-c .win-report .crew-role { color: var(--star); }

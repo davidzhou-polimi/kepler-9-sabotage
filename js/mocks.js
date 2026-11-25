@@ -709,9 +709,9 @@ const liveState = (stage, s = {}) => (stage < 0 ? { ...base(), phase: 'home' } :
 const liveL = (label, stage, s = {}, extra = {}) => cap(label, laptop(chosen({ flow: 'live', stage, state: liveState(stage, s), remainingMs: 10 * MIN - 9000, ...extra }), { cls: BASE, big: true }));
 const liveP = (label, stage, s = {}, opts = {}) => cap(label, phone(chosen({ flow: 'live', stage, state: liveState(stage, s), remainingMs: 10 * MIN - 9000 }), { cls: BASE, ...opts }));
 const LIVE = {
-  id: 'live', title: 'La console si popola dopo aver accettato la trasmissione',
+  id: 'live', title: 'La console si popola dopo aver accettato la trasmissione', done: 'nel gioco dal 2026-11-25',
   quote: '«dovrebbe essere una richiesta di nova, che chiede a mission control di rispondere, chi apre la webapp accetta la trasmissione e nova inizia a scrivere. compare poi la schermata briefing, che si compila mentre nova scrive, come se mission control stesse prendendo in carico il caso e si appunta le cose no, e anche i report vengono aperti man mano che nova li apre (nella chat si vedono come allegati non lo so)» · «ah, e per forza di cose, anche il timer dell\'ossigeno e il numero di domande, saranno finestre, che compaiono dove che è comparso il briefing ecc. quindi vediamo veramente la console popolarsi dopo aver accettato il caso» · «change layout della console di mission control, centrato nova, a sinistra mappa, a destra report, timer e domande, sopra la mappa, sempre colonna di sinistra» · «cambia alla mappa dai, così l\'utente vede che si può cambiare, e la mappa è più scenografica» · «se riscrivi il testo riformattato, riesci ad allungare la finestra per combaciare più o meno la chat di nova?»',
-  context: `È uno storyboard: i momenti in ordine, sul laptop e sul telefono. Non ci sono scelte da fare con il pallino; dimmi cosa non torna. Come l'ho letta. La console è vuota e c'è solo la richiesta di NOVA, la sua prima frase di oggi («Mission Control, this is NOVA on Kepler-9.») con ACCEPT. Accettando, NOVA scrive il resto del briefing nel suo canale, una frase alla volta, e ogni cosa compare quando la dice: gli appunti del caso (la finestra CASE con il suo codice, una riga per ogni frase), i quattro rapporti come allegati sotto la frase che li nomina (e la colonna dei rapporti si apre), la mappa quando parla dei sensori, la finestra QUESTIONS quando dice quante domande regge il collegamento, la finestra OXYGEN quando dice l'ossigeno. Sulla barra un tasto si accende solo quando c'è ciò che apre. L'ossigeno corre da quando accetti, come avevi deciso: la sua finestra arriva con l'ultima frase, una decina di secondi dopo, e mostra già il tempo sceso. Sul laptop, dopo il tuo ultimo messaggio, le colonne sono tre e NOVA sta in quella al centro dall'inizio alla fine, senza spostarsi: a sinistra, quando si apre il caso, arriva la colonna con domande e ossigeno in alto (le domande a sinistra perché arrivano prima) e sotto gli appunti del caso finché NOVA scrive; quando ha finito, la mappa prende il loro posto e resta, e i tasti BRIEFING e CODE riportano lì gli appunti o il codice; a destra arrivano i rapporti. Prima NOVA stava a sinistra e la colonna al centro era questa. La finestra sotto domande e ossigeno finisce dove finisce la chat di NOVA, su uno schermo alto come su uno basso (se il testo non ci sta, scorre dentro la finestra); negli appunti il nome sta a sinistra e ogni fatto ha la sua riga, con le stesse parole di prima. Sul telefono domande e ossigeno stanno in alto e sotto c'è un canale alla volta. La conversazione con NOVA scorre dentro la sua finestra, con la barra di scorrimento nel nostro stile: il bordo resta sempre in vista. I rapporti arrivano chiusi: una striscia con gli angoli smussati, il solo nome («REPORT 01») e il segno + a destra, dove da aperto sta il −; toccandola si apre, e il − in fondo al testo la richiude; se ne possono tenere aperti quanti si vuole. Testi nuovi da approvare: ACCEPT e INCOMING TRANSMISSION; le sette righe di appunti, che sono le frasi di NOVA ridotte a parole chiave (SITUATION_ «03:00 · Recycler sabotaged · Every module sealed»; SABOTEUR_ «Whoever was in Life Support»; REPORTS_ «4 reports · One is false»; SENSORS_ «Hatch openings · Motion · No names recorded»; LINK_ «Damaged · 2 questions · Emergency code» (senza la regola sulla domanda rifiutata: quella il giocatore la scopre da sé); CODE_ «False report number + saboteur's ID · One attempt»; OXYGEN_ «10 minutes»); e gli allegati, righe di testo come in un terminale («+ REPORT 01 · MIRA»). Dopo i tuoi ultimi messaggi: il canale di NOVA non ha più la linguetta, e ogni rapporto è una finestra con la sua linguetta («REPORT 01»), sotto il titolo CREW REPORTS.`,
+  context: `Dal 2026-11-25 è nel gioco, con tutto ciò che è deciso nelle tavole qui sotto. Tre cose che lo storyboard non diceva e che ho chiuso con pezzi già decisi, da correggere se non tornano: NOVA scrive alla velocità di chi batte (il briefing dura una decina di secondi) e un tocco sulla sua conversazione mostra subito il resto, come è sempre stato per il suo testo; un allegato toccato nella chat apre quel rapporto; riaprendo la pagina con un caso aperto, sopra la richiesta c'è una riga con il caso, l'ossigeno e CONTINUE (ultimi due riquadri). Restano le parole di gioco «QUIT GAME» nella conferma del tasto di accensione e «NEW GAME» in fondo alla soluzione, che riporta alla console vuota. È uno storyboard: i momenti in ordine, sul laptop e sul telefono. Non ci sono scelte da fare con il pallino; dimmi cosa non torna. Come l'ho letta. La console è vuota e c'è solo la richiesta di NOVA, la sua prima frase di oggi («Mission Control, this is NOVA on Kepler-9.») con ACCEPT. Accettando, NOVA scrive il resto del briefing nel suo canale, una frase alla volta, e ogni cosa compare quando la dice: gli appunti del caso (la finestra CASE con il suo codice, una riga per ogni frase), i quattro rapporti come allegati sotto la frase che li nomina (e la colonna dei rapporti si apre), la mappa quando parla dei sensori, la finestra QUESTIONS quando dice quante domande regge il collegamento, la finestra OXYGEN quando dice l'ossigeno. Sulla barra un tasto si accende solo quando c'è ciò che apre. L'ossigeno corre da quando accetti, come avevi deciso: la sua finestra arriva con l'ultima frase, una decina di secondi dopo, e mostra già il tempo sceso. Sul laptop, dopo il tuo ultimo messaggio, le colonne sono tre e NOVA sta in quella al centro dall'inizio alla fine, senza spostarsi: a sinistra, quando si apre il caso, arriva la colonna con domande e ossigeno in alto (le domande a sinistra perché arrivano prima) e sotto gli appunti del caso finché NOVA scrive; quando ha finito, la mappa prende il loro posto e resta, e i tasti BRIEFING e CODE riportano lì gli appunti o il codice; a destra arrivano i rapporti. Prima NOVA stava a sinistra e la colonna al centro era questa. La finestra sotto domande e ossigeno finisce dove finisce la chat di NOVA, su uno schermo alto come su uno basso (se il testo non ci sta, scorre dentro la finestra); negli appunti il nome sta a sinistra e ogni fatto ha la sua riga, con le stesse parole di prima. Sul telefono domande e ossigeno stanno in alto e sotto c'è un canale alla volta. La conversazione con NOVA scorre dentro la sua finestra, con la barra di scorrimento nel nostro stile: il bordo resta sempre in vista. I rapporti arrivano chiusi: una striscia con gli angoli smussati, il solo nome («REPORT 01») e il segno + a destra, dove da aperto sta il −; toccandola si apre, e il − in fondo al testo la richiude; se ne possono tenere aperti quanti si vuole. Testi nuovi da approvare: ACCEPT e INCOMING TRANSMISSION; le sette righe di appunti, che sono le frasi di NOVA ridotte a parole chiave (SITUATION_ «03:00 · Recycler sabotaged · Every module sealed»; SABOTEUR_ «Whoever was in Life Support»; REPORTS_ «4 reports · One is false»; SENSORS_ «Hatch openings · Motion · No names recorded»; LINK_ «Damaged · 2 questions · Emergency code» (senza la regola sulla domanda rifiutata: quella il giocatore la scopre da sé); CODE_ «False report number + saboteur's ID · One attempt»; OXYGEN_ «10 minutes»); e gli allegati, righe di testo come in un terminale («+ REPORT 01 · MIRA»). Dopo i tuoi ultimi messaggi: il canale di NOVA non ha più la linguetta, e ogni rapporto è una finestra con la sua linguetta («REPORT 01»), sotto il titolo CREW REPORTS.`,
   common: [
     liveL('1 · Laptop: la richiesta di NOVA, console vuota', -1),
     liveL('2 · Accettato: NOVA scrive, da sola al centro', 0),
@@ -728,6 +728,8 @@ const LIVE = {
     liveP('5 · Compare OXYGEN, NOVA ha finito', 8, {}, { scroll: 'bottom' }),
     liveP('6 · Tasto BRIEFING: gli appunti del caso', 8, { tab: 'briefing' }),
     liveP('7 · Tasto REPORTS: il primo rapporto aperto, gli altri chiusi', 8, { tab: 'reports', openReports: c.order.slice(0, 1) }),
+    liveL('Riapertura con un caso aperto: CONTINUE sopra la richiesta', -1, {}, { saved: { code: SAMPLE, phase: 'play', remainingMs: 7 * MIN + 42000 } }),
+    cap('Telefono: riapertura con un caso aperto', phone(chosen({ flow: 'live', stage: -1, state: liveState(-1), saved: { code: SAMPLE, phase: 'play', remainingMs: 7 * MIN + 42000 } }), { cls: BASE })),
   ],
   dirs: [],
 };
@@ -736,7 +738,8 @@ const LIVE = {
 
 const scrFrame = (key, label) => cap(label, laptop(chosen({ flow: 'live', stage: 8, state: liveState(8), remainingMs: 10 * MIN - 9000 }), { cls: `${BASE} scr-${key}`, big: true }));
 const SCROLLEDGE = {
-  id: 'scrolledge', title: 'La chat di NOVA quando scorre: il taglio sotto il titolo',
+  id: 'scrolledge', title: 'La chat di NOVA quando scorre: il taglio sotto il titolo', decided: 'A, il testo sfuma sotto il titolo', chosen: 'c',
+  answer: 'A · Il testo sfuma sotto il titolo > Per l\'intestazione che taglia il contenuto, vai con lo sfumato',
   quote: '«se scrollo nella finestra di nova, c\'è quel taglio strano, come possiamo risolvere?»',
   context: 'Come la leggo: quando la conversazione è scesa, una riga resta tagliata a metà subito sotto «NOVA ON KEPLER-9», e lì non c\'è niente che faccia da bordo: il testo sembra tagliato dal nulla (in fondo succede lo stesso, ma lì c\'è la cornice e non stona). Tre modi di risolvere, da provare scorrendo la chat dentro il riquadro: le prove partono con la conversazione a metà, dove oggi si vede il taglio. Ne ho provato un quarto e l\'ho scartato: far scorrere la chat a messaggi interi, come un terminale a righe. L\'ho misurato: con la chat all\'ultima riga, che è dove sta quasi sempre, il bordo in alto cade dove lo mette l\'ultima riga e il taglio resta.',
   dirs: [
@@ -758,6 +761,125 @@ const SCROLLEDGE = {
       note: `<p>Dietro il titolo c'è una fascia più chiara larga quanto la finestra, come la riga di stato di un terminale: il bordo è il cambio di fondo, senza linea.</p>
         <p>Costo: cambia il disegno della finestra anche a chat ferma, e per coerenza la fascia andrebbe alle altre finestre senza linguetta (QUESTIONS, OXYGEN, il codice).</p>`,
       frames: [scrFrame('d', 'Laptop: la chat a metà, sotto la fascia del titolo')],
+    },
+  ],
+};
+
+// ---------- the console and its monitor in pixel art ----------
+
+const pixelView = (extra = {}) => chosen({ deck: 'pixel', flow: 'live', stage: 8, state: liveState(8), remainingMs: 10 * MIN - 9000, ...extra });
+const pixelFrames = (deckStyle) => {
+  const v = (extra = {}) => ({ ...pixelView(extra), deck: deckStyle });
+  return [
+    cap('Laptop, console piena', laptop(v(), { cls: BASE, big: true })),
+    cap('Laptop, la barra a grandezza vera', `<div class="mock-barzoom ${BASE}">${laptop(v(), { cls: BASE, big: true })}</div>`),
+    cap('Telefono, NOVA', phone(v(), { cls: BASE })),
+    cap('Telefono, rapporti', phone(v({ state: liveState(8, { tab: 'reports', openReports: c.order.slice(0, 1) }) }), { cls: BASE })),
+    cap('Telefono, ultimo minuto', phone(v({ remainingMs: 42000, state: liveState(8, { tab: 'map' }) }), { cls: `${BASE} emergency alarm` })),
+    cap('Telefono, la richiesta di NOVA (tasti spenti)', phone(v({ stage: -1, state: liveState(-1) }), { cls: BASE })),
+  ];
+};
+const PIXELDECK = {
+  id: 'pixeldeck', title: 'La console e il monitor in pixel art',
+  quote: '«Aggiungimi nel mock una prova con la console e monitor (non lo schermo e il contenuto) in versione pixel art»',
+  context: 'Cambia solo l\'hardware: la cornice del monitor, la barra, i tasti, il tasto CODE con la sua protezione, i LED, la griglia, la targhetta, il tasto di accensione. Lo schermo e quello che c\'è dentro restano com\'erano. Come l\'ho disegnata: tutto su una sola griglia di pixel quadrati (3 px sul laptop, 2 sul telefono), tinte piatte prese da una scala corta di grigi, un contorno scuro di un pixel, un filo chiaro in alto e a sinistra e uno scuro in basso e a destra, angoli tagliati a gradini, retino a scacchi dove una superficie gira. Niente sfumature, niente ombre morbide, niente angoli tondi. È disegnata con il codice, non con un\'immagine: si adatta a ogni larghezza e i tasti si accendono e si abbassano come oggi. Il segno dell\'accensione qui è in pixel come il resto dell\'hardware; sulla console in uso resta quello vettoriale che avevi chiesto.',
+  dirs: [
+    { key: 'retro', title: 'Oggi · La console in uso', note: '<p>Per confronto: l\'hardware di oggi, con le sfumature e gli angoli tondi.</p>', frames: pixelFrames('retro').slice(0, 3) },
+    {
+      key: 'pixel', title: 'A · In pixel art',
+      note: `<p>La cornice del monitor è spessa, con gli angoli a gradini e il vetro incassato; i tasti sono blocchi rialzati che scendono di un pixel quando sono accesi; CODE sta sotto una protezione a strisce disegnate a scalini; i LED sono blocchetti di luce con un pixel bianco di riflesso; la targhetta e la griglia sono piatte.</p>
+        <p>Costo: accanto a uno schermo che ha linee sottili, bagliore e caratteri piccoli, un hardware a pixel grossi è un altro registro; i ritratti e i titoli invece sono già a pixel, e con quelli lega. Il bagliore dei tasti accesi non c'è più: un tasto acceso si riconosce dal bordo e dalla spia.</p>`,
+      frames: pixelFrames('pixel'),
+    },
+  ],
+};
+
+// ---------- after the feedback of 2026-11-25: the columns against NOVA's height, the member's block ----------
+
+const fbView = (s = {}, extra = {}) => chosen({ flow: 'live', stage: 8, state: liveState(8, s), remainingMs: 10 * MIN - 9000, ...extra });
+const fbL = (label, cls, s = {}) => cap(label, laptop(fbView(s), { cls: `${BASE} ${cls}`, big: true }));
+const repcolFrames = (cls) => [
+  fbL('Laptop: tutti chiusi', cls, { openReports: [] }),
+  fbL('Laptop: uno aperto', cls, { openReports: c.order.slice(0, 1) }),
+  fbL('Laptop: due aperti', cls, { openReports: c.order.slice(0, 2) }),
+];
+const REPCOL = {
+  id: 'repcol', title: 'La colonna dei rapporti: finire dove finisce NOVA',
+  quote: '«Se la prima colonna è sempre lunga quanto nova, tanto vale sistemare gli spazi dei report e avere pannello che finisce giusto.»',
+  context: 'Come la leggo: la colonna di sinistra finisce già dove finisce la chat di NOVA; quella dei rapporti no, e sotto l\'ultimo rapporto resta un vuoto che cambia a ogni apertura. Due modi di farla finire sulla stessa riga, usando solo gli spazi (i rapporti restano senza finestra attorno, come avevi scelto). In tutte e due, se i rapporti aperti non ci stanno la colonna scorre come oggi. Nel codice la colonna seguirebbe l\'altezza di NOVA a ogni passo del briefing, come fa quella di sinistra; qui la vedi a console piena.',
+  dirs: [
+    { key: 'now', title: 'Oggi · Uno sotto l\'altro, dall\'alto', note: '<p>Per confronto.</p>', frames: repcolFrames('').slice(0, 2) },
+    {
+      key: 'a', title: 'A · Gli spazi tra i rapporti si allargano', rec: true,
+      note: `<p>I quattro rapporti si distribuiscono lungo la colonna: il primo sotto il titolo, l'ultimo finisce dove finisce NOVA, e lo spazio che resta si divide in parti uguali tra loro. Aprendone uno gli spazi si stringono.</p>
+        <p>Perché: finisce giusta in ogni stato senza cambiare il disegno di nessun rapporto. Costo: con tutti i rapporti chiusi gli spazi sono larghi (più di 100 px l'uno su questo schermo), e a ogni apertura gli altri si spostano.</p>`,
+      frames: repcolFrames('rc-a'),
+    },
+    {
+      key: 'b', title: 'B · I rapporti aperti si prendono lo spazio',
+      note: `<p>I rapporti chiusi restano vicini; quelli aperti si allungano fino a riempire la colonna, con il − che resta in fondo a destra. Se sono tutti chiusi si distribuiscono come in A.</p>
+        <p>Costo: un rapporto aperto da solo diventa una finestra alta con poco testo in cima e molto vuoto sotto.</p>`,
+      frames: repcolFrames('rc-b'),
+    },
+  ],
+};
+const mapfitFrames = (cls, sel = null) => [
+  fbL(sel ? 'Laptop: Life Support già selezionata' : 'Laptop: niente selezionato', cls, { mapSel: sel }),
+  fbL('Laptop: dopo aver toccato un portello', cls, { mapSel: 'M-K' }),
+];
+const MAPFIT = {
+  id: 'mapfit', title: 'La scheda della mappa quando è vuota',
+  quote: '«Però ha più senso che la scheda della mappa si adatti al contenuto, es. quando è vuota, oppure mostra già selezionata Life Support?»',
+  context: 'Oggi la scheda della mappa è alta quanto la chat di NOVA anche quando non hai toccato niente, e sotto «Tap a module or a hatch.» resta un vuoto. Tre modi di risolverlo. La mia posizione: la C, perché finisce giusta qualunque cosa sia selezionata (le letture hanno due o tre righe, e con A e B resta sempre un po\' di scarto), e in più Life Support già selezionata all\'arrivo, come in B: NOVA ha appena detto che i suoi sensori sono stati staccati, e la lettura mostra subito a cosa serve toccare la mappa. Non indirizza nessuna domanda: su Life Support NOVA non può rispondere. Se vuoi le due cose insieme, dimmelo: nella tavola sono separate per poterle giudicare.',
+  dirs: [
+    { key: 'now', title: 'Oggi · Alta quanto NOVA, vuota sotto', note: '<p>Per confronto.</p>', frames: mapfitFrames('').slice(0, 1) },
+    {
+      key: 'a', title: 'A · Si adatta al contenuto',
+      note: `<p>La scheda è alta quanto la mappa e la sua lettura; finisce più in alto della chat di NOVA quando non c'è niente di selezionato, più in basso dopo un tocco.</p>
+        <p>Costo: la colonna di sinistra non finisce più sulla riga delle altre, e la scheda cambia altezza a ogni tocco.</p>`,
+      frames: mapfitFrames('mf-a'),
+    },
+    {
+      key: 'b', title: 'B · Alta quanto NOVA, con Life Support già selezionata',
+      note: `<p>La mappa arriva con Life Support selezionata e la sua lettura già scritta («Motion sensor: Offline», «Cause: Manual disconnection, inside the module»).</p>
+        <p>Costo: resta un po' di vuoto sotto la lettura, e torna intero se tocchi un altro punto con meno righe; e l'app, per la prima volta, mostra un posto senza che tu l'abbia toccato.</p>`,
+      frames: mapfitFrames('', 'L'),
+    },
+    {
+      key: 'c', title: 'C · Alta quanto NOVA, la lettura in fondo', rec: true,
+      note: `<p>La lettura sta in fondo alla scheda e il modello sta al centro dello spazio che resta sopra: il vuoto diventa aria attorno all'ologramma, sopra e sotto in parti uguali.</p>
+        <p>Perché: finisce giusta con niente selezionato, con due righe e con tre. Costo: su uno schermo molto alto il modello resta lontano dal titolo.</p>`,
+      frames: mapfitFrames('mf-c'),
+    },
+  ],
+};
+const repheadFrames = (cls) => [
+  fbL('Laptop: due rapporti aperti', cls, { openReports: c.order.slice(0, 2) }),
+  cap('Telefono: un rapporto aperto', phone(fbView({ tab: 'reports', openReports: c.order.slice(0, 2) }), { cls: `${BASE} ${cls}` })),
+];
+const REPHEAD = {
+  id: 'rephead', title: 'La scheda del rapporto: i dati del membro',
+  quote: '«La scheda dei report ha le info sul membro tutte a sinistra, lasciando destra vuoto, come possiamo riorganizzare quelle informazioni?»',
+  context: 'In testa a un rapporto aperto ci sono cinque cose: il ritratto, il nome, il ruolo, l\'ID e la scritta PERSONNEL FILE che porta al profilo. Oggi stanno tutte in colonna accanto al ritratto, come sulla carta del gruppo, che però è quadrata: in una finestra larga il doppio la metà destra resta vuota. Tre modi di usarla, tutti con le stesse cinque cose e le stesse parole; tutta la testata resta toccabile per aprire il profilo.',
+  dirs: [
+    { key: 'now', title: 'Oggi · Tutto a sinistra', note: '<p>Per confronto.</p>', frames: repheadFrames('').slice(0, 1) },
+    {
+      key: 'a', title: 'A · Chi è a sinistra, ID e scheda a destra', rec: true,
+      note: `<p>A sinistra il ritratto con nome e ruolo; a destra, allineati al bordo, l'ID in alto e PERSONNEL FILE sotto.</p>
+        <p>Perché: è il cambio più piccolo, separa chi è (a sinistra) da quello che serve per il codice e per il profilo (a destra), e l'ID di ogni rapporto cade sempre nello stesso punto, facile da ritrovare quando componi il codice.</p>`,
+      frames: repheadFrames('rh-a'),
+    },
+    {
+      key: 'b', title: 'B · L\'ID accanto al nome, la scheda come tasto a destra',
+      note: `<p>Nome e ID sulla stessa riga, il ruolo sotto; a destra PERSONNEL FILE diventa un tasto, disegnato come il + e il − dei rapporti.</p>
+        <p>Costo: il tasto pesa più del nome, e nella striscia c'è già il − in fondo: due riquadri nella stessa finestra.</p>`,
+      frames: repheadFrames('rh-b'),
+    },
+    {
+      key: 'c', title: 'C · Una scheda a campi, come la tessera del profilo',
+      note: `<p>Nome e ruolo con le loro etichette («NAME_», «ROLE_», le stesse della tessera che si apre con il profilo), l'ID e PERSONNEL FILE a destra.</p>
+        <p>Costo: due etichette in più da leggere per due dati che si capiscono da soli.</p>`,
+      frames: repheadFrames('rh-c'),
     },
   ],
 };
@@ -1151,9 +1273,9 @@ const fontsBoard = `
 // ---------- page ----------
 
 const STORY = [LIVE];
-const OPEN = [SCROLLEDGE];
+const OPEN = [PIXELDECK, REPCOL, MAPFIT, REPHEAD];
 const NOTES = [BTN2, MAPTEXT, PORTRAITS];
-const DECIDED = [WINFX, REPCLOSED, LIVELEFT, BARLED, ASKTERM2, MAPINFO, HOME2, ASKTERM, REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const DECIDED = [SCROLLEDGE, WINFX, REPCLOSED, LIVELEFT, BARLED, ASKTERM2, MAPINFO, HOME2, ASKTERM, REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">
@@ -1187,7 +1309,9 @@ root.addEventListener('click', (e) => {
   if (b.dataset.replay === 'static') { cs.classList.remove('cs-switching'); void cs.offsetWidth; cs.classList.add('cs-switching'); setTimeout(() => cs.classList.remove('cs-switching'), 400); }
 });
 // in the filling console NOVA's channel shows its last line, as a conversation does
-root.querySelectorAll('.screen-live .win-term .win-body').forEach((b) => { b.scrollTop = b.scrollHeight; });
+const chatEnd = () => root.querySelectorAll('.screen-live .win-term .win-body').forEach((b) => { b.scrollTop = b.scrollHeight; b.classList.toggle('is-scrolled', b.scrollTop > 2); });
+chatEnd();
+document.fonts.ready.then(() => requestAnimationFrame(chatEnd));
 // the scroll edge board starts with the conversation half way, where a line is cut under the title
 // (the third attachment line sliced in half, as in the picture David sent; set once the fonts have their measures)
 const cutLine = () => root.querySelectorAll('.mock-frame[class*="scr-"] .win-term .win-body').forEach((b) => {
@@ -1198,7 +1322,7 @@ const cutLine = () => root.querySelectorAll('.mock-frame[class*="scr-"] .win-ter
 });
 document.fonts.ready.then(() => requestAnimationFrame(cutLine));
 root.addEventListener('scroll', (e) => {
-  if (e.target.matches?.('.win-term .win-body')) e.target.classList.toggle('is-scrolled', e.target.scrollTop > 2);
+  if (e.target.matches?.('.win-body')) e.target.classList.toggle('is-scrolled', e.target.scrollTop > 2);
 }, true);
 root.querySelectorAll('[data-scroll]').forEach((frame) => {
   const f = frame.querySelector('.cs-screen > .cs-scroll, .cs-mon-main .cs-scroll') || frame;

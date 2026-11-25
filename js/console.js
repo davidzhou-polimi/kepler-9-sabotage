@@ -123,7 +123,7 @@ function dashShell(view, inner) {
 
 // the power symbol as a drawing of lines, not of pixels («l'icona power on rendilo vettoriale, non pixel», 2026-11-25)
 const powerKey = (live) => `<button type="button" class="cs-power" ${live ? 'data-act="quit"' : 'disabled'} aria-label="Quit game">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5V12"/><path d="M7.2 7.4A7.5 7.5 0 1 0 16.8 7.4"/></svg></button>`;
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5V12"/><path d="M7.2 7.4A7.5 7.5 0 1 0 16.8 7.4"/></svg><i class="cs-power-px" aria-hidden="true"></i></button>`;
 const key2 = (label, v, { on = false, live = true, cls = '' } = {}) =>
   `<button type="button" class="cs-key cs-key2 ${on ? 'is-on' : ''} ${cls}" ${live ? `data-act="tab" data-v="${v}"` : 'disabled'}><i class="cs-led" aria-hidden="true"></i><span>${label}</span></button>`;
 // no case open: the same display, waiting for telemetry
@@ -182,7 +182,8 @@ function desk2Shell(view, inner) {
 // effect stays on the screen, never on the hardware. The physical bar has more on it, none of it a fake control:
 // the keys (today's tabs, each with its lamp), the red CODE key under its guard, the power button (QUIT), the PWR
 // and ALARM lamps, the LINK meter (low and unsteady: the link is damaged), the speaker of the voice channel.
-// view.deck: 'retro' chunky dark keys, slotted grille, needle gauge, a tube with its bezel
+// view.deck: 'pixel' the hardware (bezel, bar, keys, LEDs) in pixel art, the screen as it is (proposal 2026-11-25)
+//            'retro' chunky dark keys, slotted grille, needle gauge, a tube with its bezel
 //            'color' as retro, with coloured key caps: amber ASK NOVA (the amber of the QUESTIONS marks), red CODE
 //            'scifi' flat backlit keys, light strips, no bezel
 // view.deckBar (what is on the bar besides the keys; proposals after «non mi convince molto, soprattutto il coso
@@ -227,7 +228,7 @@ function deckShell(view, screenFn) {
     min: '',
   }[bar];
   return `<div class="cs cs-deck deck-${style} bar-${bar} ${view.wide ? 'is-wide' : ''} ${fxClass(view)}">
-    <div class="cs-screen"><div class="cs-scroll">${inner}</div><div class="cs-fx" aria-hidden="true"></div></div>
+    ${style === 'pixel' ? '<div class="cs-bezel">' : ''}<div class="cs-screen"><div class="cs-scroll">${inner}</div><div class="cs-fx" aria-hidden="true"></div></div>${style === 'pixel' ? '</div>' : ''}
     <div class="cs-bar">
       ${bar === 'min' ? '' : `<div class="cs-instr">${instr}${powerKey(playing)}</div>`}
       <div class="cs-keyrow">${keys}${code}${bar === 'min' ? powerKey(playing) : ''}</div>
