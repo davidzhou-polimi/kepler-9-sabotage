@@ -31,6 +31,19 @@ export const CALL_STARTS = [10, 15, 20, 25, 30, 35, 40, 45, 50];
 export const CALL_LENGTH = 10;
 // Off in the game until the design of the question builder is chosen (mocks.html); on in the tests.
 export const CALLS_IN_GAME = false;
+// Every question covers a window of exactly this many minutes, moved along the hour (decided 2026-11-24).
+export const QUESTION_WINDOW = 10;
+// The story of the one pair of reports that can't both be true (chosen 2026-11-25, so that cases are not all solved
+// the same way), drawn once per case, each a third of the time:
+//   heard: someone heard the denier's corridor hatch open at a time (the original shape)
+//   knock: someone knocked at the denier's hatch at a time and nobody answered
+//   seen:  the Bridge occupant saw the Cargo Bay occupant come through and go out into the Corridor
+export const STORIES = ['heard', 'knock', 'seen'];
+// A second clue in every case (2026-11-25), told by one of the two who are not suspects: something true whichever of
+// the two suspects lies, so that the reports don't say at once what to ask.
+//   ls:    they heard the Life Support hatch open around the time someone went in (NOVA can't answer about it)
+//   steps: they heard footsteps in the Corridor around that time
+export const HERRINGS = ['ls', 'steps'];
 
 // ---------- seeds ----------
 
@@ -87,6 +100,7 @@ function shuffle(rand, arr) {
 /** Hatch events and transit spans for moving src -> dst starting at minute t. */
 export function pathHatches(src, dst, t) {
   const ev = [], transit = [];
+  if (src === 'B' && dst === 'C') return { ev: [['C-B', t]], transit }; // the direct hatch, not via the Corridor
   if (src === 'C') {
     ev.push(['C-B', t]); transit.push(['B', t, t + 1]); t += 1;
     src = 'B';
@@ -108,7 +122,7 @@ export function crossesBridge(src, dst) {
  * call: { a, b } (a call happened), null (no call), or { unknownBefore: t } (hypothetical world where the
  * Bridge occupant is the liar: whatever they claim, the console can only have been in use before they left).
  */
-export function buildWorld(start, sab, t, visit, call = null) {
+export function buildWorld(start, sab, t, visit, call = null, knock = null) {
   const hatches = [];
   const occ = {};
   const add = (m, a, b) => (occ[m] ||= []).push([a, b]);
@@ -125,6 +139,12 @@ export function buildWorld(start, sab, t, visit, call = null) {
       hatches.push(...ev);
       for (const [mod, a, b] of transit) add(mod, a, b);
       add(visit.dst, visit.u + 1, 60);
+    } else if (knock && p === knock.who) {
+      // out into the Corridor to knock at a hatch, and back: own hatch a minute before and a minute after
+      add(m, 0, knock.u - 1);
+      hatches.push([HATCH_OF[m], knock.u - 1], [HATCH_OF[m], knock.u + 1]);
+      add('K', knock.u - 1, knock.u + 1);
+      add(m, knock.u + 1, 60);
     } else {
       add(m, 0, 60);
     }
@@ -156,6 +176,7 @@ export const QUESTIONS = [];
 for (let i = 0; i < GRID.length; i++) {
   for (let j = i + 1; j < GRID.length; j++) {
     const a = GRID[i], b = GRID[j];
+    if (b - a !== QUESTION_WINDOW) continue;
     for (const h of HATCHES) QUESTIONS.push({ kind: 'hatch', what: h, a, b });
     for (const m of MODULES) QUESTIONS.push({ kind: 'motion', what: m, a, b });
     QUESTIONS.push({ kind: 'call', what: 'B', a, b });
@@ -167,24 +188,32 @@ for (let i = 0; i < GRID.length; i++) {
 //   { kind: 'stayed', mod, obs: { type: 'quiet' } }
 //   { kind: 'stayed', mod, obs: { type: 'heard', mod: X, t } }       (X's corridor hatch, around t)
 //   { kind: 'stayed', mod, obs: { type: 'visitor', who, u } }
+//   { kind: 'stayed', mod, obs: { type: 'knocked', mod: X, u } }      (went out to X's hatch around u, no answer, back)
+//   { kind: 'stayed', mod, obs: { type: 'saw', who, t } }             (on the Bridge: who came through from the Cargo Bay)
+//   { kind: 'stayed', mod, obs: { type: 'ls' | 'steps', t } }        (the second clue: Life Support hatch, footsteps)
 //   { kind: 'moved', mod, dst, u, host }
 // An honest Bridge occupant who had the scheduled call always mentions it: report.call = { a, b }.
 // The liar never claims a call.
 
 export function buildReports(spec) {
-  const { start, sab, style, accuse, visit, witness, call } = spec;
+  const { start, sab, style, accuse, visit, witness, call, story = 'heard', herring = null } = spec;
   const occupantOf = (m) => CREW.find((p) => start[p] === m);
+  // the accusation of the case, by story: what the accuser says about the denier
+  const claim = (a) => (story === 'knock' ? { type: 'knocked', mod: a.mod, u: a.t }
+    : story === 'seen' ? { type: 'saw', who: occupantOf(a.mod), t: a.t } : { type: 'heard', mod: a.mod, t: a.t });
   const r = {};
   for (const p of CREW) {
     const m = start[p];
     if (visit && p === visit.who) {
       r[p] = { kind: 'moved', mod: m, dst: visit.dst, u: visit.u, host: occupantOf(visit.dst) };
     } else if (p === sab) {
-      r[p] = { kind: 'stayed', mod: m, obs: style === 'accuser' ? { type: 'heard', mod: accuse.mod, t: accuse.t } : { type: 'quiet' } };
+      r[p] = { kind: 'stayed', mod: m, obs: style === 'accuser' ? claim(accuse) : { type: 'quiet' } };
     } else if (witness && p === witness.who) {
-      r[p] = { kind: 'stayed', mod: m, obs: { type: 'heard', mod: witness.mod, t: witness.t } };
+      r[p] = { kind: 'stayed', mod: m, obs: claim(witness) };
     } else if (visit && visit.dst === m) {
       r[p] = { kind: 'stayed', mod: m, obs: { type: 'visitor', who: visit.who, u: visit.u } };
+    } else if (herring && p === herring.who) {
+      r[p] = { kind: 'stayed', mod: m, obs: { type: herring.type, t: herring.t } };
     } else {
       r[p] = { kind: 'stayed', mod: m, obs: { type: 'quiet' } };
     }
@@ -200,7 +229,9 @@ export function buildReports(spec) {
  * Returns null if the hypothesis survives these checks.
  */
 export function exclusionReason(start, rep, liar) {
-  if (start[liar] === 'C') return { type: 'cargo' }; // would have crossed an occupied Bridge
+  // from the Cargo Bay the way out crosses the Bridge: only a Bridge occupant who saw them go can leave them a suspect
+  const bridge = CREW.find((p) => start[p] === 'B');
+  if (start[liar] === 'C' && !(bridge && rep[bridge].obs && rep[bridge].obs.type === 'saw' && rep[bridge].obs.who === liar)) return { type: 'cargo' };
   if (rep[liar].kind === 'moved') return { type: 'moved' }; // only a "stayed" report can hide the trip
   // Change from gen.py: whoever had a visitor had company when they would have left (visits end before
   // anyone leaves): the honest visitor would have seen them go. Same reasoning as the Cargo Bay rule.
@@ -209,7 +240,8 @@ export function exclusionReason(start, rep, liar) {
   for (const p of CREW) {
     if (p === liar) continue;
     const r = rep[p];
-    if (r.kind === 'stayed' && r.obs.type === 'heard') {
+    if (r.kind === 'stayed' && r.obs.type === 'saw' && r.obs.who !== liar) return { type: 'contradiction', a: p, b: r.obs.who };
+    if (r.kind === 'stayed' && (r.obs.type === 'heard' || r.obs.type === 'knocked')) {
       const occupants = CREW.filter((q) => start[q] === r.obs.mod);
       if (!occupants.length) return { type: 'contradiction', a: p };
       for (const q of occupants) {
@@ -221,19 +253,29 @@ export function exclusionReason(start, rep, liar) {
 }
 
 /** Worlds consistent with: liar's report is false (liar went to Life Support), all others true. */
-export function candidateWorlds(start, rep, liar, visit) {
+export function candidateWorlds(start, rep, liar, visit, knock = null) {
   if (exclusionReason(start, rep, liar)) return [];
   const worlds = [];
   const bridge = CREW.find((p) => start[p] === 'B');
   for (const t of LEAVE_TIMES) {
     const call = bridge === liar ? { unknownBefore: t } : rep[bridge].call || null;
-    const w = buildWorld(start, liar, t, visit, call);
-    // every honest accusation must match a real hatch event at that hatch and time
+    const w = buildWorld(start, liar, t, visit, call, knock && knock.who !== liar ? knock : null);
+    // every honest accusation must match what really happened
     const ok = CREW.every((p) => {
       if (p === liar) return true;
       const r = rep[p];
-      if (r.kind !== 'stayed' || r.obs.type !== 'heard') return true;
-      return ask(w, { kind: 'hatch', what: HATCH_OF[r.obs.mod], a: r.obs.t, b: r.obs.t }) === 'yes';
+      if (r.kind !== 'stayed') return true;
+      const o = r.obs;
+      // heard: a real hatch event at that hatch and time
+      if (o.type === 'heard') return ask(w, { kind: 'hatch', what: HATCH_OF[o.mod], a: o.t, b: o.t }) === 'yes';
+      // knocked, nobody answered: whoever was in there had already left
+      if (o.type === 'knocked') return start[liar] === o.mod && t <= o.u - 5;
+      // saw them come through from the Cargo Bay: they left then
+      if (o.type === 'saw') return o.who === liar && t === o.t;
+      // the second clue: within a couple of minutes of the time they give
+      if (o.type === 'ls') return w.hatches.some(([h, tt]) => h === 'L-K' && Math.abs(tt - o.t) <= 2);
+      if (o.type === 'steps') return (w.occ.K || []).some(([s, e]) => s < o.t + 2 && e > o.t - 2);
+      return true;
     });
     if (ok) worlds.push({ t, world: w });
   }
@@ -281,14 +323,18 @@ export function splittingQuestions(groups, suspects) {
   return out;
 }
 
-/** Pairs of reports that can't both be true: [accuser, denier], the accuser heard the denier's hatch. */
+/**
+ * Pairs of reports that can't both be true: [accuser, denier]. The accuser heard the denier's hatch, knocked at it
+ * and nobody answered, or saw the denier come through the Bridge; the denier says they stayed and nothing happened.
+ */
 export function clashPairs(start, rep) {
   const out = [];
   for (const p of CREW) {
     const r = rep[p];
-    if (r.kind !== 'stayed' || r.obs.type !== 'heard') continue;
+    if (r.kind !== 'stayed' || !['heard', 'knocked', 'saw'].includes(r.obs.type)) continue;
     for (const q of CREW) {
-      if (q !== p && start[q] === r.obs.mod && rep[q].kind === 'stayed' && rep[q].obs.type === 'quiet') out.push([p, q]);
+      const about = r.obs.type === 'saw' ? q === r.obs.who : start[q] === r.obs.mod;
+      if (q !== p && about && rep[q].kind === 'stayed' && rep[q].obs.type === 'quiet') out.push([p, q]);
     }
   }
   return out;
@@ -313,7 +359,7 @@ export function trapQuestions(groups, suspects, start, about) {
 export function analyze(spec) {
   const rep = spec.reports || buildReports(spec);
   const groups = {};
-  for (const p of CREW) groups[p] = candidateWorlds(spec.start, rep, p, spec.visit);
+  for (const p of CREW) groups[p] = candidateWorlds(spec.start, rep, p, spec.visit, spec.knock);
   const suspects = CREW.filter((p) => groups[p].length);
   const first = suspects.length >= 2 ? solve(groups, suspects, 2) : suspects.length === 1;
   return { rep, groups, suspects, solvable: Boolean(first), firstQuestion: typeof first === 'object' ? first : null };
@@ -326,8 +372,10 @@ export function analyze(spec) {
 const P_VISIT = 0.5;
 const P_CALL = 0.3; // "in some cases" the Bridge occupant had a scheduled call
 
-/** One random case spec for a given saboteur and liar form (not yet validated). */
-function sampleSpec(rand, sab, form, calls) {
+/** One random case spec for a given saboteur, liar form and story (not yet validated). */
+function sampleSpec(rand, sab, form, calls, story) {
+  if (story === 'knock') return sampleKnock(rand, sab, form);
+  if (story === 'seen') return sampleSeen(rand, sab, form);
   let mods;
   do mods = shuffle(rand, START_MODS); while (mods[CREW.indexOf(sab)] === 'C');
   const start = Object.fromEntries(CREW.map((p, i) => [p, mods[i]]));
@@ -373,7 +421,73 @@ function sampleSpec(rand, sab, form, calls) {
     const a = pick(rand, CALL_STARTS);
     call = { a, b: a + CALL_LENGTH };
   }
-  return { start, sab, t, form, style, accuse, visit, witness, call };
+  return { story, start, sab, t, form, style, accuse, visit, witness, call, knock: null };
+}
+
+/**
+ * knock: the accuser went out to the denier's hatch around u, knocked, nobody answered, and went back.
+ * Denying form: the saboteur had already left (u at least 5 minutes after the exit). Accusing form: the saboteur
+ * invents the knock; the denier was there all night.
+ */
+function sampleKnock(rand, sab, form) {
+  let mods;
+  do mods = shuffle(rand, START_MODS); while (mods[CREW.indexOf(sab)] === 'C');
+  const start = Object.fromEntries(CREW.map((p, i) => [p, mods[i]]));
+  const t = pick(rand, LEAVE_TIMES);
+  const others = CREW.filter((p) => p !== sab && start[p] !== 'C'); // from the Cargo Bay one would cross the Bridge
+  if (!others.length) return null;
+  const other = pick(rand, others);
+  const [x, d] = form === 'denying' ? [other, sab] : [sab, other];
+  // the knock ends a question window before 03:00, so the window starting at the knock exists (and is the trap)
+  const fits = (u) => u >= LEAVE_TIMES[0] + 5 && u + QUESTION_WINDOW <= 60;
+  const times = LEAVE_TIMES.filter((u) => fits(u) && (form === 'accusing' || u >= t + 5));
+  if (!times.length) return null;
+  const u = pick(rand, times);
+  const claim = { who: x, mod: start[d], t: u };
+  return {
+    story: 'knock', start, sab, t, form, style: form === 'denying' ? 'quiet' : 'accuser',
+    accuse: form === 'accusing' ? claim : null, witness: form === 'denying' ? claim : null,
+    visit: null, call: null, knock: { who: x, u },
+  };
+}
+
+/**
+ * seen: the Bridge occupant saw the Cargo Bay occupant come through around T and go out into the Corridor.
+ * Denying form: the saboteur started in the Cargo Bay and left that way at T. Accusing form: the saboteur is on the
+ * Bridge and invents it; the Cargo Bay occupant never moved.
+ */
+function sampleSeen(rand, sab, form) {
+  const other = pick(rand, CREW.filter((p) => p !== sab));
+  const [b, c] = form === 'denying' ? [other, sab] : [sab, other];
+  const rest = shuffle(rand, ['N', 'M']);
+  const start = { [b]: 'B', [c]: 'C' };
+  CREW.filter((p) => p !== b && p !== c).forEach((p, i) => { start[p] = rest[i]; });
+  const t = pick(rand, LEAVE_TIMES);
+  const claim = { who: b, mod: 'C', t: form === 'denying' ? t : pick(rand, LEAVE_TIMES) };
+  return {
+    story: 'seen', start, sab, t, form, style: form === 'denying' ? 'quiet' : 'accuser',
+    accuse: form === 'accusing' ? claim : null, witness: form === 'denying' ? claim : null,
+    visit: null, call: null, knock: null,
+  };
+}
+
+/**
+ * The second clue: one of the two who are not in the pair, on a module by the Corridor and with nothing else to say,
+ * heard the Life Support hatch or footsteps in the Corridor around the time the saboteur went into Life Support.
+ * In a case with a visit, the visit is the second clue.
+ */
+function addHerring(rand, spec) {
+  // a visit already gives the other two something true to tell (who joined whom, and when): it is the second clue
+  if (spec.visit) return spec;
+  const occupantOf = (m) => CREW.find((p) => spec.start[p] === m);
+  const claim = spec.accuse || spec.witness;
+  const accuser = spec.form === 'accusing' ? spec.sab : claim.who;
+  const denier = spec.form === 'accusing' ? occupantOf(claim.mod) : spec.sab;
+  const v = spec.visit;
+  const tellers = CREW.filter((p) => p !== accuser && p !== denier && spec.start[p] !== 'C'
+    && !(v && (v.who === p || v.dst === spec.start[p])) && !(spec.call && spec.start[p] === 'B'));
+  if (!tellers.length) return null;
+  return { ...spec, herring: { who: pick(rand, tellers), type: pick(rand, HERRINGS), t: spec.t } };
 }
 
 /** Score of a question as a natural first choice: a window around the key time, 10–20 minutes wide. */
@@ -382,9 +496,12 @@ const naturalScore = (focus) => ({ q }) => (q.kind === 'hatch' ? 1000 : 0)
   - Math.abs(q.b - q.a - 15) * 4
   - Math.abs((q.a + q.b) / 2 - focus);
 
-const focusTime = (rep) => Object.values(rep).find((r) => r.kind === 'stayed' && r.obs.type === 'heard').obs.t;
+const focusTime = (rep) => {
+  const o = Object.values(rep).find((r) => r.kind === 'stayed' && ['heard', 'knocked', 'saw'].includes(r.obs.type)).obs;
+  return o.t ?? o.u;
+};
 
-/** Questions players would find natural first: hatches, a window around the key time, 10–20 minutes wide. */
+/** Questions players would find natural first: hatches, a window around the key time. */
 function decisiveQuestion(rep, groups, suspects) {
   const score = naturalScore(focusTime(rep));
   const options = splittingQuestions(groups, suspects);
@@ -409,8 +526,10 @@ export function generateCase(code, { calls = CALLS_IN_GAME } = {}) {
   const rand = prng(code);
   const sab = pick(rand, CREW);
   const form = rand() < 0.5 ? 'accusing' : 'denying';
+  const story = pick(rand, STORIES);
   for (let attempt = 0; attempt < 2000; attempt++) {
-    const spec = sampleSpec(rand, sab, form, calls);
+    const bare = sampleSpec(rand, sab, form, calls, story);
+    const spec = bare && addHerring(rand, bare);
     if (!spec) continue;
     const { rep, groups, suspects, solvable } = analyze(spec);
     if (suspects.length !== 2 || !suspects.includes(spec.sab) || !solvable) continue;
@@ -422,10 +541,15 @@ export function generateCase(code, { calls = CALLS_IN_GAME } = {}) {
     if (suspects.some((p) => !traps[p])) continue;
     const order = shuffle(rand, CREW); // report numbers 1–4
     const decisive = decisiveQuestion(rep, groups, suspects);
+    // tone (2026-11-25): one suspect explains too much, the other says just what is needed, 50/50 whoever lies;
+    // the other two draw theirs freely. Its own seed, so the case itself doesn't change with it.
+    const toneRand = prng(`${code}:tone`);
+    const over = toneRand() < 0.5 ? accuser : denier;
+    const tone = Object.fromEntries(CREW.map((p) => [p, suspects.includes(p) ? (p === over ? 'over' : 'plain') : toneRand() < 0.5 ? 'over' : 'plain']));
     const exclusions = Object.fromEntries(CREW.filter((p) => !suspects.includes(p)).map((p) => [p, exclusionReason(spec.start, rep, p)]));
     return {
-      code, ...spec, reports: rep, order, suspects, accuser, denier, decisive, traps, exclusions,
-      world: buildWorld(spec.start, spec.sab, spec.t, spec.visit, spec.call),
+      code, ...spec, reports: rep, order, suspects, accuser, denier, decisive, traps, exclusions, tone,
+      world: buildWorld(spec.start, spec.sab, spec.t, spec.visit, spec.call, spec.knock && spec.knock.who !== spec.sab ? spec.knock : null),
       variant: Math.floor(rand() * 1e9), // picks the text variants
       emergencyCode: `${order.indexOf(spec.sab) + 1}${PEOPLE[spec.sab].id}`,
       attempts: attempt + 1,

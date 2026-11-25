@@ -13,7 +13,7 @@ export const BRIEFING = [
   'The Life Support sensors were cut from inside. I can answer yes/no questions on every other sensor: hatch openings and motion. Hatches record when they open, never who opened them. No sensor records names.',
   'The saboteur also damaged our link. It will carry only 2 questions and the emergency code. A question I have to refuse is still sent.',
   'Emergency code: the number of the false report, followed by the saboteur\'s ID. One attempt.',
-  'Oxygen: 10 minutes. The countdown starts on your command.',
+  'Oxygen: 10 minutes. The countdown has already started.',
 ];
 
 // The briefing in parts, for the briefing layouts (same sentences as BRIEFING). keys: words to highlight.
@@ -101,38 +101,86 @@ const ACT = {
   echo: { B: 'Bridge systems diagnostics', N: 'Engine Room pump maintenance', M: 'Medbay sterilisation cycle', C: 'Cargo Bay inventory scan' },
 };
 
+// Why a crew member went out to knock at someone's hatch (the knock story). The same reason whether the knock is
+// true or invented, so a false report reads like a true one.
+const KNOCK_WHY = {
+  hana: 'to have the night checklist signed',
+  doyun: 'to pick up a spare part',
+  mira: 'to drop off the night\'s medical log',
+  echo: 'spare part delivery',
+};
+
 // How a person names a hatch they heard (always the module's hatch on the Corridor).
 const HEARD = { B: 'the Bridge\'s corridor hatch', N: 'the Engine Room hatch', M: 'the Medbay hatch' };
 
 // Placeholders: {inMod} "on the Bridge" / "in the Medbay", {mod} "the Medbay", {act}, {time}, {target} the hatch heard,
 // {inTarget} where it leads, {who}, {dst}, {host}, {ca} {cb} the call. ECHO-7: {task}, {hatch} (NOVA's hatch name),
 // {Dst} bare module name, {WHO} {HOST} full name with ID.
+// Tone (chosen 2026-11-25): the accusation, the denial and the closing line come in two versions in each voice:
+// "over" explains too much or insists (it sounds like a liar), "plain" says just what is needed (it sounds sincere).
+// In every case one of the two suspects speaks "over" and the other "plain", whoever lies (generator: c.tone).
 const VOICES = {
-  // Captain: confident, composed, complete decisive sentences; procedures and responsibility; doesn't over-justify.
+  // Captain: confident, composed, complete decisive sentences; procedures and responsibility. Over: she justifies herself.
   hana: {
     open: [
       'I was {inMod} throughout the shift, {act}.',
       'I spent the whole shift {inMod}, {act}.',
       'From 02:00 until the lockdown I was {inMod}, {act}.',
     ],
-    quiet: [
-      'No one came in, and I heard nothing out of the ordinary.',
-      'It was an uneventful shift: no one came in, and nothing unusual reached me.',
-      'Nothing out of the ordinary happened until the alarm.',
+    openOut: [
+      'I was {inMod}, {act}.',
+      'My post was {mod}: I was {act}.',
     ],
-    heard: [
-      'At around {time} I heard {target} open. Nobody was scheduled to move at that hour.',
-      'At around {time} I clearly heard {target} open. That was not on any schedule.',
-      'At around {time} I heard {target} open, and I noted the time.',
-    ],
+    quiet: {
+      over: [
+        'No one came in, and I heard nothing out of the ordinary. I would have noticed anything unusual.',
+        'It was an uneventful shift: no one came in, nothing unusual reached me, and I was alert the whole time.',
+      ],
+      plain: [
+        'No one came in, and I heard nothing out of the ordinary.',
+        'Nothing out of the ordinary happened until the alarm.',
+      ],
+    },
+    heard: {
+      over: [
+        'At around {time} I clearly heard {target} open. That was not on any schedule, and I am certain of the time.',
+        'At around {time} I heard {target} open. Nobody was scheduled to move at that hour; I want that on record.',
+      ],
+      plain: [
+        'At around {time} I heard {target} open.',
+        'At around {time} I heard {target} open, and I noted the time.',
+      ],
+    },
+    knocked: {
+      over: ['At around {time} I went to {target} {why}. I knocked twice, firmly; nobody answered. I waited, then returned to {mod}.'],
+      plain: ['At around {time} I knocked at {target} {why}. There was no answer, so I went back to {mod}.'],
+    },
+    saw: {
+      over: ['At around {time} {who} came through from the Cargo Bay and went out into the Corridor. I saw it clearly. Nobody was scheduled to move at that hour.'],
+      plain: ['At around {time} I saw {who} cross the Bridge from the Cargo Bay and leave by the corridor hatch.'],
+    },
+    close: {
+      over: [
+        'I followed the standard procedures. There was no reason for me to leave {mod}.',
+        'I followed procedure throughout. There was no reason for me to leave my post.',
+        'My responsibility was {mod}, and I stayed at my post.',
+      ],
+      plain: [
+        'That is all I have to report.',
+        'Nothing further to report.',
+      ],
+    },
+    // the second clue (told by someone who is not a suspect)
+    ls: ['At around {time} I heard the Life Support hatch open.', 'At around {time} the Life Support hatch opened; I heard it clearly from {mod}.'],
+    steps: ['At around {time} I heard footsteps in the Corridor.', 'At around {time} someone walked past in the Corridor.'],
+    // whoever went out to knock doesn't say she never left
+    closeOut: {
+      over: ['I followed the standard procedures, and I want that on record.'],
+      plain: ['Nothing else to report.'],
+    },
     visitor: [
       'At around {time} {who} joined me, and stayed until the lockdown.',
       '{who} joined me at around {time} and was still with me at the lockdown.',
-    ],
-    close: [
-      'I followed the standard procedures. There was no reason for me to leave {mod}.',
-      'I followed procedure throughout. There was no reason for me to leave my post.',
-      'My responsibility was {mod}, and I stayed at my post.',
     ],
     call: 'From {ca} to {cb} I held the scheduled call with Mission Control.',
     moved: [
@@ -140,31 +188,58 @@ const VOICES = {
       'I was {inMod} until around {time}, {act}. Then I went to {dst} to assist {host}, and I remained there until the lockdown. Nothing else to report.',
     ],
   },
-  // Engineer: direct, practical, slightly blunt; technical words; a bit defensive; points elsewhere.
+  // Engineer: direct, practical, slightly blunt; technical words. Over: defensive, impatient, points elsewhere.
   doyun: {
     open: [
       'I was {inMod}, {act}.',
       'I was {inMod} the whole shift, {act}.',
       'I spent the night {inMod}, {act}.',
     ],
-    quiet: [
-      'Nothing unusual on my end; the machinery was running normally.',
-      'Quiet night. Nobody came in, and I didn\'t hear anything.',
-      'Nothing on my end. Nobody came by, and I didn\'t hear a thing.',
-    ],
-    heard: [
-      'Around {time} I heard {target} slam. If you want to know what happened, you should probably ask whoever was {inTarget}.',
-      'Around {time}, {target} opened. You can\'t miss that sound: the seals hiss. Ask whoever was {inTarget}.',
-      'Around {time} I heard {target} open. Not my business, but you should ask whoever was {inTarget}.',
-    ],
+    openOut: ['I was {inMod}, {act}.'],
+    quiet: {
+      over: [
+        'Quiet night. Nobody came in, I didn\'t hear anything, and I didn\'t go anywhere.',
+        'Nothing on my end. Nobody came by, I didn\'t hear a thing, and I never left the place.',
+      ],
+      plain: [
+        'Quiet night. Nobody came in, and I didn\'t hear anything.',
+        'Nothing unusual on my end; the machinery was running normally.',
+      ],
+    },
+    heard: {
+      over: [
+        'Around {time} I heard {target} slam. If you want to know what happened, you should probably ask whoever was {inTarget}.',
+        'Around {time} I heard {target} open. Not my business, but you should ask whoever was {inTarget}.',
+      ],
+      plain: [
+        'Around {time}, {target} opened. You can\'t miss that sound: the seals hiss.',
+        'Around {time} I heard {target} open.',
+      ],
+    },
+    knocked: {
+      over: ['Around {time} I went over to {target} {why}. Knocked hard, twice. Nobody answered. Don\'t ask me where they were.'],
+      plain: ['Around {time} I knocked at {target} {why}. No answer. Went back to my work.'],
+    },
+    saw: {
+      over: ['Around {time} {who} came up from the Cargo Bay and walked straight out into the Corridor. Didn\'t say a word. Ask {who} why, not me.'],
+      plain: ['Around {time} {who} came through from the Cargo Bay and headed out into the Corridor.'],
+    },
+    ls: ['Around {time} I heard the Life Support hatch. Heavy seals; you can\'t miss them.', 'Around {time} the Life Support hatch opened. I heard it from here.'],
+    steps: ['Around {time} somebody walked down the Corridor. Quick steps.', 'Around {time} I heard footsteps out in the Corridor.'],
+    close: {
+      over: [
+        'My work\'s in order. That\'s all I\'ve got.',
+        'That\'s it. Can we get on with this?',
+        'I had a job to do, and I did it.',
+      ],
+      plain: [
+        'That\'s all from me.',
+        'Nothing else to add.',
+      ],
+    },
     visitor: [
       'Around {time} {who} showed up and stayed until the lockdown.',
       '{who} came in around {time} and didn\'t leave again.',
-    ],
-    close: [
-      'My work\'s in order. That\'s all I\'ve got.',
-      'I had a job to do, and I did it.',
-      'That\'s it. Can we get on with this?',
     ],
     call: 'From {ca} to {cb} I was on the scheduled call with Mission Control. Routine.',
     moved: [
@@ -173,30 +248,62 @@ const VOICES = {
     ],
   },
   // Medical Officer: calm, warm, reassuring, conversational; worried about the crew; never confrontational.
+  // Over: she says the same thing several ways, or insists she is sure. Plain: one statement, then her concern for others.
   mira: {
     open: [
       'I was {inMod} all night, {act}.',
       'I spent the night {inMod}, {act}.',
       'I stayed {inMod} the whole night, {act}.',
     ],
-    quiet: [
-      'It was a quiet night, thankfully. Nobody came in, and I didn\'t hear anything.',
-      'It was so quiet; nobody came by, and I didn\'t hear a sound.',
-      'Nothing happened on my side, thankfully. I didn\'t hear anything at all.',
+    openOut: [
+      'I was {inMod}, {act}.',
+      'I was working {inMod}, {act}.',
     ],
-    heard: [
-      'Around {time} I heard {target} open. I thought someone might be feeling unwell, and I nearly went to check.',
-      'Around {time} I heard {target} open. I\'m sure there\'s a good reason; maybe someone couldn\'t sleep.',
-      'Around {time} I heard {target} open, and I wondered if someone needed me.',
-    ],
+    quiet: {
+      over: [
+        'Nothing happened on my side, thankfully. I didn\'t hear anything at all.',
+        'It was a quiet night, thankfully. Nobody came in, nobody at all, and I didn\'t hear a sound.',
+      ],
+      plain: [
+        'Nobody came by all night.',
+        'It was a quiet night. Nobody came in.',
+      ],
+    },
+    heard: {
+      over: [
+        'Around {time} I heard {target} open, I\'m sure of it. I thought someone might be feeling unwell, and I nearly went to check.',
+        'Around {time} I heard {target} open, I\'m certain. I\'m sure there\'s a good reason; maybe someone couldn\'t sleep.',
+      ],
+      plain: [
+        'Around {time} I heard {target} open, and I wondered if someone needed me.',
+        'Around {time} I heard {target} open. I nearly went to check.',
+      ],
+    },
+    // her knock line closes the report itself (closeOut is empty)
+    knocked: {
+      over: ['Around {time} I went to {target} {why}. I knocked twice, I\'m sure of it, and nobody answered. I really hope {host} is all right.'],
+      plain: ['Around {time} I went to {target} {why}. I knocked, but nobody answered, so I went back. I hope {host} is all right.'],
+    },
+    saw: {
+      over: ['Around {time} {who} came through from the Cargo Bay and went out into the Corridor, I\'m sure it was {who}. I hope nothing was wrong.'],
+      plain: ['Around {time} {who} came through from the Cargo Bay and went out into the Corridor. I didn\'t think much of it at the time.'],
+    },
+    ls: ['Around {time} I heard the Life Support hatch open, and I wondered who was up.', 'Around {time} I heard the Life Support hatch. I thought someone was checking the recycler.'],
+    steps: ['Around {time} I heard footsteps in the Corridor. Someone was in a hurry.', 'Around {time} someone walked past in the Corridor; I nearly looked out.'],
+    close: {
+      over: [
+        'I hope everyone is okay.',
+        'Please tell me the others are all right.',
+      ],
+      plain: [
+        'I hope everyone is okay.',
+        'I just hope everyone is safe.',
+      ],
+    },
+    closeOut: { over: [], plain: [] },
     visitor: [
       'Around {time} {who} came by and kept me company until the alarm. I was glad of it.',
       '{who} came in around {time} and stayed with me until the lockdown.',
-    ],
-    close: [
-      'I just hope everyone is safe.',
-      'Please tell me the others are all right.',
-      'I hope everyone is okay.',
     ],
     call: 'From {ca} to {cb} I had the scheduled call with Mission Control; it was nice to hear a friendly voice.',
     moved: [
@@ -205,24 +312,47 @@ const VOICES = {
     ],
   },
   // Android: precise, neutral, structured; short task/time/status lines; no emotions, no speculation.
+  // Over: redundant status lines, claims of certainty. Plain: the one line needed.
   echo: {
     open: [
       'Scheduled task: {task}. Time interval: 02:00–03:00. Task status: COMPLETED.',
       'Location: {Mod}. Scheduled task: {task}. Time interval: 02:00–03:00. Task status: COMPLETED.',
     ],
-    quiet: [
-      'Observations: none.',
-      'Unscheduled events observed: none.',
-    ],
-    heard: [
-      'Observation: {hatch} hatch heard opening, approx. {time}.',
-      'Unscheduled event: {hatch} hatch heard opening, approx. {time}.',
-    ],
+    quiet: {
+      over: [
+        'Observations: none. Unscheduled events: none. Anomalies: none.',
+        'Unscheduled events observed: none. Confirmed: none.',
+      ],
+      plain: [
+        'Observations: none.',
+        'Unscheduled events observed: none.',
+      ],
+    },
+    heard: {
+      over: ['Unscheduled event: {hatch} hatch heard opening, approx. {time}. Confidence: high. Event confirmed.'],
+      plain: [
+        'Observation: {hatch} hatch heard opening, approx. {time}.',
+        'Unscheduled event: {hatch} hatch heard opening, approx. {time}.',
+      ],
+    },
+    knocked: {
+      over: ['Unscheduled task: {why} to {HOST}, {Dst}, approx. {time}. Hatch: no response. Attempts: 3. Task status: ABORTED. Returned to {Mod}.'],
+      plain: ['Unscheduled task: {why} to {HOST}, {Dst}, approx. {time}. Hatch: no response. Returned to {Mod}.'],
+    },
+    saw: {
+      over: ['Observation: {WHO} crossed the Bridge, Cargo Bay to Corridor, approx. {time}. Identification: certain.'],
+      plain: ['Observation: {WHO} crossed the Bridge, Cargo Bay to Corridor, approx. {time}.'],
+    },
+    ls: ['Observation: Life Support hatch heard opening, approx. {time}.', 'Unscheduled event: Life Support hatch heard opening, approx. {time}.'],
+    steps: ['Observation: footsteps in Corridor, approx. {time}.', 'Unscheduled event: footsteps in Corridor, approx. {time}.'],
+    close: {
+      over: ['Statement accuracy: 100%. End of statement.'],
+      plain: ['End of statement.'],
+    },
     visitor: [
       'Visitor: {WHO}, from approx. {time} until lockdown.',
       'Unscheduled event: {WHO} entered, approx. {time}. Present until lockdown.',
     ],
-    close: ['End of statement.'],
     call: 'Scheduled call: Mission Control. Time interval: {ca}–{cb}. Call status: COMPLETED.',
     moved: [
       'Scheduled task: {task}. Time interval: 02:00–{time}. Task status: INTERRUPTED. Reassignment: assist {HOST}, {Dst}, from approx. {time} until lockdown. End of statement.',
@@ -244,22 +374,33 @@ export function renderReport(c, p) {
   const r = c.reports[p];
   const V = VOICES[p];
   const rand = prng(`${c.code}:${c.variant}:${p}`);
-  const one = (pool) => pool[Math.floor(rand() * pool.length)];
+  // a pool is a list, or { over, plain } for the lines that carry the tone (c.tone; a case without one is plain)
+  const tone = (c.tone && c.tone[p]) || 'plain';
+  const one = (pool) => {
+    const list = Array.isArray(pool) ? pool : pool[tone];
+    return list[Math.floor(rand() * list.length)];
+  };
   const time = r.kind === 'moved' ? r.u : r.obs.t ?? r.obs.u;
   const who = r.obs && r.obs.who;
-  const heard = r.obs && r.obs.type === 'heard' ? r.obs.mod : null;
+  const heard = r.obs && (r.obs.type === 'heard' || r.obs.type === 'knocked') ? r.obs.mod : null;
+  const host = r.obs && r.obs.type === 'knocked' ? c.order.find((q) => c.start[q] === r.obs.mod) : r.host;
   const vars = {
     mod: the(r.mod), Mod: MOD_NAME[r.mod], inMod: inMod(r.mod), act: ACT[p][r.mod], task: ACT.echo[r.mod],
     time: time === undefined ? '' : fmtTime(time),
     target: heard ? HEARD[heard] : '', inTarget: heard ? inMod(heard) : '', hatch: heard ? HATCH_NAME[HATCH_OF[heard]] : '',
     who: who ? PEOPLE[who].short : '', WHO: who ? fullName(who) : '',
-    dst: r.dst ? the(r.dst) : '', Dst: r.dst ? MOD_NAME[r.dst] : '',
-    host: r.host ? PEOPLE[r.host].short : '', HOST: r.host ? fullName(r.host) : '',
+    dst: r.dst ? the(r.dst) : '',
+    host: host ? PEOPLE[host].short : '', HOST: host ? fullName(host) : '',
+    why: KNOCK_WHY[p], Dst: r.dst ? MOD_NAME[r.dst] : heard ? MOD_NAME[heard] : '',
     ca: r.call ? fmtTime(r.call.a) : '', cb: r.call ? fmtTime(r.call.b) : '',
   };
   let parts;
   if (r.kind === 'moved') parts = [one(V.moved)];
-  else parts = [one(V.open), r.call ? V.call : null, one(V[r.obs.type]), one(V.close)].filter(Boolean);
+  else {
+    // whoever went out to knock doesn't say they were there all night
+    const out = r.obs.type === 'knocked';
+    parts = [one(out && V.openOut ? V.openOut : V.open), r.call ? V.call : null, one(V[r.obs.type]), one(out && V.closeOut ? V.closeOut : V.close)].filter(Boolean);
+  }
   return parts.map((s) => fill(s, vars)).join(' ');
 }
 
@@ -288,7 +429,7 @@ export function solutionText(c) {
   const s = c.sab, S = nm(s), m = c.start[s];
   const happened = [
     `${S} was in Life Support at 03:00.`,
-    `Reconstructed route (the Life Support sensors were offline): ${S} stayed ${inMod(m)} until around ${fmtTime(c.t)}, then crossed the Corridor into Life Support.`,
+    `Reconstructed route (the Life Support sensors were offline): ${S} stayed ${inMod(m)} until around ${fmtTime(c.t)}, then crossed ${m === 'C' ? 'the Bridge and the Corridor' : 'the Corridor'} into Life Support.`,
     PEOPLE[s].human
       ? 'Voran Industries paid them to make the recycler test fail.'
       : 'Voran Industries hacked ECHO-7 from outside the station to make the recycler test fail.',
@@ -296,9 +437,14 @@ export function solutionText(c) {
 
   const A = c.accuser, D = c.denier;
   const [first, second] = [A, D].sort((x, y) => n(c, x) - n(c, y));
-  const heard = c.reports[A].obs;
+  const o = c.reports[A].obs;
+  const said = {
+    heard: () => `heard ${HEARD[o.mod]} open around ${fmtTime(o.t)}`,
+    knocked: () => `knocked at ${HEARD[o.mod]} around ${fmtTime(o.u)} and nobody answered`,
+    saw: () => `saw ${nm(D)} come through from the Cargo Bay around ${fmtTime(o.t)}`,
+  }[o.type]();
   const reports = [
-    `Reports ${n(c, first)} and ${n(c, second)} couldn't both be true. ${tag(c, A)} heard ${HEARD[heard.mod]} open around ${fmtTime(heard.t)}; ${tag(c, D)} was ${inMod(c.start[D])} and reported a quiet night.`,
+    `Reports ${n(c, first)} and ${n(c, second)} couldn't both be true. ${tag(c, A)} ${said}; ${tag(c, D)} was ${inMod(c.start[D])} and reported a quiet night.`,
     `The false one was report ${n(c, s)}.`,
   ];
 
