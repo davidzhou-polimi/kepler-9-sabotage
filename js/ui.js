@@ -111,10 +111,9 @@ function reportAlt(c, p, style, { open = null } = {}) {
       // the mark that opens and closes stands at the bottom right: beside who wrote it when the report is
       // closed, after the text when it is open (2026-11-25: «il più ad esempio lo terrei in basso»)
       if (isOpen) return win(`REPORT ${n}`, `${id}${body}<div class="rep-foot">${toggle}</div>`, { cls: 'win-report rep' });
-      return win(`REPORT ${n}`, `<button type="button" class="crew-id is-compact" data-act="toggle-report" data-p="${p}" aria-label="Open report ${n}">
-          <span class="crew-photo">${portrait(p)}</span>
-          <span class="crew-who"><b class="crew-name">${esc(P.short.toUpperCase())}</b><span class="crew-role">${esc(P.role)}</span><span class="crew-chip">ID ${P.id}</span></span>
-        </button>${toggle}`, { cls: 'win-report rep is-closed' });
+      // closed, a report is only its name and the mark that opens it; the whole strip opens it
+      // (2026-11-25: «immaginavo una cosa molto più compatta, con meno dettagli, es. solo report 1, report 2»)
+      return win(`REPORT ${n}`, `<button type="button" class="rep-cover" data-act="toggle-report" data-p="${p}" aria-expanded="false" aria-label="Open report ${n}"><i>+</i></button>`, { cls: 'win-report rep is-closed' });
     }
     const top = `<div class="crew-top"><span>REPORT ${n}</span><i></i><span class="crew-dot"></span></div>`;
     return `<article class="rep rep-crew ${style === 'crewtop' ? 'is-top' : ''}">${top}${style === 'crewtop' ? id + body : body + id}</article>`;

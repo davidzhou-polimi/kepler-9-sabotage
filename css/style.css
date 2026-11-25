@@ -1267,10 +1267,12 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 }
 .rep-toggle:hover, .rep-toggle:focus-visible { background: rgba(67, 217, 210, 0.3); outline: none; }
 .rep-foot { display: flex; justify-content: flex-end; margin-top: 8px; }
-.win-report.is-closed .win-body { display: flex; align-items: center; gap: 12px; padding: 8px 14px 12px; }
-.win-report .crew-id.is-compact { flex: 1; min-width: 0; grid-template-columns: 40px minmax(0, 1fr); grid-template-rows: auto; gap: 0 12px; padding: 0; border: 0; cursor: pointer; }
-.win-report .crew-id.is-compact .crew-photo { grid-row: auto; }
-.win-report .crew-id.is-compact .crew-who { gap: 3px 8px; }
+/* closed: one strip, the name in its tab and the mark at the bottom right; all of it opens the report */
+.win-report.is-closed .win-body { padding: 0; min-height: 8px; }
+.rep-cover { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: flex-end; padding: 0 10px 7px; border: 0; background: none; cursor: pointer; }
+.rep-cover i { display: grid; place-items: center; width: 24px; height: 22px; border: 1px solid var(--cyan); background: rgba(67, 217, 210, 0.1); color: var(--cyan); font: 600 15px/1 var(--font-mono); }
+.rep-cover:hover i, .rep-cover:focus-visible i { background: rgba(67, 217, 210, 0.3); }
+.rep-cover:focus-visible { outline: 2px solid var(--cyan); outline-offset: -3px; }
 
 /* ---------- how a window appears (proposals, mocks) ---------- */
 /* a: it opens from a line, like a tube lighting up; b: the frame first, then what is inside; c: it flickers on */
