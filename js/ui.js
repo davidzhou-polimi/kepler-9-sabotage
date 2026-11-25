@@ -89,7 +89,7 @@ export function reportBlock(c, p) {
 //   crewtop:  the crew card first, as printed, then the text
 //   crewwin:  no frame inside a frame: each report is a window of its own, titled REPORT 01, with the crew card
 //             first and then the text; there is no CREW REPORTS window around them
-function reportAlt(c, p, style) {
+function reportAlt(c, p, style, { open = null } = {}) {
   const P = PEOPLE[p];
   const n = String(c.order.indexOf(p) + 1).padStart(2, '0');
   const body = `<p class="rep-body ${P.human ? '' : 'is-machine'}">${esc(renderReport(c, p))}</p>`;
@@ -104,7 +104,16 @@ function reportAlt(c, p, style) {
         <span class="crew-file">PERSONNEL FILE</span>
       </button>`;
     if (style === 'crewsign') return `<article class="rep rep-sheet"><div class="sheet-top">REPORT <b>${n}</b></div>${body}${id}</article>`;
-    if (style === 'crewwin') return win(`REPORT ${n}`, `${id}${body}`, { cls: 'win-report rep' });
+    if (style === 'crewwin') {
+      // a report is a small window that opens and closes (open: the list of the open ones; null = all open)
+      const isOpen = !open || open.includes(p);
+      const toggle = `<button type="button" class="rep-toggle" data-act="toggle-report" data-p="${p}" aria-expanded="${isOpen}" aria-label="${isOpen ? 'Close' : 'Open'} report ${n}">${isOpen ? '&minus;' : '+'}</button>`;
+      if (isOpen) return win(`REPORT ${n}`, `${toggle}${id}${body}`, { cls: 'win-report rep' });
+      return win(`REPORT ${n}`, `${toggle}<button type="button" class="crew-id is-compact" data-act="toggle-report" data-p="${p}" aria-label="Open report ${n}">
+          <span class="crew-photo">${portrait(p)}</span>
+          <span class="crew-who"><b class="crew-name">${esc(P.short.toUpperCase())}</b><span class="crew-role">${esc(P.role)}</span><span class="crew-chip">ID ${P.id}</span></span>
+        </button>`, { cls: 'win-report rep is-closed' });
+    }
     const top = `<div class="crew-top"><span>REPORT ${n}</span><i></i><span class="crew-dot"></span></div>`;
     return `<article class="rep rep-crew ${style === 'crewtop' ? 'is-top' : ''}">${top}${style === 'crewtop' ? id + body : body + id}</article>`;
   }
@@ -134,8 +143,8 @@ const REPORT_HINT = {
 };
 
 // bare (proposal, mocks): no window around the reports; the cards stand on the screen under the title
-export function reportsPanel(c, style = 'card', { bare = false } = {}) {
-  const block = (p) => (style === 'card' ? reportBlock(c, p) : reportAlt(c, p, style));
+export function reportsPanel(c, style = 'card', { bare = false, open = null } = {}) {
+  const block = (p) => (style === 'card' ? reportBlock(c, p) : reportAlt(c, p, style, { open }));
   if (style === 'crewwin') return `<div class="reports-wins"><h2 class="win-title rw-title">CREW REPORTS</h2><p class="hint">${REPORT_HINT[style]}</p>${c.order.map(block).join('')}</div>`;
   return win('CREW REPORTS', `
     <p class="hint">${REPORT_HINT[style]}</p>
@@ -836,7 +845,8 @@ const NOTES = [
   ['saboteur', 'SABOTEUR_', 'Whoever was in Life Support'],
   ['reports', 'REPORTS_', '4 reports · One is false'],
   ['sensors', 'SENSORS_', 'Hatch openings · Motion · No names recorded'],
-  ['link', 'LINK_', '2 questions · A refused question still counts'],
+  // not the rule about refused questions: the player finds that out (2026-11-25)
+  ['link', 'LINK_', 'Damaged · 2 questions · Emergency code'],
   ['code', 'CODE_', 'False report number + saboteur\'s ID · One attempt'],
   ['oxygen', 'OXYGEN_', '10 minutes'],
 ];
@@ -855,9 +865,10 @@ export function screenLive(view) {
       <span class="meter" data-meter>${Array.from({ length: 20 }, (_, i) => `<i class="${i < on ? 'on' : ''}"></i>`).join('')}</span></div>`, { cls: 'win-meter win-oxygen' }) : '';
   const questions = has('link') ? win('QUESTIONS', `<div class="status-link"><span class="pips">${Array.from({ length: MAX_QUESTIONS }, (_, i) => `<i class="${i < leftQ ? 'on' : ''}"></i>`).join('')}</span>
       <span class="status-num">${leftQ}/${MAX_QUESTIONS}</span></div>`, { cls: 'win-meter win-questions' }) : '';
-  const meters = oxygen || questions ? `<div class="live-meters">${oxygen}${questions}</div>` : '';
+  // the questions come first, so they stand on the left
+  const meters = oxygen || questions ? `<div class="live-meters">${questions}${oxygen}</div>` : '';
   const notes = stage >= 1 ? win(`CASE ${esc(c.code)}`, `<dl class="notes">${NOTES.filter(([id]) => has(id)).map(([id, label, text]) => `<div><dt>${label}</dt><dd>${text}${at(id) === stage ? '<span class="tl-cur"></span>' : ''}</dd></div>`).join('')}</dl>`, { cls: 'win-notes' }) : '';
-  const reports = has('reports') ? reportsPanel(c, view.reportStyle || 'crewtop', { bare: true }) : '';
+  const reports = has('reports') ? reportsPanel(c, view.reportStyle || 'crewtop', { bare: true, open: state.openReports || [] }) : '';
   const model = has('sensors') ? mapPanel(state.mapSel, { detail }) : '';
   const code = has('code') ? codePanel(state) : '';
   const tab = state.tab || 'ask';
@@ -865,10 +876,12 @@ export function screenLive(view) {
   const critical = remainingMs <= 60000 && has('oxygen') ? `<div class="alarm-strip" role="alert">${warningIcon()}<span>OXYGEN CRITICAL // LESS&nbsp;THAN&nbsp;ONE&nbsp;MINUTE</span></div>` : '';
   if (wide) {
     const mid = tab === 'map' && model ? model : tab === 'code' && code ? code : notes;
-    return `<main class="screen screen-live live-wide">${critical}
-      <div class="live-col">${chat}</div>
-      <div class="live-col">${meters}${mid}</div>
-      <div class="live-col">${reports}</div>
+    // one column at first, in the middle; a second when the case opens, a third when the reports arrive
+    const cols = 1 + (stage >= 1 ? 1 : 0) + (reports ? 1 : 0);
+    return `<main class="screen screen-live live-wide live-cols-${cols}">${critical}
+      <div class="live-col live-chat">${chat}</div>
+      ${cols > 1 ? `<div class="live-col">${meters}${mid}</div>` : ''}
+      ${reports ? `<div class="live-col">${reports}</div>` : ''}
       ${modals}</main>`;
   }
   const channel = { reports, map: model, code, briefing: notes, ask: chat }[tab] || chat;

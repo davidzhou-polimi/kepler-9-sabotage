@@ -1235,3 +1235,68 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .tl-accept { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 16px; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
 /* the station model: air between the map, the divider and the readout of the place */
 .win-map .holo + .mread { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--line); }
+
+/* ---------- storyboard, second set of corrections (2026-11-25) ---------- */
+/* laptop: one column in the middle, then two, then three */
+.live-wide { grid-template-rows: minmax(0, 1fr); }
+.live-cols-1 { grid-template-columns: minmax(0, 480px); justify-content: center; }
+.live-cols-2 { grid-template-columns: repeat(2, minmax(0, 440px)); justify-content: center; }
+/* NOVA's window keeps its frame in view: the conversation scrolls inside it */
+.live-wide > .live-chat { align-self: stretch; display: flex; flex-direction: column; overflow: hidden; min-height: 0; max-height: none; }
+.live-cols-1 > .live-chat { justify-content: center; }
+.screen-live .win-term { display: flex; flex-direction: column; flex: 0 1 auto; min-height: 0; }
+.screen-live .win-term .win-bar { flex: none; }
+.screen-live .win-term .win-body { min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--cyan) rgba(67, 217, 210, 0.12); }
+.screen-live .win-term .win-body::-webkit-scrollbar { width: 8px; }
+.screen-live .win-term .win-body::-webkit-scrollbar-track { background: rgba(67, 217, 210, 0.1); border-left: 1px solid rgba(67, 217, 210, 0.3); }
+.screen-live .win-term .win-body::-webkit-scrollbar-thumb { background: var(--cyan); }
+.cs-deck .screen-live:not(.live-wide):has(> .win-term) { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.cs-deck .screen-live:not(.live-wide):has(> .win-term) > .live-meters { position: static; flex: none; }
+/* the two meters: questions on the left; their rows sit on the same line */
+.live-meters { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); }
+.live-meters > .win:only-child, .live-meters > .win-oxygen:only-child { grid-column: 1; }
+.win-meter { display: flex; flex-direction: column; }
+.win-meter .win-body { flex: 1; display: flex; align-items: center; }
+.win-meter .status-o2, .win-meter .status-link { flex: 1; min-height: calc(var(--ds) * 30px); }
+/* a report closed: a small window with who wrote it; the mark at the top right opens and closes it */
+.win-report { position: relative; }
+.rep-toggle {
+  position: absolute; z-index: 1; right: 10px; top: calc(var(--ws, 0px) + 9px); width: 26px; height: 26px; padding: 0; cursor: pointer;
+  border: 1px solid var(--cyan); background: rgba(67, 217, 210, 0.1); color: var(--cyan); font: 600 16px/1 var(--font-mono);
+}
+.rep-toggle:hover, .rep-toggle:focus-visible { background: rgba(67, 217, 210, 0.3); outline: none; }
+.win-report.is-closed .win-body { padding: 8px 14px 10px; }
+.win-report .crew-id.is-compact { grid-template-columns: 34px minmax(0, 1fr); grid-template-rows: auto; padding: 0 34px 0 0; border: 0; cursor: pointer; }
+.win-report .crew-id.is-compact .crew-photo { grid-row: auto; }
+.win-report .crew-id.is-compact .crew-name { flex: 0 0 auto; font-size: calc(var(--ds) * 17px); }
+
+/* ---------- how a window appears (proposals, mocks) ---------- */
+/* a: it opens from a line, like a tube lighting up; b: the frame first, then what is inside; c: it flickers on */
+[class*="fxin-"] .win { animation-delay: var(--wd, 0s) !important; }
+[class*="fxin-"] .win-term { --wd: 0s; }
+[class*="fxin-"] .win-notes, [class*="fxin-"] .win-map { --wd: 0.5s; }
+[class*="fxin-"] .reports-wins .win:nth-of-type(1) { --wd: 1s; }
+[class*="fxin-"] .reports-wins .win:nth-of-type(2) { --wd: 1.15s; }
+[class*="fxin-"] .reports-wins .win:nth-of-type(3) { --wd: 1.3s; }
+[class*="fxin-"] .reports-wins .win:nth-of-type(4) { --wd: 1.45s; }
+[class*="fxin-"] .win-questions { --wd: 2s; }
+[class*="fxin-"] .win-oxygen { --wd: 2.5s; }
+.fxin-a .win { animation: win-in-a 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes win-in-a {
+  0% { clip-path: inset(50% 0 50% 0); filter: brightness(3.5) saturate(0.3); }
+  45% { clip-path: inset(0 0 0 0); filter: brightness(1.8); }
+  100% { clip-path: inset(0 0 0 0); filter: none; }
+}
+.fxin-b .win { animation: win-in-b 0.5s linear both; }
+.fxin-b .win > * { animation: win-in-b-in 0.3s ease-out both; animation-delay: calc(var(--wd, 0s) + 0.22s); }
+@keyframes win-in-b { 0% { opacity: 0; transform: scale(0.97); } 30% { opacity: 1; transform: none; } 100% { opacity: 1; } }
+@keyframes win-in-b-in { 0% { opacity: 0; transform: translateY(6px); } 100% { opacity: 1; transform: none; } }
+.fxin-c .win { animation: win-in-c 0.42s steps(1) both; }
+@keyframes win-in-c { 0% { opacity: 0; } 15% { opacity: 1; } 30% { opacity: 0.2; } 45% { opacity: 1; } 60% { opacity: 0.55; } 75%, 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { [class*="fxin-"] .win, [class*="fxin-"] .win > * { animation: none !important; } }
+/* buttons stand at the right of their row, the main one last; a note beside them stays on the left
+   («come regola generale i pulsanti a destra?», 2026-11-25; with the cut-corner buttons, mocks) */
+.btns-d .actions { justify-content: flex-end; }
+.btns-d .actions .note, .btns-d .actions .hc-tag { order: -1; margin-right: auto; }
+.btns-d .actions .btn-primary, .btns-d .actions .btn-danger { order: 2; }
+.btns-d .menu { justify-content: flex-end; }

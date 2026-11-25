@@ -704,29 +704,47 @@ const ASKTERM2 = {
 
 // ---------- the console fills up after accepting NOVA's transmission (storyboard) ----------
 
-const liveState = (stage, s = {}) => (stage < 0 ? { ...base(), phase: 'home' } : d2state({ tab: 'ask', draft: { ...hatchQ, what: null }, askStep: 0, ...s }));
+const liveState = (stage, s = {}) => (stage < 0 ? { ...base(), phase: 'home' } : d2state({ tab: 'ask', draft: { ...hatchQ, what: null }, askStep: 0, openReports: stage >= 8 ? c.order.slice(0, 2) : [], ...s }));
 const liveL = (label, stage, s = {}, extra = {}) => cap(label, laptop(chosen({ flow: 'live', stage, state: liveState(stage, s), remainingMs: 10 * MIN - 9000, ...extra }), { cls: BASE, big: true }));
 const liveP = (label, stage, s = {}, opts = {}) => cap(label, phone(chosen({ flow: 'live', stage, state: liveState(stage, s), remainingMs: 10 * MIN - 9000 }), { cls: BASE, ...opts }));
 const LIVE = {
   id: 'live', title: 'La console si popola dopo aver accettato la trasmissione',
   quote: '«dovrebbe essere una richiesta di nova, che chiede a mission control di rispondere, chi apre la webapp accetta la trasmissione e nova inizia a scrivere. compare poi la schermata briefing, che si compila mentre nova scrive, come se mission control stesse prendendo in carico il caso e si appunta le cose no, e anche i report vengono aperti man mano che nova li apre (nella chat si vedono come allegati non lo so)» · «ah, e per forza di cose, anche il timer dell\'ossigeno e il numero di domande, saranno finestre, che compaiono dove che è comparso il briefing ecc. quindi vediamo veramente la console popolarsi dopo aver accettato il caso»',
-  context: `È uno storyboard: i momenti in ordine, sul laptop e sul telefono. Non ci sono scelte da fare con il pallino; dimmi cosa non torna. Come l'ho letta. La console è vuota e c'è solo la richiesta di NOVA, la sua prima frase di oggi («Mission Control, this is NOVA on Kepler-9.») con ACCEPT. Accettando, NOVA scrive il resto del briefing nel suo canale, una frase alla volta, e ogni cosa compare quando la dice: gli appunti del caso (la finestra CASE con il suo codice, una riga per ogni frase), i quattro rapporti come allegati sotto la frase che li nomina (e la colonna dei rapporti si apre), la mappa quando parla dei sensori, la finestra QUESTIONS quando dice quante domande regge il collegamento, la finestra OXYGEN quando dice l'ossigeno. Sulla barra un tasto si accende solo quando c'è ciò che apre. L'ossigeno corre da quando accetti, come avevi deciso: la sua finestra arriva con l'ultima frase, una decina di secondi dopo, e mostra già il tempo sceso. Sul laptop le colonne sono tre: NOVA, il caso (ossigeno e domande in alto; sotto gli appunti, oppure la mappa o il codice con i tasti), i rapporti. Sul telefono ossigeno e domande stanno in alto e sotto c'è un canale alla volta. Testi nuovi da approvare: ACCEPT e INCOMING TRANSMISSION; le sette righe di appunti, che sono le frasi di NOVA ridotte a parole chiave (SITUATION_ «03:00 · Recycler sabotaged · Every module sealed»; SABOTEUR_ «Whoever was in Life Support»; REPORTS_ «4 reports · One is false»; SENSORS_ «Hatch openings · Motion · No names recorded»; LINK_ «2 questions · A refused question still counts»; CODE_ «False report number + saboteur's ID · One attempt»; OXYGEN_ «10 minutes»); e gli allegati, righe di testo come in un terminale («+ REPORT 01 · MIRA»). Dopo i tuoi ultimi messaggi: il canale di NOVA non ha più la linguetta, e ogni rapporto è una finestra con la sua linguetta («REPORT 01»), sotto il titolo CREW REPORTS.`,
+  context: `È uno storyboard: i momenti in ordine, sul laptop e sul telefono. Non ci sono scelte da fare con il pallino; dimmi cosa non torna. Come l'ho letta. La console è vuota e c'è solo la richiesta di NOVA, la sua prima frase di oggi («Mission Control, this is NOVA on Kepler-9.») con ACCEPT. Accettando, NOVA scrive il resto del briefing nel suo canale, una frase alla volta, e ogni cosa compare quando la dice: gli appunti del caso (la finestra CASE con il suo codice, una riga per ogni frase), i quattro rapporti come allegati sotto la frase che li nomina (e la colonna dei rapporti si apre), la mappa quando parla dei sensori, la finestra QUESTIONS quando dice quante domande regge il collegamento, la finestra OXYGEN quando dice l'ossigeno. Sulla barra un tasto si accende solo quando c'è ciò che apre. L'ossigeno corre da quando accetti, come avevi deciso: la sua finestra arriva con l'ultima frase, una decina di secondi dopo, e mostra già il tempo sceso. Sul laptop si parte da una colonna sola al centro (NOVA), poi diventano due quando si apre il caso (domande e ossigeno in alto, le domande a sinistra perché arrivano prima; sotto gli appunti, oppure la mappa o il codice con i tasti) e tre quando arrivano i rapporti; lì si ferma. Sul telefono domande e ossigeno stanno in alto e sotto c'è un canale alla volta. La conversazione con NOVA scorre dentro la sua finestra, con la barra di scorrimento nel nostro stile: il bordo resta sempre in vista. I rapporti arrivano chiusi, come finestrelle con chi li ha scritti; il segno + in alto a destra li apre, il − li richiude, e se ne possono tenere aperti quanti si vuole. Testi nuovi da approvare: ACCEPT e INCOMING TRANSMISSION; le sette righe di appunti, che sono le frasi di NOVA ridotte a parole chiave (SITUATION_ «03:00 · Recycler sabotaged · Every module sealed»; SABOTEUR_ «Whoever was in Life Support»; REPORTS_ «4 reports · One is false»; SENSORS_ «Hatch openings · Motion · No names recorded»; LINK_ «Damaged · 2 questions · Emergency code» (senza la regola sulla domanda rifiutata: quella il giocatore la scopre da sé); CODE_ «False report number + saboteur's ID · One attempt»; OXYGEN_ «10 minutes»); e gli allegati, righe di testo come in un terminale («+ REPORT 01 · MIRA»). Dopo i tuoi ultimi messaggi: il canale di NOVA non ha più la linguetta, e ogni rapporto è una finestra con la sua linguetta («REPORT 01»), sotto il titolo CREW REPORTS.`,
   common: [
     liveL('1 · Laptop: la richiesta di NOVA, console vuota', -1),
-    liveL('2 · Accettato: NOVA scrive, compaiono gli appunti del caso', 1),
-    liveL('3 · NOVA allega i rapporti: si apre la colonna dei rapporti', 3),
-    liveL('4 · Il collegamento: compare QUESTIONS (gli appunti crescono)', 5),
-    liveL('5 · L\'ossigeno: compare OXYGEN, NOVA ha finito e il canale è fermo', 8),
-    liveL('6 · Tasto MAP: la mappa al posto degli appunti', 8, { tab: 'map', mapSel: 'M-K' }),
+    liveL('2 · Accettato: NOVA scrive, da sola al centro', 0),
+    liveL('3 · Due colonne: compaiono gli appunti del caso', 1),
+    liveL('4 · Tre colonne: NOVA allega i rapporti, che arrivano chiusi', 3),
+    liveL('5 · Il collegamento: compare QUESTIONS, a sinistra', 5),
+    liveL('6 · L\'ossigeno: compare OXYGEN; NOVA ha finito; due rapporti aperti', 8),
+    liveL('7 · Tasto MAP: la mappa al posto degli appunti', 8, { tab: 'map', mapSel: 'M-K' }),
     liveP('1 · Telefono: la richiesta di NOVA', -1),
     liveP('2 · NOVA scrive', 1),
     liveP('3 · I rapporti come allegati', 3, {}, { scroll: 'bottom' }),
     liveP('4 · Compare QUESTIONS', 5, {}, { scroll: 'bottom' }),
     liveP('5 · Compare OXYGEN, NOVA ha finito', 8, {}, { scroll: 'bottom' }),
     liveP('6 · Tasto BRIEFING: gli appunti del caso', 8, { tab: 'briefing' }),
-    liveP('7 · Tasto REPORTS: i rapporti', 8, { tab: 'reports' }),
+    liveP('7 · Tasto REPORTS: il primo rapporto aperto, gli altri chiusi', 8, { tab: 'reports', openReports: c.order.slice(0, 1) }),
   ],
   dirs: [],
+};
+
+// ---------- how a window appears ----------
+
+const fxDir = (key, title, note, rec = false) => ({
+  key, title, rec, note,
+  frames: [cap('Laptop: la console si popola (premi «Riguarda»)', `${laptop(chosen({ flow: 'live', stage: 8, state: liveState(8), remainingMs: 10 * MIN - 9000 }), { cls: `${BASE} fxin-${key}`, big: true })}<button type="button" class="replay" data-replay="winfx">Riguarda</button>`)],
+});
+const WINFX = {
+  id: 'winfx', title: 'Come compaiono le finestre',
+  quote: '«va definito effetto con cui appaiono le finestre»',
+  context: 'Tre effetti, tutti brevi (meno di mezzo secondo per finestra). Ogni riquadro rifà in tre secondi l\'arrivo di tutte le finestre in fila, per vederle una dopo l\'altra: nel gioco ognuna arriva quando NOVA la nomina. Con «riduci movimento» attivo nel sistema le finestre compaiono e basta.',
+  dirs: [
+    fxDir('a', 'A · Si apre da una riga', '<p>Una riga di luce al centro che si apre in altezza fino alla finestra intera, con un lampo che si spegne: un tubo che si accende.</p><p>Perché: è l\'effetto più da console, ed è lo stesso gesto per ogni finestra, grande o piccola.</p>', true),
+    fxDir('b', 'B · Prima la cornice, poi il contenuto', '<p>Compare la cornice vuota, poi quello che c\'è dentro sale di poco e si schiarisce.</p><p>Costo: è il più morbido, e il meno «macchina».</p>'),
+    fxDir('c', 'C · Si accende a scatti', '<p>La finestra lampeggia due volte prima di restare accesa, senza muoversi.</p><p>Costo: con cinque finestre in fila lo sfarfallio si nota molto.</p>'),
+  ],
 };
 
 // ---------- buttons with cut corners (done, to check) ----------
@@ -734,7 +752,7 @@ const LIVE = {
 const BTN2 = {
   id: 'buttons2', title: 'I pulsanti con gli angoli smussati', done: 'angoli opposti smussati, hover senza testo nero, tasti di scelta coerenti',
   quote: '«il pulsante è rimasto con un design piatto, non come le nostre finestre, potremmo aggiungere gli angoli opposti smussati, e va risolto il hover che mostra testo nero. e poi è incoerente con i pulsanti per selezionare orario: lì terrei almeno il trasparentino ed effetto hover no?»',
-  context: 'I pulsanti tengono le staffe ai lati che avevi scelto e prendono due angoli opposti smussati (in alto a sinistra e in basso a destra), come le finestre. Passandoci sopra si illuminano e le parole restano chiare: prima diventavano scure su ciano pieno. I tasti di scelta (gli intervalli di tempo, e ogni altro tasto piccolo) hanno lo stesso fondo trasparente, gli stessi angoli e la stessa risposta al puntatore; quello scelto resta pieno di ciano, come le cose selezionate altrove. È solo nei mock: nel gioco lo porto quando mi dici che va bene. Passa il mouse sui pulsanti per vedere l\'effetto.',
+  context: 'I pulsanti tengono le staffe ai lati che avevi scelto e prendono due angoli opposti smussati (in alto a sinistra e in basso a destra), come le finestre. Passandoci sopra si illuminano e le parole restano chiare: prima diventavano scure su ciano pieno. I tasti di scelta (gli intervalli di tempo, e ogni altro tasto piccolo) hanno lo stesso fondo trasparente, gli stessi angoli e la stessa risposta al puntatore; quello scelto resta pieno di ciano, come le cose selezionate altrove. I pulsanti stanno a destra della loro riga, il principale per ultimo, e la nota che li accompagna resta a sinistra («come regola generale i pulsanti a destra?»: sì, è dove li cerca il pollice sul telefono ed è dove hai messo ACCEPT). È solo nei mock: nel gioco lo porto quando mi dici che va bene. Passa il mouse sui pulsanti per vedere l\'effetto.',
   common: [
     cap('NEW QUESTION', phone(chosen({ state: d2state({ tab: 'ask', draft: { ...hatchQ, what: null }, askStep: 0 }), askUi: 'open' }), { cls: BASE })),
     cap('Gli intervalli di tempo', phone(chosen({ state: d2state({ tab: 'ask', draft: hatchQ, askStep: 2 }), askUi: 'open' }), { cls: BASE })),
@@ -1029,7 +1047,7 @@ const fontsBoard = `
 // ---------- page ----------
 
 const STORY = [LIVE];
-const OPEN = [];
+const OPEN = [WINFX];
 const NOTES = [BTN2, MAPTEXT, PORTRAITS];
 const DECIDED = [BARLED, ASKTERM2, MAPINFO, HOME2, ASKTERM, REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
@@ -1053,11 +1071,17 @@ root.addEventListener('click', (e) => {
   const b = e.target.closest('[data-replay]');
   if (!b) return;
   const cs = b.closest('.mock-fig').querySelector('.cs');
+  if (b.dataset.replay === 'winfx') {
+    const fr = b.closest('.mock-fig').querySelector('.mock-frame');
+    const cls = [...fr.classList].find((x) => x.startsWith('fxin-'));
+    fr.classList.remove(cls); void fr.offsetWidth; fr.classList.add(cls);
+    return;
+  }
   if (b.dataset.replay === 'boot') { cs.classList.remove('fx-boot'); void cs.offsetWidth; cs.classList.add('fx-boot'); }
   if (b.dataset.replay === 'static') { cs.classList.remove('cs-switching'); void cs.offsetWidth; cs.classList.add('cs-switching'); setTimeout(() => cs.classList.remove('cs-switching'), 400); }
 });
 // in the filling console NOVA's channel shows its last line, as a conversation does
-root.querySelectorAll('.live-wide .win-term').forEach((w) => { const col = w.closest('.live-col'); col.scrollTop = col.scrollHeight; });
+root.querySelectorAll('.screen-live .win-term .win-body').forEach((b) => { b.scrollTop = b.scrollHeight; });
 root.querySelectorAll('[data-scroll]').forEach((frame) => {
   const f = frame.querySelector('.cs-screen > .cs-scroll, .cs-mon-main .cs-scroll') || frame;
   f.scrollTop = frame.dataset.scroll === 'bottom' ? f.scrollHeight : Number(frame.dataset.scroll);
