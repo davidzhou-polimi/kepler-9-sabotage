@@ -1763,3 +1763,37 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .fx-closing .win-oxygen { --od: 0.8s; }
 .fx-closing .win-questions { --od: 0.95s; }
 .fx-closing .win-term { --od: 1.4s; }
+
+/* ---------- the station plan of the group's map (proposal, mocks: detail.plan) ---------- */
+.map-plan .room .shape { fill: rgba(11, 18, 32, 0.85); stroke: var(--line-strong); stroke-width: 2; stroke-linejoin: round; }
+.map-plan .room.is-off .shape { stroke: var(--red); stroke-dasharray: 5 3; fill: rgba(228, 91, 97, 0.1); }
+.map-plan .room.is-sel .shape { stroke: var(--cyan); stroke-width: 3; }
+.holo .map-plan .room .shape { fill: rgba(67, 217, 210, 0.1); stroke: rgba(67, 217, 210, 0.85); }
+.holo .map-plan .room.is-off .shape { fill: rgba(228, 91, 97, 0.1); stroke: var(--red); }
+.map-pick.map-plan .room.is-sel .shape { fill: rgba(67, 217, 210, 0.28); stroke: var(--cyan); stroke-width: 3; }
+.map-plan .plan-neck { stroke: rgba(67, 217, 210, 0.5); stroke-width: 7; }
+.map-plan .hatch-bar.is-sel rect:first-child { fill: var(--star); stroke: var(--cyan); stroke-width: 1.5; }
+/* the hull and the solar arrays, in amber as on the group's map; drawn on the floor, never tappable */
+.map-plan .plan-hull { pointer-events: none; }
+.map-plan .p-hull { fill: none; stroke: rgba(242, 184, 75, 0.75); stroke-width: 1.2; stroke-linejoin: round; }
+.map-plan .p-mast { stroke: rgba(242, 184, 75, 0.85); stroke-width: 1.6; }
+.map-plan .p-mount { fill: rgba(242, 184, 75, 0.75); }
+.map-plan .p-panel { fill: rgba(231, 237, 244, 0.08); stroke: rgba(231, 237, 244, 0.55); stroke-width: 0.6; }
+.map-plan .p-cell { stroke: rgba(231, 237, 244, 0.35); stroke-width: 0.4; }
+@media (hover: hover) {
+  .holo .map-plan .room[data-act]:hover .shape { fill: rgba(67, 217, 210, 0.3); stroke: var(--star); }
+  .holo .map-plan .room.is-off[data-act]:hover .shape { fill: rgba(228, 91, 97, 0.3); stroke: var(--star); }
+}
+/* the walls of the hologram follow the outline: one per side, raised from its start along the side */
+.h-edge { height: var(--hh); transform-origin: 0 0; background: linear-gradient(to bottom, rgba(var(--hc), 0.38), rgba(var(--hc), 0.03)); }
+.h-top-poly { border: 0; box-shadow: none; overflow: visible; filter: drop-shadow(0 0 3px rgba(var(--hc), 0.6)); }
+.h-top-poly polygon { fill: none; stroke: rgba(var(--hc), 0.75); stroke-width: 1.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.h-box.is-off .h-top-poly polygon { stroke-dasharray: 5 3; }
+.h-box.is-sel .h-top-poly { background: none; }
+.h-box.is-sel .h-top-poly polygon { stroke: var(--star); fill: rgba(var(--hc), 0.16); }
+
+/* the station model under a finger (board "maptouch"; the game lays it flat on the first tap, ?touch=swipe|off for its record) */
+.touch-swipe .holo-4 { touch-action: none; }
+.holo-4.is-held .holo-stage { animation: none; --tilt: var(--held-tilt); --sway: var(--held-sway); --swayk: 1; --hs: var(--held-hs); transition: none; }
+.holo-4.is-held .h-box { --hh: var(--held-hh); transition: none; }
+.holo-4.is-held::after, .holo-4.is-held .holo-beam { opacity: var(--held-beam); transition: none; } /* the projector goes off as it lies flat */

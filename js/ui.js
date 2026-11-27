@@ -205,6 +205,116 @@ const HATCH_NUM = Object.fromEntries(HATCHES.map((h, i) => [h, i + 1]));
 const NUM_POS = { 'C-B': [126, 31], 'B-K': [206, 93], 'N-K': [126, 127], 'M-K': [254, 127], 'L-K': [206, 189] };
 export const hatchLegend = () => `<ol class="hatch-legend">${HATCHES.map((h) => `<li><b>${HATCH_NUM[h]}</b> ${HATCH_NAME[h]}</li>`).join('')}</ol>`;
 
+// ---------- the station plan of the group's map (proposal, mocks only until one is chosen) ----------
+// 2026-11-27: «la mappa va aggiornata per riflettere questa», with the group's STATION MAP, sent in the chat
+// (not in the repository: it is the group's work).
+// The same six places and five hatches as today; the drawing follows the group's map: rooms with cut corners, the
+// Corridor as a cross, the Cargo Bay beside the Bridge, the hatches as bars on the walls. Coordinates are the pixels of
+// that picture (1771 × 1246); planGeo() scales them into a box 360 wide.
+//   detail.plan 'a': the plan alone; 'b': with the hull and the two solar arrays of the picture (chosen 2026-11-27:
+//   «usiamo con scafo e pennelli»). No motion sensor squares: without the legend nothing said what they were, and the
+//   readout under the map names the sensor of the place tapped (2026-11-27, asked what the squares were: «sì togliamo»).
+const oct = (x1, y1, x2, y2, k = 38) => [[x1 + k, y1], [x2 - k, y1], [x2, y1 + k], [x2, y2 - k], [x2 - k, y2], [x1 + k, y2], [x1, y2 - k], [x1, y1 + k]];
+const PLAN_ROOMS = {
+  C: oct(335, 295, 650, 430), B: oct(678, 208, 1138, 430), N: oct(180, 507, 638, 727),
+  M: oct(1197, 507, 1657, 727), L: oct(678, 803, 1138, 1023),
+  K: [[880, 432], [935, 432], [960, 458], [960, 535], [990, 565], [1165, 565], [1195, 592], [1195, 643], [1165, 670], [990, 670],
+    [960, 700], [960, 775], [935, 800], [880, 800], [855, 775], [855, 700], [830, 670], [670, 670], [640, 643], [640, 592],
+    [670, 565], [830, 565], [855, 535], [855, 458]],
+};
+// hatch: centre and the direction of the wall it sits on
+const PLAN_HATCH = { 'C-B': [678, 362, 'v'], 'B-K': [907, 432, 'h'], 'N-K': [638, 618, 'v'], 'M-K': [1197, 618, 'v'], 'L-K': [907, 802, 'h'] };
+const PLAN_HULL = [[360, 265], [565, 265], [597, 253], [680, 172], [710, 160], [1075, 160], [1105, 172], [1190, 253], [1203, 285],
+  [1203, 455], [1220, 472], [1610, 472], [1640, 485], [1695, 537], [1707, 567], [1707, 673], [1695, 703], [1640, 755], [1610, 768],
+  [1220, 768], [1203, 785], [1203, 958], [1190, 988], [1105, 1068], [1075, 1080], [710, 1080], [680, 1068], [597, 987], [565, 975],
+  [360, 975], [330, 960], [120, 705], [110, 675], [110, 565], [120, 535], [330, 280]];
+// the solar arrays: the mast, its mount on the hull, two columns of four panels
+const PLAN_ARRAYS = [
+  { mast: [1427, 240, 470], mount: [1400, 385, 1455, 472, 'up'], bars: [245, 337], cols: [[1265, 1415], [1440, 1588]], rows: [[205, 243], [248, 287], [297, 335], [340, 378]] },
+  { mast: [1432, 768, 1000], mount: [1405, 768, 1460, 858, 'down'], bars: [902, 995], cols: [[1270, 1418], [1445, 1592]], rows: [[860, 898], [903, 941], [952, 990], [995, 1033]] },
+];
+const PLAN_BOX = { a: [168, 196, 1669, 1035], b: [100, 150, 1717, 1090] };
+function planGeo(plan) {
+  const [x0, y0, x1, y1] = PLAN_BOX[plan] || PLAN_BOX.a;
+  const s = 360 / (x1 - x0);
+  const P = ([x, y]) => [+((x - x0) * s).toFixed(1), +((y - y0) * s).toFixed(1)];
+  return { s, P, H: Math.round((y1 - y0) * s), pts: (ps) => ps.map((p) => P(p).join(',')).join(' ') };
+}
+const bboxOf = (ps) => { const xs = ps.map((p) => p[0]), ys = ps.map((p) => p[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)]; };
+
+function planSvgParts(sel, { tap, plan, withHull }) {
+  const g = planGeo(plan);
+  const room = (m) => {
+    const ps = PLAN_ROOMS[m].map(g.P);
+    const [x1, y1, x2, y2] = bboxOf(ps);
+    const off = m === 'L';
+    const t = tap('room', m, MOD_NAME[m]);
+    const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+    return `<g class="room ${off ? 'is-off' : ''} ${sel === m ? 'is-sel' : ''} ${t === 'class-dim' ? 'is-dim' : ''}" ${t === 'class-dim' ? '' : t}>
+      <polygon points="${ps.map((p) => p.join(',')).join(' ')}" class="shape"/>
+      <text x="${cx}" y="${cy + 4}" class="room-name" text-anchor="middle">${MOD_NAME[m].toUpperCase()}</text>
+      ${off ? `<text x="${cx}" y="${cy + 16}" class="room-off" text-anchor="middle">SENSORS OFFLINE</text>` : ''}
+    </g>`;
+  };
+  const hatch = (h) => {
+    const [x, y] = g.P(PLAN_HATCH[h]);
+    const o = PLAN_HATCH[h][2];
+    const off = h === 'L-K';
+    const w = o === 'h' ? 14 : 5, hh = o === 'h' ? 5 : 14;
+    // the touch area: long along the wall, shallow into the two rooms, so a tap near a room's edge stays the room's
+    // (the rooms are wide and shallow: a hatch on a side wall can reach further into them than one on a floor wall)
+    const hw = o === 'h' ? 36 : 28, hd = o === 'h' ? 24 : 36;
+    const t = tap('hatch', h, `${HATCH_NAME[h]} hatch`);
+    return `<g class="hatch hatch-bar ${off ? 'is-off' : ''} ${sel === h ? 'is-sel' : ''} ${t === 'class-dim' ? 'is-dim' : ''}" ${t === 'class-dim' ? '' : t}>
+      <rect x="${x - w / 2}" y="${y - hh / 2}" width="${w}" height="${hh}" rx="1"/>
+      <rect x="${x - hw / 2}" y="${y - hd / 2}" width="${hw}" height="${hd}" class="hit"/>
+    </g>`;
+  };
+  // the Cargo Bay reaches the Bridge through a short neck
+  const [nx1, ny] = g.P([650, 362]), [nx2] = g.P([678, 362]);
+  const neck = `<line x1="${nx1}" y1="${ny}" x2="${nx2}" y2="${ny}" class="conn plan-neck"/>`;
+  let hull = '';
+  if (withHull) {
+    const arr = (a) => {
+      const [mx, mt, mb] = a.mast;
+      const [p1, p2] = [g.P([mx, mt]), g.P([mx, mb])];
+      const [qx1, qy1] = g.P([a.mount[0], a.mount[1]]), [qx2, qy2] = g.P([a.mount[2], a.mount[3]]);
+      const r = (qx2 - qx1) / 2;
+      const mount = a.mount[4] === 'up'
+        ? `M${qx1},${qy2} V${qy1 + r} A${r},${r} 0 0 1 ${qx2},${qy1 + r} V${qy2} Z`
+        : `M${qx1},${qy1} V${qy2 - r} A${r},${r} 0 0 0 ${qx2},${qy2 - r} V${qy1} Z`;
+      const panels = a.cols.flatMap(([cx1, cx2]) => a.rows.map(([ry1, ry2]) => {
+        const [ax, ay] = g.P([cx1, ry1]), [bx, by] = g.P([cx2, ry2]);
+        const cells = Array.from({ length: 7 }, (_, i) => ax + ((bx - ax) * (i + 1)) / 8)
+          .map((lx) => `<line x1="${lx.toFixed(1)}" y1="${ay}" x2="${lx.toFixed(1)}" y2="${by}" class="p-cell"/>`).join('');
+        return `<rect x="${ax}" y="${ay}" width="${(bx - ax).toFixed(1)}" height="${(by - ay).toFixed(1)}" class="p-panel"/>${cells}`;
+      })).join('');
+      const bars = a.bars.map((y) => { const [b1x, b1y] = g.P([mx - 15, y]), [b2x] = g.P([mx + 15, y]); return `<line x1="${b1x}" y1="${b1y}" x2="${b2x}" y2="${b1y}" class="p-mast"/>`; }).join('');
+      return `<line x1="${p1[0]}" y1="${p1[1]}" x2="${p2[0]}" y2="${p2[1]}" class="p-mast"/>${bars}<path d="${mount}" class="p-mount"/>${panels}`;
+    };
+    hull = `<g class="plan-hull" aria-hidden="true"><polygon points="${g.pts(PLAN_HULL)}" class="p-hull"/>${PLAN_ARRAYS.map(arr).join('')}</g>`;
+  }
+  return { g, body: `${hull}${neck}${['C', 'B', 'N', 'K', 'M', 'L'].map(room).join('')}${HATCHES.map(hatch).join('')}` };
+}
+
+// the hologram's walls for a room of the plan: one wall per side of its outline, and the outline again on top
+function planBox(m, sel, g, pc) {
+  const ps = PLAN_ROOMS[m].map(g.P);
+  const [x1, y1, x2, y2] = bboxOf(ps);
+  const bw = x2 - x1, bh = y2 - y1;
+  const walls = ps.map((p, i) => {
+    const q = ps[(i + 1) % ps.length];
+    const len = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    const ang = (Math.atan2(q[1] - p[1], q[0] - p[0]) * 180) / Math.PI;
+    return `<i class="h-w h-edge" style="left:${pc(p[0] - x1, bw)};top:${pc(p[1] - y1, bh)};width:${pc(len, bw)};transform:rotateZ(${ang.toFixed(2)}deg) rotateX(90deg)"></i>`;
+  }).join('');
+  const top = `<svg class="h-top h-top-poly" viewBox="0 0 ${bw.toFixed(1)} ${bh.toFixed(1)}" preserveAspectRatio="none"><polygon points="${ps.map((p) => `${(p[0] - x1).toFixed(1)},${(p[1] - y1).toFixed(1)}`).join(' ')}"/></svg>`;
+  return `<div class="h-box h-plan ${m === 'L' ? 'is-off' : ''} ${sel === m ? 'is-sel' : ''}" style="left:${pc(x1, 360)};top:${pc(y1, g.H)};width:${pc(bw, 360)};height:${pc(bh, g.H)}">
+    ${walls}${top}
+    <b class="h-label">${esc(MOD_NAME[m].toUpperCase())}${m === 'L' ? '<small>SENSORS OFFLINE</small>' : ''}</b>
+  </div>`;
+}
+
 // opts.act: action of a tap; opts.only: 'hatch' or 'room' keeps only those tappable (the others are dimmed)
 // opts.detail: { interior, numbers, holo: 1 | 2 | 3 } (holo: hologram proposals, mocks only until one is chosen)
 //   1 tilted hologram, 2 + walls in layers, 3 + projector beam and a slow sway
@@ -245,7 +355,10 @@ export function mapSvg(sel, { act = 'map-sel', only = null, cls = '', detail = {
   const hull = detail.interior ? '<rect x="4" y="6" width="352" height="258" class="d-hull"/>' : '';
   const deco = detail.interior ? `<g class="deco">${Object.values(DECO).join('')}</g>` : '';
   const nums = detail.numbers ? `<g class="nums">${HATCHES.map((h) => { const [x, y] = NUM_POS[h]; return `<rect x="${x - 6}" y="${y - 6}" width="12" height="12" class="n-box"/><text x="${x}" y="${y + 3}" class="n-txt">${HATCH_NUM[h]}</text>`; }).join('')}</g>` : '';
-  const svg = `<svg class="map ${cls} ${detail.interior ? 'map-interior' : ''}" viewBox="0 0 360 270" shape-rendering="crispEdges">
+  const plan = detail.plan ? planSvgParts(sel, { tap, plan: detail.plan, withHull: detail.plan === 'b' }) : null;
+  const svg = plan
+    ? `<svg class="map map-plan ${cls}" viewBox="0 0 360 ${plan.g.H}">${plan.body}</svg>`
+    : `<svg class="map ${cls} ${detail.interior ? 'map-interior' : ''}" viewBox="0 0 360 270" shape-rendering="crispEdges">
     ${hull}
     ${conn(112, 45, 140, 45)}${conn(190, 76, 190, 110)}${conn(112, 141, 140, 141)}${conn(240, 141, 268, 141)}${conn(190, 172, 190, 206)}
     ${['C', 'B', 'N', 'K', 'M', 'L'].map(room).join('')}
@@ -268,8 +381,8 @@ export function mapSvg(sel, { act = 'map-sel', only = null, cls = '', detail = {
       </div>`;
     };
     // detail.noproj: the same model without the ring and the beam of the projector (inside NOVA's conversation)
-    return `<div class="holo holo-3 holo-x holo-${detail.holo} ${detail.noproj ? 'holo-noproj' : ''}">
-      <div class="holo-stage">${svg}<div class="h-boxes" aria-hidden="true">${['C', 'B', 'N', 'K', 'M', 'L'].map(box).join('')}</div></div>
+    return `<div class="holo holo-3 holo-x holo-${detail.holo} ${detail.noproj ? 'holo-noproj' : ''} ${plan ? `holo-plan holo-plan-${detail.plan}` : ''}">
+      <div class="holo-stage">${svg}<div class="h-boxes" aria-hidden="true">${['C', 'B', 'N', 'K', 'M', 'L'].map((m) => (plan ? planBox(m, sel, plan.g, pc) : box(m))).join('')}</div></div>
       ${detail.noproj ? '' : '<div class="holo-beam" aria-hidden="true"></div>'}
       <div class="holo-scan" aria-hidden="true"></div>
     </div>`;

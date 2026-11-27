@@ -91,6 +91,11 @@
     .mock-live iframe { display: block; width: 1280px; height: 800px; border: 0; transform: scale(0.65); transform-origin: top left; }
     .mock-live.is-phone { width: 390px; height: 780px; }
     .mock-live.is-phone iframe { width: 390px; height: 780px; transform: none; }
+    /* a finger drawn over a frame that plays itself (board "maptouch") */
+    .mock-live { position: relative; }
+    .finger { position: absolute; left: 0; top: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%; background: rgba(242, 184, 75, 0.35); border: 2px solid var(--amber); pointer-events: none; opacity: 0; transition: opacity 0.15s; }
+    .finger.is-down { opacity: 1; }
+    .step-note { min-height: 1.4em; margin: 6px 0 0; font: 500 12px var(--font-mono); color: var(--amber); }
     .replay { margin-top: 6px; font: 600 12px var(--font-mono); background: var(--amber); color: var(--deep); border: 0; padding: 5px 10px; cursor: pointer; }
     .mock-card { padding-top: 8px; }
     .mock-cardscreen .modal { position: static; background: none; padding: 16px 0 0; display: block; }

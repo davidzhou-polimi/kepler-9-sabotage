@@ -80,7 +80,7 @@ function view() {
     shell: 'deck', deck: 'retro', fx: ['crt'], deckBar: 'leds', ledStyle: 'b',
     flow: 'live', flowHome: true, // (the endings keep their own screens; the bar keeps the same keys, dark)
     stage: state.phase === 'play' ? state.stage : -1,
-    reportStyle: 'crewwin', askUi: 'thread', mapDetail: { holo: 4, info: 'fields' },
+    reportStyle: 'crewwin', askUi: 'thread', mapDetail: { holo: 4, info: 'fields', plan: PLAN },
     quitOpen: state.quitOpen,
     saved: state.resume ? { code: state.code, phase: state.resume, remainingMs: remaining() } : null,
     ack: PACE.ack ? { hold: Boolean(state.hold) } : null,
@@ -93,6 +93,9 @@ function view() {
 //                   fades away (coerentemente con uno schermo)»)
 //   ?out=fade|glow|scan  how it leaves when the transmission is accepted (CSS: .home-title.is-leaving.to-…)
 //   ?btnin=a|b|c    how a button comes (board "btnin"; CSS: .btnin-… .btn-in)
+// The station plan of the group's map with the hull and the solar arrays (board "mapplan", chosen 2026-11-27);
+// ?plan=a plays the plan alone, as it was shown on the board.
+const PLAN = params.get('plan') === 'a' ? 'a' : 'b';
 const HOME_TITLE = ['one', 'two'].includes(params.get('title')) ? params.get('title') : null;
 const TITLE_OUT = params.get('out') || 'fade';
 if (['a', 'b', 'c'].includes(params.get('btnin'))) document.body.classList.add(`btnin-${params.get('btnin')}`);
@@ -126,7 +129,7 @@ function render() {
   const titleBox = title0?.getBoundingClientRect();
   startClock();
   // the model sways on the page's clock, not from the moment it was drawn: drawing it again leaves it where it was
-  root.style.setProperty('--holo-t', `${-Math.round(performance.now() % 10000)}ms`);
+  root.style.setProperty('--holo-t', `${-Math.round((((performance.now() + swayShift) % 10000) + 10000) % 10000)}ms`);
   root.innerHTML = screen(view());
   layFlat(); // (before anything reads the layout, so the new model is flat from its first frame and does not tip over)
   document.body.classList.toggle('emergency', isRed());
@@ -258,14 +261,124 @@ function glide(before) {
 // every tap, so which model is flat is kept here and given to the new one before it is first painted.
 let flatHolo = null; // 'map' (the one in its window) or 'pick' (the one NOVA shows for a question)
 const holoKey = (h) => (h.closest('.win-map') ? 'map' : 'pick');
-function layFlat() { root.querySelectorAll('.holo').forEach((h) => h.classList.toggle('is-flat', holoKey(h) === flatHolo)); }
+function layFlat() {
+  root.querySelectorAll('.holo').forEach((h) => {
+    h.classList.toggle('is-flat', holoKey(h) === flatHolo);
+    holdModel(h); // (the model a finger is turning keeps its position when the screen is drawn again)
+  });
+}
 root.addEventListener('pointerover', (e) => {
-  if (e.pointerType !== 'mouse') return;
+  // (after a finger, the browser may report a mouse over whatever is drawn again under its last place: only a mouse
+  // that really moves takes the model back)
+  if (e.pointerType !== 'mouse' || SIM || fingerDown) return;
   const h = e.target.closest?.('.holo');
   const key = h ? holoKey(h) : null;
   if (key !== flatHolo) { flatHolo = key; layFlat(); }
 });
-root.addEventListener('pointerleave', () => { if (flatHolo) { flatHolo = null; layFlat(); } });
+// (only the mouse: a finger also "leaves" the page each time it is lifted)
+root.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && !SIM && flatHolo) { flatHolo = null; layFlat(); } });
+
+// ---------- the station model under a finger (board "maptouch") ----------
+
+// 2026-11-27, on a phone the places of the new plan are small targets: «sul telefono, non possiamo che quando focus
+// sulla mappa la appiattisce? o lo rendiamo interattivo quindi se swipo con dito si gira la mappa come voglio, non ha
+// senso andare sotto alla mappa né dietro, quindi con lo swipe il movimento è limitato a quello che già farebbe. poi
+// quando dopo qualche secondo che non si tocca la mappa, torna a girare come suo consueto»
+// Chosen 2026-11-27, the first tap: the first tap on the swaying model lays it flat and selects nothing, the next taps
+// select, and REST_MS after the last touch on it the model goes back to swaying («teniamo quella con tocco dai»; just
+// before, the swipe: «i think interactive is better, and you can move with the finger, but movement is limited to how
+// the map usually swings»). Kept for the record of the board:
+//   ?touch=swipe  a finger dragged on the model turns it: up and down between flat and its usual tilt, sideways within
+//                 its sway; a tap still selects; at rest it goes on swaying from where it was left
+//   ?touch=off    the model as it was before: a finger only taps
+//   ?sim=1        the mouse acts as a finger (the board plays them in a frame on a laptop)
+const TOUCH = params.get('touch') === 'off' ? null : params.get('touch') === 'swipe' ? 'swipe' : 'flat';
+const SIM = params.get('sim') === '1';
+if (TOUCH) document.body.classList.add(`touch-${TOUCH}`);
+const REST_MS = 4000;
+const TILT = 50, SWAY = 5; // the model's usual tilt and the reach of its sway (CSS: .holo-4, holo-sway-p)
+const isFinger = (e) => e.pointerType === 'touch' || e.pointerType === 'pen' || (SIM && e.pointerType === 'mouse');
+let restTimer = 0;
+const restLater = (fn) => { clearTimeout(restTimer); restTimer = setTimeout(fn, REST_MS); };
+let fingerDown = false; // the click that follows comes from a finger
+let swallow = false; // the click that ends a swipe selects nothing
+let held = null; // { key, tilt, sway }: the model a finger has turned, until it rests
+let drag = null;
+
+function holdModel(h) {
+  const on = Boolean(held && holoKey(h) === held.key);
+  h.classList.toggle('is-held', on);
+  if (!on) return;
+  h.style.setProperty('--held-tilt', `${held.tilt}deg`);
+  h.style.setProperty('--held-sway', `${held.sway}deg`);
+  h.style.setProperty('--held-hs', String(1 - 0.14 * (1 - held.tilt / TILT))); // as small as the flat model when flat
+  h.style.setProperty('--held-hh', `${(26 * held.tilt) / TILT}px`); // the walls go down as it lies flat
+  h.style.setProperty('--held-beam', String(held.tilt / TILT));
+}
+// The sway is ease-in-out from -SWAY to +SWAY in 5 s and back: the moment of the 10 s cycle where it is at `deg`,
+// on the way up, so that a model let go goes on swaying from where the finger left it.
+function swayPhaseMs(deg) {
+  const bez = (a, b, s) => 3 * a * s * (1 - s) ** 2 + 3 * b * s * s * (1 - s) + s ** 3;
+  const ease = (x) => { let lo = 0, hi = 1; for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (bez(0.42, 0.58, m) < x) lo = m; else hi = m; } return bez(0, 1, lo); };
+  const want = (deg + SWAY) / (2 * SWAY);
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (ease(m) < want) lo = m; else hi = m; }
+  return lo * 5000;
+}
+let swayShift = 0; // added to the page's clock for the sway (render(): --holo-t)
+function letGo() {
+  if (!held) return;
+  swayShift = swayPhaseMs(held.sway) - (performance.now() % 10000);
+  held = null;
+  root.style.setProperty('--holo-t', `${-Math.round((((performance.now() + swayShift) % 10000) + 10000) % 10000)}ms`);
+  layFlat();
+}
+
+root.addEventListener('pointerdown', (e) => {
+  fingerDown = isFinger(e);
+  const h = e.target.closest?.('.holo');
+  if (!TOUCH || !fingerDown || !h) return;
+  if (TOUCH === 'flat') { if (flatHolo === holoKey(h)) restLater(() => { flatHolo = null; layFlat(); }); return; }
+  const stage = h.querySelector('.holo-stage');
+  const cs = getComputedStyle(stage);
+  const from = held && held.key === holoKey(h) ? held : { tilt: parseFloat(cs.getPropertyValue('--tilt')) || TILT, sway: parseFloat(cs.getPropertyValue('--sway')) || 0 };
+  drag = { key: holoKey(h), x: e.clientX, y: e.clientY, tilt: from.tilt, sway: from.sway, moved: false, id: e.pointerId };
+  clearTimeout(restTimer);
+}, true);
+root.addEventListener('pointermove', (e) => {
+  if (e.pointerType === 'mouse' && !SIM && (e.movementX || e.movementY)) fingerDown = false;
+  if (!drag || e.pointerId !== drag.id) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!drag.moved && Math.hypot(dx, dy) < 8) return; // a tap, not a swipe
+  drag.moved = true;
+  // down pulls the far edge towards you, as on a sheet lying on a table: 120 px from tilted to flat; 150 px sideways
+  // cover the whole sway
+  held = {
+    key: drag.key,
+    tilt: Math.min(TILT, Math.max(0, drag.tilt - (dy * TILT) / 120)),
+    sway: Math.min(SWAY, Math.max(-SWAY, drag.sway + (dx * 2 * SWAY) / 150)),
+  };
+  root.querySelectorAll('.holo').forEach(holdModel);
+}, true);
+const endDrag = (e) => {
+  if (!drag || e.pointerId !== drag.id) return;
+  swallow = drag.moved;
+  drag = null;
+  restLater(letGo);
+};
+root.addEventListener('pointerup', endDrag, true);
+root.addEventListener('pointercancel', endDrag, true);
+root.addEventListener('click', (e) => {
+  if (!TOUCH || !fingerDown) return;
+  const h = e.target.closest?.('.holo');
+  if (TOUCH === 'swipe') {
+    if (swallow) { swallow = false; e.stopImmediatePropagation(); e.preventDefault(); }
+    return;
+  }
+  if (!h) return;
+  if (!h.classList.contains('is-flat')) { e.stopImmediatePropagation(); e.preventDefault(); flatHolo = holoKey(h); layFlat(); }
+  restLater(() => { flatHolo = null; layFlat(); });
+}, true);
 
 // ---------- NOVA writes ----------
 

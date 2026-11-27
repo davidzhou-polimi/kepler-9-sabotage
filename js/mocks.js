@@ -892,6 +892,64 @@ const REPHEAD = {
   ],
 };
 
+// ---------- 2026-11-27: the station map of the group ----------
+
+const planDetail = (plan) => ({ holo: 4, info: 'fields', ...(plan ? { plan } : {}) });
+const flat = (html) => html.replace(/class="holo holo-3 holo-x holo-4 /g, 'class="holo holo-3 holo-x holo-4 is-flat ');
+const planFrames = (plan) => [
+  cap('Laptop: la mappa arriva, Life Support selezionata', laptop(fbView({ mapSel: 'L' }, { mapDetail: planDetail(plan) }), { cls: BASE, big: true })),
+  cap('Laptop: il mouse sulla mappa, il modello si stende', flat(laptop(fbView({ mapSel: 'M-K' }, { mapDetail: planDetail(plan) }), { cls: BASE, big: true }))),
+  cap('Telefono: canale MAP, toccato un portello', phone(fbView({ tab: 'map', mapSel: 'M-K' }, { mapDetail: planDetail(plan) }), { cls: BASE })),
+  cap('Telefono: NOVA chiede il luogo', phone(fbView({ tab: 'ask', draft: { kind: 'hatch', what: null, a: 40, b: 50 }, askStep: 1 }, { mapDetail: planDetail(plan) }), { cls: BASE, scroll: 'bottom' })),
+];
+const MAPPLAN = {
+  id: 'mapplan', title: 'La mappa della stazione come quella del gruppo', decided: 'B, con lo scafo e i pannelli solari', chosen: 'b',
+  answer: 'B · Con lo scafo e i pannelli solari > sì togliamo, usiamo con scafo e pennelli',
+  quote: '«la mappa va aggiornata per riflettere questa» (con la STATION MAP del gruppo)',
+  context: `Ho messo la mappa del gruppo accanto alla nostra: i posti sono gli stessi sei e i portelli gli stessi cinque, nello stesso ordine (Cargo Bay in alto a sinistra attaccata al Bridge, Engine Room a sinistra, Medbay a destra, Life Support in basso, il corridoio al centro). Cambia il disegno, e qui lo porto com'è: stanze con gli angoli tagliati e nelle proporzioni della loro mappa (il Bridge più grande della Cargo Bay, Engine Room e Medbay larghe), il corridoio a croce, la Cargo Bay collegata al lato sinistro del Bridge da un passaggio corto, i portelli come barre ambra sulle pareti, i colori già loro (ciano le stanze, ambra i portelli). Resta tutto quello che è deciso: l'ologramma con le pareti di luce che seguono il contorno, i nomi dritti, Life Support rossa con SENSORS OFFLINE, il sensore in ogni stanza, il modello che si stende sotto il mouse, la lettura a campi sotto. Non porto la legenda (2026-11-25: «è poco realistico avere la legenda sulla mappa di mission control»), la bussola, la Terra e i quadratini: sono del foglio, non del modello. Il corridoio nella loro mappa non ha nome e in legenda è «Locked area»; qui resta CORRIDOR e si tocca, perché nel caso ha un sensore di movimento e ogni portello dà lì. Dopo la scelta, con le tue parole: via i quadrati dei sensori di movimento in ogni stanza (alla domanda su cosa fossero: «sì togliamo»); e l'area da toccare di un portello è lunga lungo la parete e corta verso le stanze, perché un tocco vicino al bordo di una stanza resti della stanza (provato nel gioco su ogni portello e ogni stanza, al mouse e al tocco).`,
+  dirs: [
+    { key: 'now', title: 'Oggi · La pianta a riquadri', note: '<p>Per confronto.</p>', frames: planFrames(null).slice(0, 2) },
+    {
+      key: 'a', title: 'A · La pianta del gruppo, da sola',
+      note: `<p>Solo le stanze, il corridoio e i portelli, inquadrati stretti: il modello occupa tutta la larghezza della finestra.</p>
+        <p>Costo: senza lo scafo e i pannelli assomiglia alla loro mappa per le stanze, ma non per la sagoma della stazione.</p>`,
+      frames: planFrames('a'),
+    },
+    {
+      key: 'b', title: 'B · Con lo scafo e i pannelli solari', rec: true,
+      note: `<p>In più lo scafo in ambra attorno alle stanze e i due pannelli solari a destra, sopra e sotto la Medbay, stesi a terra come la pianta: non si alzano e non si toccano.</p>
+        <p>Perché: è la sagoma che i giocatori hanno sul foglio, e la riconoscono a colpo d'occhio sulla console. Costo: per farci stare i pannelli le stanze sono un po' più piccole (circa il 7% rispetto ad A), e sul telefono i nomi della Cargo Bay e del Bridge stanno più vicini.</p>`,
+      frames: planFrames('b'),
+    },
+  ],
+};
+
+// ---------- 2026-11-27: the station model under a finger, on a phone ----------
+
+// the console itself in a phone frame (?demo=1 leaves no trace; ?sim=1: the mouse acts as a finger, to try it by hand)
+const touchFrame = (touch, label) => cap(label, `<div class="mock-live is-phone"><iframe src="./?demo=1&amp;auto=1&amp;touch=${touch || 'off'}${touch ? '&amp;sim=1' : ''}" loading="lazy" title="${label}"></iframe><i class="finger"></i></div><p class="step-note" aria-live="polite"></p><button type="button" class="replay" data-replay="touch" data-touch="${touch || 'now'}">Guarda</button>`);
+const MAPTOUCH = {
+  id: 'maptouch', title: 'Sul telefono: la mappa sotto il dito', decided: 'A, al primo tocco la mappa si stende', chosen: 'flat',
+  answer: 'A · Al primo tocco la mappa si stende > teniamo quella con tocco dai (prima: B · i think interactive is better, and you can move with the finger, but movement is limited to how the map usually swings)',
+  quote: '«sul telefono, non possiamo che quando focus sulla mappa la appiattisce? o lo rendiamo interattivo quindi se swipo con dito si gira la mappa come voglio, non ha senso andare sotto alla mappa né dietro, quindi con lo swipe il movimento è limitato a quello che già farebbe. poi quando dopo qualche secondo che non si tocca la mappa, torna a girare come suo consueto»',
+  context: `Le tue due idee, ognuna giocata dalla console vera in un telefono. «Guarda» la fa andare da sola: un cerchio ambra segna dove tocca il dito e sotto il riquadro c'è scritto cosa sta facendo. Con il mouse puoi anche provarle a mano: il clic vale come un tocco, il trascinamento come uno swipe. Il problema da cui partono: con la pianta nuova, sul telefono, il modello inclinato è basso e i portelli si vedono di pochi pixel; un tocco 9 px sopra o sotto il punto prende il posto accanto. In tutte e due, come chiedi, dopo 4 secondi senza toccare la mappa torna a girare come sempre. Sul laptop non cambia niente: sotto il mouse si stende come oggi. La mia posizione: A, perché risolve per tutti il problema da cui siamo partiti, senza che nessuno debba scoprire un gesto; la B è più viva, ma chi non sa di poterla stendere tocca ancora bersagli piccoli.`,
+  dirs: [
+    { key: 'now', title: 'Oggi · Il tocco seleziona sul modello inclinato', note: '<p>Per confronto.</p>', frames: [touchFrame(null, 'Telefono, canale MAP')] },
+    {
+      key: 'flat', title: 'A · Al primo tocco la mappa si stende', rec: true,
+      note: `<p>Il primo tocco sul modello che gira lo stende, visto dall'alto come sul laptop sotto il mouse, e non seleziona niente; i tocchi dopo selezionano. Vale anche per la mappa che NOVA mostra quando prepari una domanda.</p>
+        <p>Costo: ogni volta che la mappa è tornata a girare serve un tocco in più, anche a ogni domanda; e il primo tocco, se cadeva già su un portello, non lo prende.</p>`,
+      frames: [touchFrame('flat', 'Telefono, canale MAP')],
+    },
+    {
+      key: 'swipe', title: 'B · Con il dito si gira la mappa',
+      note: `<p>Trascinando il dito sulla mappa, su e giù la inclini tra stesa (vista dall'alto) e l'inclinazione di sempre, mai di più: né sotto né dietro. Di lato la giri quanto oscilla già da sola, 5 gradi per parte. Un tocco senza trascinare seleziona come oggi. Quando la lasci, dopo 4 secondi riprende a oscillare da dove l'hai lasciata.</p>
+        <p>Costo: 5 gradi di lato sono pochi e si vedono appena; se ne vuoi di più dimmi quanto. Nella conversazione con NOVA la mappa sta dentro un testo che scorre: un dito che parte dalla mappa la gira invece di far scorrere la conversazione. E chi non scopre il gesto tocca ancora i bersagli piccoli del modello inclinato.</p>`,
+      frames: [touchFrame('swipe', 'Telefono, canale MAP')],
+    },
+  ],
+};
+
 // ---------- after the feedback of 2026-11-25, second set: NOVA's pace, a case left open, the archive, the text font ----------
 
 // the game itself, in a frame, with one pace (?pace=) and leaving no trace (?demo=1)
@@ -1688,7 +1746,7 @@ const fontsBoard = `
 const STORY = [LIVE];
 const OPEN = [INBOX, HOMETITLE, TITLEOUT2, PACE, BTNIN, CODEFLOW, CASEFILE];
 const NOTES = [BTN2, MAPTEXT, PORTRAITS];
-const DECIDED = [ENDTITLE, RESUME, TEXTFONT, TITLEOUT, CODEPLACE, ARCHIVE, MAPFIT, REPHEAD, REPCOL, PIXELDECK, SCROLLEDGE, WINFX, REPCLOSED, LIVELEFT, BARLED, ASKTERM2, MAPINFO, HOME2, ASKTERM, REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
+const DECIDED = [MAPTOUCH, MAPPLAN, ENDTITLE, RESUME, TEXTFONT, TITLEOUT, CODEPLACE, ARCHIVE, MAPFIT, REPHEAD, REPCOL, PIXELDECK, SCROLLEDGE, WINFX, REPCLOSED, LIVELEFT, BARLED, ASKTERM2, MAPINFO, HOME2, ASKTERM, REPORTS3, BAR, TIME10, WINDOWS2, TIMEWIN, HOLO2, CONSOLE4, WINDOWS, REPORTS2, TIMEUI, CONSOLE3, CALLS, CONSOLE2, CONSOLE2_FX, CONSOLE_BG, CONSOLE_FX, HOLO, HOME, MAPD, BRIEF, BUTTONS, MAPQ, RESET, REPORTS, CRITICAL];
 const root = document.getElementById('mocks');
 root.innerHTML = `
   <div class="mock-head">
@@ -1709,6 +1767,7 @@ root.innerHTML = `
 root.addEventListener('click', (e) => {
   const b = e.target.closest('[data-replay]');
   if (!b) return;
+  if (b.dataset.replay === 'touch') { playTouch(b); return; }
   // a frame that plays the game itself starts again from NOVA's request
   // (a frame of the board "pace" plays the whole briefing, without a tap inside it)
   if (b.dataset.replay === 'live') { const f = b.closest('.mock-fig').querySelector('iframe'); f.src = `${f.dataset.play || f.getAttribute('src')}&r=${Date.now()}`; b.textContent = f.dataset.play ? 'Ricomincia il briefing' : b.textContent; return; }
@@ -1768,6 +1827,85 @@ root.addEventListener('click', (e) => {
   if (b.dataset.replay === 'boot') { cs.classList.remove('fx-boot'); void cs.offsetWidth; cs.classList.add('fx-boot'); }
   if (b.dataset.replay === 'static') { cs.classList.remove('cs-switching'); void cs.offsetWidth; cs.classList.add('cs-switching'); setTimeout(() => cs.classList.remove('cs-switching'), 400); }
 });
+// The board "maptouch": a finger plays the console in a phone frame. The events are a finger's (pointerType touch),
+// so the game answers as it would on a phone; the amber circle shows where it touches.
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+async function playTouch(b) {
+  const fig = b.closest('.mock-fig');
+  if (fig.dataset.busy) return;
+  fig.dataset.busy = '1';
+  b.disabled = true;
+  const frame = fig.querySelector('iframe');
+  const dot = fig.querySelector('.finger');
+  const say = (s) => { fig.querySelector('.step-note').textContent = s; };
+  const win = frame.contentWindow;
+  const doc = frame.contentDocument;
+  try {
+    say('Apro il canale MAP');
+    for (let i = 0; i < 40 && !doc.querySelector('.win-term'); i++) await wait(150);
+    doc.querySelector('.win-term .win-body')?.click(); // the rest of the briefing at once
+    await wait(700);
+    [...doc.querySelectorAll('[data-act]')].find((k) => /^MAP$/.test(k.textContent.trim()))?.click();
+    await wait(900);
+    const at = (id) => {
+      const m = doc.querySelector(`.win-map .holo .map [data-id="${id}"]`);
+      const r = (m.querySelector('rect:not(.hit), polygon') || m).getBoundingClientRect();
+      return [r.left + r.width / 2, r.top + r.height / 2];
+    };
+    const fire = (type, x, y, Ctor = win.PointerEvent) => {
+      const el = doc.elementFromPoint(x, y) || doc.body;
+      el.dispatchEvent(new Ctor(type, { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, pointerId: 9, pointerType: 'touch', isPrimary: true }));
+    };
+    const show = (x, y, down) => { dot.style.left = `${x}px`; dot.style.top = `${y}px`; dot.classList.toggle('is-down', down); };
+    const tap = async (id, note) => {
+      say(note);
+      const [x, y] = at(id);
+      show(x, y, true);
+      fire('pointerdown', x, y);
+      await wait(120);
+      fire('pointerup', x, y);
+      fire('click', x, y, win.MouseEvent);
+      await wait(200);
+      show(x, y, false);
+      await wait(1400);
+    };
+    const swipe = async (id, dx, dy, note) => {
+      say(note);
+      const [x, y] = at(id);
+      show(x, y, true);
+      fire('pointerdown', x, y);
+      for (let k = 1; k <= 24; k++) { await wait(30); show(x + (dx * k) / 24, y + (dy * k) / 24, true); fire('pointermove', x + (dx * k) / 24, y + (dy * k) / 24); }
+      fire('pointerup', x + dx, y + dy);
+      fire('click', x + dx, y + dy, win.MouseEvent);
+      await wait(200);
+      show(x + dx, y + dy, false);
+      await wait(900);
+    };
+    const touch = b.dataset.touch;
+    if (touch === 'now') {
+      await tap('B', 'Tocco il Bridge: si seleziona sul modello inclinato');
+      await tap('M-K', 'Tocco il portello Medbay–Corridor');
+    } else if (touch === 'flat') {
+      await tap('B', 'Primo tocco: la mappa si stende, niente selezionato');
+      await tap('B', 'Secondo tocco: il Bridge si seleziona');
+      await tap('M-K', 'Tocco il portello Medbay–Corridor');
+      say('Non tocco più: tra 4 secondi torna a girare');
+      await wait(5200);
+    } else {
+      await swipe('K', 0, 130, 'Trascino giù: la mappa si stende');
+      await swipe('K', 60, 0, 'Trascino a destra: gira, fino a 5 gradi');
+      await swipe('K', -120, 0, 'Trascino a sinistra');
+      await tap('M-K', 'Un tocco senza trascinare seleziona il portello');
+      await swipe('K', 0, -200, 'Trascino su: torna inclinata, non oltre');
+      say('Non tocco più: tra 4 secondi riprende a oscillare da qui');
+      await wait(5200);
+    }
+    say('');
+  } finally {
+    delete fig.dataset.busy;
+    b.disabled = false;
+  }
+}
 // in the filling console NOVA's channel shows its last line, as a conversation does
 const chatEnd = () => root.querySelectorAll('.screen-live .win-term .win-body').forEach((b) => { b.scrollTop = b.scrollHeight; b.classList.toggle('is-scrolled', b.scrollTop > 2); });
 chatEnd();
