@@ -1,6 +1,6 @@
 // NOVA: game state, events, timer, persistence, developer tools.
-import { generateCase, randomCode, normalizeCode, answer, PEOPLE, HATCH_NAME } from './generator.js';
-import { BRIEFING_PARTS } from './texts.js';
+import { generateCase, randomCode, normalizeCode, answer, checkCode, PEOPLE, HATCH_NAME } from './generator.js';
+import { BRIEFING_PARTS, BRIEFING_DONE, codeFlagText, endingBeats } from './texts.js';
 import { screen, newState, liveSide, fmtClock, MAX_QUESTIONS, OXYGEN_MS, esc } from './ui.js';
 import { initFontSwitch } from './fonts.js';
 import { typeIn } from './typing.js';
@@ -146,13 +146,14 @@ function render() {
   leaveTitle(title0, titleBox);
   speak(quiet);
   typeIn(root);
+  nextBeat();
   if (DEV) renderDev();
   save();
 }
 
 function isRed() {
   if (state.phase === 'play') return remaining() <= 60000;
-  if (state.phase === 'ending') return state.ending !== 'right';
+  if (state.phase === 'ending') return state.ending !== 'right' && state.endBeat !== 1;
   return false;
 }
 
@@ -188,7 +189,7 @@ function arrive(quiet) {
     if (a && now - a.t0 < a.ms) start(now - a.t0); else arrivals.delete(key);
     return 0;
   };
-  const said = state.phase === 'play' && state.stage < 8 ? BRIEFING_PARTS[state.stage] : null; // the line she is writing
+  const said = state.phase === 'play' && state.stage < BRIEFING_DONE ? BRIEFING_PARTS[state.stage] : null; // the line she is writing
   const writing = said && (!speech || speech.key !== `${state.code}:b${state.stage}`) ? lineMs(state.stage) : 0; // (just begun)
   let nth = 0; // the reports that come in this drawing, counted
   live.querySelectorAll('.win').forEach((w) => {
@@ -383,7 +384,7 @@ root.addEventListener('click', (e) => {
 // ---------- NOVA writes ----------
 
 // After the transmission is accepted NOVA writes her briefing one line at a time, and each thing comes onto the
-// console when she names it (state.stage: the line she is on, 8 when she has finished). Her clock is the page's, not
+// console when she names it (state.stage: the line she is on, BRIEFING_DONE when she has finished). Her clock is the page's, not
 // the screen's: she goes on writing while the player looks at another channel on a phone. A tap on her conversation
 // while she writes shows the rest at once, as a tap on her typing always did.
 // Her pace. 'now' is the game: with the pauses, the briefing takes about ten seconds. The others are proposals, played
@@ -419,7 +420,7 @@ function speak(quiet) {
   const term = root.querySelector('.win-term .term');
   const rows = term ? [...term.querySelectorAll(':scope > .tl')] : [];
   const stage = state.stage;
-  if (stage < 8) {
+  if (stage < BRIEFING_DONE) {
     const key = `${state.code}:b${stage}`;
     if (!speech || speech.key !== key) speech = { key, t0: now };
     const into = now - speech.t0;
@@ -517,7 +518,19 @@ function endGame(kind) {
   state.ending = kind;
   state.phase = 'ending';
   state.confirming = false;
+  // a wrong code comes in two beats (update 3): the code carried out, a short pause, then the warning in red.
+  // The second beat waits for the first to be typed (typing.js: 2 letters every 16 ms, 140 ms between lines)
+  const typed = still() ? 0 : endingBeats(kind, state.sentCode)[0].reduce((ms, l) => ms + Math.ceil((l.length + 2) / 2) * 16 + 140, 0);
+  state.endBeat = kind === 'wrong' ? 1 : 2;
+  state.beatAt = Date.now() + typed + END_PAUSE;
   render();
+}
+const END_PAUSE = 1500;
+let beatTimer = 0;
+// (also after a reload during the pause: the second beat comes when it was due)
+function nextBeat() {
+  if (state.phase !== 'ending' || state.endBeat !== 1 || beatTimer) return;
+  beatTimer = setTimeout(() => { beatTimer = 0; if (state.phase === 'ending' && state.endBeat === 1) { state.endBeat = 2; again(); } }, Math.max(0, state.beatAt - Date.now()));
 }
 
 const again = () => { render.keepScroll = true; render(); };
@@ -580,18 +593,28 @@ const ACTIONS = {
     state.askStep = 0;
     again();
   },
-  'send-code': () => { if (/^\d{3}$/.test(state.codeInput)) { state.confirming = true; again(); } },
+  // The console checks the code before it goes on the link, which carries few transmissions (2026-11-27): a report
+  // number or an ID that doesn't exist, or a report not written by that ID, is not sent, and the attempt is not used
+  'send-code': () => {
+    if (!/^\d{3}$/.test(state.codeInput)) return;
+    const r = checkCode(theCase, state.codeInput);
+    state.codeFlag = r.flag ? codeFlagText(r) : null;
+    state.confirming = !r.flag;
+    save(); again();
+  },
   'cancel-code': () => { state.confirming = false; again(); },
   'confirm-code': () => {
+    const r = checkCode(theCase, state.codeInput);
+    if (r.flag) return; // the console sends only a code it has checked (send-code)
     state.sentCode = state.codeInput;
-    endGame(state.codeInput === theCase.emergencyCode ? 'right' : 'wrong');
+    endGame(r.right ? 'right' : 'wrong');
   },
   solution: () => { state.phase = 'solution'; render(); },
 };
 
 // NOVA stops writing and everything she had still to bring is there
 function cutBriefing() {
-  state.stage = 8;
+  state.stage = BRIEFING_DONE;
   state.hold = false;
   render.keepScroll = true;
   render.quiet = true;
@@ -601,7 +624,7 @@ function cutBriefing() {
 root.addEventListener('click', (e) => {
   const el = e.target.closest('[data-act]');
   if (!el || !root.contains(el)) {
-    if (state.phase === 'play' && state.stage < 8 && e.target.closest('.win-term')) cutBriefing();
+    if (state.phase === 'play' && state.stage < BRIEFING_DONE && e.target.closest('.win-term')) cutBriefing();
     return;
   }
   // clicks inside a modal window don't close it, except on its own buttons
@@ -621,6 +644,8 @@ root.addEventListener('input', (e) => {
   const clean = e.target.value.replace(/\D/g, '').slice(0, 3);
   if (clean !== e.target.value) e.target.value = clean;
   state.codeInput = clean;
+  // the console's flag about the last code stays until the code is changed
+  if (state.codeFlag) { state.codeFlag = null; root.querySelectorAll('.code-flag').forEach((n) => n.remove()); }
   // update the button without a re-render, so the field keeps focus
   const b = root.querySelector('[data-act="send-code"]');
   if (b) b.disabled = !/^\d{3}$/.test(clean);
@@ -669,7 +694,7 @@ function onDevClick(e) {
   const k = b.dataset.dev;
   if (k === 'fold') { devEl.classList.toggle('is-folded'); renderDev(); return; }
   if (k === 'show') state.devShow = !state.devShow;
-  if (k === 'skip' && theCase && state.phase === 'play' && state.stage < 8) { cutBriefing(); return; }
+  if (k === 'skip' && theCase && state.phase === 'play' && state.stage < BRIEFING_DONE) { cutBriefing(); return; }
   if (k === 'pause') { if (state.timer.since) pauseTimer(); else if (state.phase === 'play' && state.clock) resumeTimer(); }
   if (k === 'speed') setSpeed(Number(b.dataset.v));
   if (k === 'minus') { state.timer.elapsed += 60000; }

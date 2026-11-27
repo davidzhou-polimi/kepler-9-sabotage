@@ -6,7 +6,7 @@
 // Hatches: B-K, N-K, M-K, L-K, C-B. They log when they open, never who opened them.
 
 export const CREW = ['hana', 'doyun', 'mira', 'echo'];
-// ECHO-7's role (confirmed 2026-11-25): the label lives here only.
+// ECHO-7's role (confirmed 2026-11-25 and 2026-11-27; docs/story.md): the label lives here only.
 export const ECHO_ROLE = 'Maintenance android';
 export const PEOPLE = {
   hana: { name: 'Hana Sato', short: 'Hana', role: 'Captain', id: 14, human: true },
@@ -560,6 +560,20 @@ export function generateCase(code, { calls = CALLS_IN_GAME } = {}) {
 
 export function answer(theCase, q) {
   return ask(theCase.world, q);
+}
+
+/**
+ * The check of a lockout code (docs/story.md, «Why NOVA needs the code»). Mission Control's console knows who is on
+ * the crew and who wrote each report, so before sending it flags a code whose report number or ID doesn't exist ({ flag: 'unknown' }: there
+ * are only reports 1 to 4, 2026-11-27) or whose report number doesn't match the ID ({ flag: 'inconsistent', n, id }),
+ * and the code is not sent: the attempt is not used. An accepted code is always consistent, and its outcome depends only on the ID: { right }.
+ */
+export function checkCode(theCase, code) {
+  const n = Number(code[0]), id = code.slice(1);
+  const who = CREW.find((p) => String(PEOPLE[p].id) === id);
+  if (!who || n < 1 || n > theCase.order.length) return { flag: 'unknown' };
+  if (theCase.order[n - 1] !== who) return { flag: 'inconsistent', n, id };
+  return { right: who === theCase.sab };
 }
 
 export function fmtTime(m) {

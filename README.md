@@ -2,6 +2,8 @@
 
 The web app at the centre of the Kepler-9 detective game (cards + app). Static site: HTML, CSS and JavaScript modules, no build, no server, no accounts. After the first visit it works offline (service worker).
 
+The story of the game is [`docs/story.md`](docs/story.md), the single source for it (since 2026-11-27): every text of the app that tells the story must agree with it, and a change to the story goes there first.
+
 ## Run locally
 
 ES modules don't load from `file://`, so serve the folder:

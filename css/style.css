@@ -1675,6 +1675,8 @@ select:focus-visible { outline: 2px solid var(--cyan); }
 .code-line::placeholder { color: rgba(242, 184, 75, 0.45); }
 .code-sent { color: var(--amber); font: 600 22px/1.2 var(--font-mono); letter-spacing: 0.3em; }
 .code-ask { margin: 2px 0 8px; }
+/* the console doesn't send a code whose report or ID doesn't exist or don't match: the attempt is not used */
+.code-flag { color: var(--amber); margin: 2px 0 8px; }
 .code-term .tl-wide .actions, .win-term .tl-wide .code-ask + .actions { margin-top: 6px; }
 
 /* ---------- proposals after the feedback of 2026-11-26 (mocks) ---------- */

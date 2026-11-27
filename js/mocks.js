@@ -1,13 +1,15 @@
 // mocks.html: real screens of the app, built with the same functions as the game, on a fixed sample case.
 // Boards: open proposals first (each direction with its own pick), then the font comparison (decided).
 import { generateCase, answer, PEOPLE } from './generator.js';
-import { ENDINGS } from './texts.js';
+import { ENDINGS, BRIEFING_DONE, briefingAt, endingBeats } from './texts.js';
 import { screen, newState, crewCard, profileModal, reportsPanel, askPanel } from './ui.js';
 import { playWindows, typeWindow, typeNodes } from './winfx.js';
 import { DISPLAY_FONTS } from './fonts.js';
 
 const SAMPLE = 'K9-7UQ8';
 const c = generateCase(SAMPLE);
+// a wrong code the console lets through (consistent: a real report and its author's ID, not the saboteur's)
+const wrongCode = (cc) => { const p = cc.order.find((q) => q !== cc.sab); return `${cc.order.indexOf(p) + 1}${PEOPLE[p].id}`; };
 const JERSEY = 3;
 
 const base = () => ({ ...newState(), code: SAMPLE });
@@ -707,7 +709,7 @@ const ASKTERM2 = {
 
 // ---------- the console fills up after accepting NOVA's transmission (storyboard) ----------
 
-const liveState = (stage, s = {}) => (stage < 0 ? { ...base(), phase: 'home' } : d2state({ tab: 'ask', draft: { ...hatchQ, what: null }, askStep: 0, openReports: stage >= 8 ? c.order.slice(0, 2) : [], ...s }));
+const liveState = (stage, s = {}) => (stage < 0 ? { ...base(), phase: 'home' } : d2state({ tab: 'ask', draft: { ...hatchQ, what: null }, askStep: 0, openReports: stage >= BRIEFING_DONE ? c.order.slice(0, 2) : [], ...s }));
 const liveL = (label, stage, s = {}, extra = {}) => cap(label, laptop(chosen({ flow: 'live', stage, state: liveState(stage, s), remainingMs: 10 * MIN - 9000, ...extra }), { cls: BASE, big: true }));
 const liveP = (label, stage, s = {}, opts = {}) => cap(label, phone(chosen({ flow: 'live', stage, state: liveState(stage, s), remainingMs: 10 * MIN - 9000 }), { cls: BASE, ...opts }));
 const LIVE = {
@@ -720,16 +722,16 @@ const LIVE = {
     liveL('3 · A sinistra compaiono gli appunti del caso', 1),
     liveL('4 · A destra i rapporti, che NOVA allega e arrivano chiusi', 3),
     liveL('5 · Il collegamento: compare QUESTIONS, in alto a sinistra', 5),
-    liveL('6 · L\'ossigeno: compare OXYGEN accanto a QUESTIONS; gli appunti sono completi', 7),
-    liveL('7 · NOVA ha finito: la mappa prende il posto degli appunti; due rapporti aperti', 8),
-    liveL('8 · Tasto BRIEFING: tornano gli appunti', 8, { tab: 'briefing' }),
+    liveL('6 · L\'ossigeno: compare OXYGEN accanto a QUESTIONS; gli appunti sono completi', briefingAt('oxygen')),
+    liveL('7 · NOVA ha finito: la mappa prende il posto degli appunti; due rapporti aperti', BRIEFING_DONE),
+    liveL('8 · Tasto BRIEFING: tornano gli appunti', BRIEFING_DONE, { tab: 'briefing' }),
     liveP('1 · Telefono: la richiesta di NOVA', -1),
     liveP('2 · NOVA scrive', 1),
     liveP('3 · I rapporti come allegati', 3, {}, { scroll: 'bottom' }),
     liveP('4 · Compare QUESTIONS', 5, {}, { scroll: 'bottom' }),
-    liveP('5 · Compare OXYGEN, NOVA ha finito', 8, {}, { scroll: 'bottom' }),
-    liveP('6 · Tasto BRIEFING: gli appunti del caso', 8, { tab: 'briefing' }),
-    liveP('7 · Tasto REPORTS: il primo rapporto aperto, gli altri chiusi', 8, { tab: 'reports', openReports: c.order.slice(0, 1) }),
+    liveP('5 · Compare OXYGEN, NOVA ha finito', BRIEFING_DONE, {}, { scroll: 'bottom' }),
+    liveP('6 · Tasto BRIEFING: gli appunti del caso', BRIEFING_DONE, { tab: 'briefing' }),
+    liveP('7 · Tasto REPORTS: il primo rapporto aperto, gli altri chiusi', BRIEFING_DONE, { tab: 'reports', openReports: c.order.slice(0, 1) }),
     liveL('Riapertura con un caso aperto: la sua striscia sopra la richiesta', -1, {}, { saved: { code: SAMPLE, phase: 'play', remainingMs: 7 * MIN + 42000 } }),
     cap('Telefono: riapertura con un caso aperto', phone(chosen({ flow: 'live', stage: -1, state: liveState(-1), saved: { code: SAMPLE, phase: 'play', remainingMs: 7 * MIN + 42000 } }), { cls: BASE })),
   ],
@@ -738,7 +740,7 @@ const LIVE = {
 
 // ---------- the top edge of NOVA's conversation once it has been scrolled ----------
 
-const scrFrame = (key, label) => cap(label, laptop(chosen({ flow: 'live', stage: 8, state: liveState(8), remainingMs: 10 * MIN - 9000 }), { cls: `${BASE} scr-${key}`, big: true }));
+const scrFrame = (key, label) => cap(label, laptop(chosen({ flow: 'live', stage: BRIEFING_DONE, state: liveState(BRIEFING_DONE), remainingMs: 10 * MIN - 9000 }), { cls: `${BASE} scr-${key}`, big: true }));
 const SCROLLEDGE = {
   id: 'scrolledge', title: 'La chat di NOVA quando scorre: il taglio sotto il titolo', decided: 'A, il testo sfuma sotto il titolo', chosen: 'c',
   answer: 'A · Il testo sfuma sotto il titolo > Per l\'intestazione che taglia il contenuto, vai con lo sfumato',
@@ -769,15 +771,15 @@ const SCROLLEDGE = {
 
 // ---------- the console and its monitor in pixel art ----------
 
-const pixelView = (extra = {}) => chosen({ deck: 'pixel', flow: 'live', stage: 8, state: liveState(8), remainingMs: 10 * MIN - 9000, ...extra });
+const pixelView = (extra = {}) => chosen({ deck: 'pixel', flow: 'live', stage: BRIEFING_DONE, state: liveState(BRIEFING_DONE), remainingMs: 10 * MIN - 9000, ...extra });
 const pixelFrames = (deckStyle) => {
   const v = (extra = {}) => ({ ...pixelView(extra), deck: deckStyle });
   return [
     cap('Laptop, console piena', laptop(v(), { cls: BASE, big: true })),
     cap('Laptop, la barra a grandezza vera', `<div class="mock-barzoom ${BASE}">${laptop(v(), { cls: BASE, big: true })}</div>`),
     cap('Telefono, NOVA', phone(v(), { cls: BASE })),
-    cap('Telefono, rapporti', phone(v({ state: liveState(8, { tab: 'reports', openReports: c.order.slice(0, 1) }) }), { cls: BASE })),
-    cap('Telefono, ultimo minuto', phone(v({ remainingMs: 42000, state: liveState(8, { tab: 'map' }) }), { cls: `${BASE} emergency alarm` })),
+    cap('Telefono, rapporti', phone(v({ state: liveState(BRIEFING_DONE, { tab: 'reports', openReports: c.order.slice(0, 1) }) }), { cls: BASE })),
+    cap('Telefono, ultimo minuto', phone(v({ remainingMs: 42000, state: liveState(BRIEFING_DONE, { tab: 'map' }) }), { cls: `${BASE} emergency alarm` })),
     cap('Telefono, la richiesta di NOVA (tasti spenti)', phone(v({ stage: -1, state: liveState(-1) }), { cls: BASE })),
   ];
 };
@@ -799,7 +801,7 @@ const PIXELDECK = {
 
 // ---------- after the feedback of 2026-11-25: the columns against NOVA's height, the member's block ----------
 
-const fbView = (s = {}, extra = {}) => chosen({ flow: 'live', stage: 8, state: liveState(8, s), remainingMs: 10 * MIN - 9000, ...extra });
+const fbView = (s = {}, extra = {}) => chosen({ flow: 'live', stage: BRIEFING_DONE, state: liveState(BRIEFING_DONE, s), remainingMs: 10 * MIN - 9000, ...extra });
 const fbL = (label, cls, s = {}) => cap(label, laptop(fbView(s), { cls: `${BASE} ${cls}`, big: true }));
 // (the record of these boards keeps what they were drawn with: mf-0, the left column as tall as NOVA's window, as it
 // was when they were chosen; rh-0, the member's block as it was)
@@ -981,7 +983,7 @@ const PACE = {
   ],
 };
 
-const HELD = { code: SAMPLE, phase: 'play', remainingMs: 7 * MIN + 42000, last: 'The link will carry 1 question and the emergency code.' };
+const HELD = { code: SAMPLE, phase: 'play', remainingMs: 7 * MIN + 42000, last: 'The link will carry 1 question and the lockout code.' };
 const NEXT = 'K9-M3XD';
 const heldFrames = (homeAlt) => {
   const v = () => chosen({ flow: 'live', stage: -1, state: liveState(-1), saved: HELD, homeAlt, nextCode: NEXT });
@@ -1011,7 +1013,7 @@ const RESUME = {
 
 const ARCH = [
   { code: SAMPLE, ending: 'right', sent: c.emergencyCode, asked: 2, left: 3 * MIN + 12000 },
-  { code: 'K9-M3XD', ending: 'wrong', sent: '227', asked: 1, left: 5 * MIN + 40000 },
+  { code: 'K9-M3XD', ending: 'wrong', sent: wrongCode(generateCase('K9-M3XD')), asked: 1, left: 5 * MIN + 40000 },
   { code: 'K9-R6TW', ending: 'timeout', sent: null, asked: 2, left: 0 },
   { code: 'K9-4HKE', ending: 'right', sent: '355', asked: 2, left: 48000 },
 ];
@@ -1020,7 +1022,7 @@ const ARCHIVE = {
   id: 'archive', title: 'L\'archivio dei casi chiusi',
   redo: '«you did it again... mi hai messo il pulsante new game... è VIETATO, cosa devo fare per farti capire che è la console di mission control» · «per l\'archivio, l\'idea è che nella home ci sia solo al centro una finestra, tipo un inbox che gestisce i casi, e abbiamo i casi aperti e in arrivo, un archivio... [...] vorrei un mock dettagliato su cosa succede dopo aver cliccato su un caso, come e cosa si apre» (continua nelle tavole «La console vuota: i casi aperti e in arrivo» e «L\'archivio: cosa si apre toccando un caso»)',
   quote: '«sarebbe interessante una history dei casi svolti, sotto forma di archivio consultabile, così regge anche il ci sono più test che avvengono»',
-  context: 'La mia posizione: sì, nella forma A. Perché: la console vuota oggi ha una sola finestra, e un elenco di casi chiusi la fa sembrare una console che lavora da tempo, che è quello che serve all\'idea dei più test; e costa poco, perché di un caso basta tenere il numero, l\'esito, il codice inviato e le domande fatte: tutto il resto si rigenera dal numero. Il costo vero è un altro: su un dispositivo condiviso (il festival) il gruppo dopo vede i casi di chi c\'era prima, con l\'esito e la soluzione. Non rovina niente, perché ogni caso è diverso, ma va deciso se l\'archivio si può svuotare e da dove. Come l\'ho letta: entrano in archivio i casi finiti (codice accettato, codice rifiutato, ossigeno finito); quelli chiusi dal tasto di accensione no, come dice già la sua conferma («Case K9-7UQ8 will be lost.»). Aprendo un caso si rivede la schermata della soluzione che c\'è già (terzo riquadro), con un modo per tornare alla console. Parole: «ARCHIVE» è nuova, ed è la tua; gli esiti sono i titoli delle schermate finali («CODE ACCEPTED», «CODE REJECTED», «OXYGEN DEPLETED»).',
+  context: 'La mia posizione: sì, nella forma A. Perché: la console vuota oggi ha una sola finestra, e un elenco di casi chiusi la fa sembrare una console che lavora da tempo, che è quello che serve all\'idea dei più test; e costa poco, perché di un caso basta tenere il numero, l\'esito, il codice inviato e le domande fatte: tutto il resto si rigenera dal numero. Il costo vero è un altro: su un dispositivo condiviso (il festival) il gruppo dopo vede i casi di chi c\'era prima, con l\'esito e la soluzione. Non rovina niente, perché ogni caso è diverso, ma va deciso se l\'archivio si può svuotare e da dove. Come l\'ho letta: entrano in archivio i casi finiti (codice accettato, codice sbagliato, ossigeno finito); quelli chiusi dal tasto di accensione no, come dice già la sua conferma («Case K9-7UQ8 will be lost.»). Aprendo un caso si rivede la schermata della soluzione che c\'è già (terzo riquadro), con un modo per tornare alla console. Parole: «ARCHIVE» è nuova, ed è la tua; gli esiti sono i titoli delle schermate finali («CODE ACCEPTED», «CODE REJECTED», «OXYGEN DEPLETED»).',
   dirs: [
     {
       key: 'list', title: 'A · Una finestra con l\'elenco', rec: true,
@@ -1099,7 +1101,7 @@ const TITLEOUT = {
     { key: 'dark', title: 'B · Sfarfalla e si spegne', note: '<p>Il titolo resta dov\'è e perde luce a scatti, come un tubo che cede, fino al buio.</p><p>Costo: per mezzo secondo sembra un guasto, e il guasto in questo gioco è un\'altra cosa (l\'ultimo minuto, i finali).</p>', frames: titleFrames('one', 'to-dark').slice(0, 1) },
   ],
 };
-const endView = (ending, endOld = true) => chosen({ endOld, state: { ...base(), phase: 'ending', ending, sentCode: ending === 'timeout' ? null : ending === 'right' ? c.emergencyCode : '255' } });
+const endView = (ending, endOld = true) => chosen({ endOld, state: { ...base(), phase: 'ending', ending, sentCode: ending === 'timeout' ? null : ending === 'right' ? c.emergencyCode : wrongCode(c) } });
 const endFrames = (cls) => [
   cap('Laptop: ossigeno finito', laptop(endView('timeout'), { cls: `${BASE} emergency ${cls}`, big: true })),
   cap('Telefono: ossigeno finito', phone(endView('timeout'), { cls: `${BASE} emergency ${cls}` })),
@@ -1119,7 +1121,7 @@ const ENDTITLE = {
     },
     {
       key: 'none', title: 'B · Senza titolone',
-      note: '<p>Resta solo la finestra, con l\'esito nelle sue righe.</p><p>Costo: da lontano «ossigeno finito» e «codice rifiutato» si distinguono solo leggendo; e l\'esito andrebbe portato nel titolo della finestra, con parole da decidere.</p>',
+      note: '<p>Resta solo la finestra, con l\'esito nelle sue righe.</p><p>Costo: da lontano «ossigeno finito» e «codice sbagliato» si distinguono solo leggendo; e l\'esito andrebbe portato nel titolo della finestra, con parole da decidere.</p>',
       frames: endFrames('et-none').slice(0, 2).concat([
         cap('Nel gioco dal 2026-11-26: il caso nella linguetta, poi l\'esito', laptop(endView('timeout', false), { cls: `${BASE} emergency`, big: true })),
         cap('Nel gioco: codice accettato', laptop(endView('right', false), { cls: BASE, big: true })),
@@ -1127,8 +1129,8 @@ const ENDTITLE = {
     },
   ],
 };
-const codeState = (s = {}) => liveState(8, { tab: 'code', codeInput: '35', openReports: c.order.slice(0, 2), ...s });
-const codeView = (codeAlt, s = {}) => chosen({ flow: 'live', stage: 8, state: codeState(s), remainingMs: 4 * MIN + 12000, codeAlt });
+const codeState = (s = {}) => liveState(BRIEFING_DONE, { tab: 'code', codeInput: '35', openReports: c.order.slice(0, 2), ...s });
+const codeView = (codeAlt, s = {}) => chosen({ flow: 'live', stage: BRIEFING_DONE, state: codeState(s), remainingMs: 4 * MIN + 12000, codeAlt });
 const codeFrames = (alt) => [
   cap('Laptop: tasto CODE premuto, due rapporti aperti', laptop(codeView(alt), { cls: `${BASE} code-${alt || 'now'}`, big: true })),
   cap('Telefono: tasto CODE premuto', phone(codeView(alt), { cls: `${BASE} code-${alt || 'now'}`, scroll: alt ? 'bottom' : '' })),
@@ -1164,12 +1166,12 @@ const c2 = generateCase(NEXT);
 const Q2 = { kind: 'hatch', what: 'N-K', a: 20, b: 30 };
 const REC = {
   right: { code: SAMPLE, ending: 'right', sent: c.emergencyCode, asked: 1, left: 3 * MIN + 12000, log: LOG2.slice(0, 1) },
-  wrong: { code: SAMPLE, ending: 'wrong', sent: '227', asked: 1, left: 3 * MIN + 12000, log: LOG2.slice(0, 1) },
+  wrong: { code: SAMPLE, ending: 'wrong', sent: wrongCode(c), asked: 1, left: 3 * MIN + 12000, log: LOG2.slice(0, 1) },
   timeout: { code: SAMPLE, ending: 'timeout', sent: null, asked: 2, left: 0, log: LOG2 },
 };
 const ARCH2 = [
   REC.right,
-  { code: NEXT, ending: 'wrong', sent: '227', asked: 1, left: 5 * MIN + 40000, log: [{ q: Q2, ans: answer(c2, Q2) }] },
+  { code: NEXT, ending: 'wrong', sent: wrongCode(c2), asked: 1, left: 5 * MIN + 40000, log: [{ q: Q2, ans: answer(c2, Q2) }] },
   { code: 'K9-R6TW', ending: 'timeout', sent: null, asked: 2, left: 0 },
   { code: 'K9-4HKE', ending: 'right', sent: '355', asked: 2, left: 48000 },
 ];
@@ -1225,12 +1227,12 @@ const INBOX = {
 
 const READBACK = `Report ${String(c.order.indexOf(c.sab) + 1).padStart(2, '0')}: false. Saboteur: ${PEOPLE[c.sab].name}, ID ${PEOPLE[c.sab].id}.`;
 const REPLY = {
-  right: [ENDINGS.right.lines[0], READBACK, ...ENDINGS.right.lines.slice(1)],
-  wrong: ENDINGS.wrong.lines,
-  timeout: ENDINGS.timeout.lines,
+  right: ((l) => [l[0], READBACK, ...l.slice(1)])(endingBeats('right', c.emergencyCode)[0]),
+  wrong: endingBeats('wrong', REC.wrong.sent).flat(),
+  timeout: endingBeats('timeout').flat(),
 };
 const LOG1 = LOG2.slice(0, 1);
-const flowV = (s = {}, extra = {}) => chosen({ flow: 'live', stage: 8, state: liveState(8, { openReports: [], log: LOG1, ...s }), remainingMs: 3 * MIN + 12000, codeAlt: 'nova', noCodeKey: true, ...extra });
+const flowV = (s = {}, extra = {}) => chosen({ flow: 'live', stage: BRIEFING_DONE, state: liveState(BRIEFING_DONE, { openReports: [], log: LOG1, ...s }), remainingMs: 3 * MIN + 12000, codeAlt: 'nova', noCodeKey: true, ...extra });
 const flowL = (label, s, extra, cls = '') => cap(label, laptop(flowV(s, extra), { cls: `${BASE} ${cls}`, big: true }));
 const flowP = (label, s, extra, cls = '') => cap(label, phone(flowV(s, extra), { cls: `${BASE} ${cls}`, scroll: 'bottom' }));
 const sentS = (kind) => ({ codeStep: 3, sentCode: REC[kind].sent, codeInput: REC[kind].sent || '' });
@@ -1241,7 +1243,7 @@ const closing = cap('Laptop: la chiusura, da guardare', `${laptop(flowV(sentS('r
 const CODEFLOW = {
   id: 'codeflow', title: 'Il codice si manda a NOVA, e il caso si chiude',
   quote: '«per il codice, propongo che sia un\'opzione vicino a new question, code, così si invia a nova il codice che procede a bloccare, però questa parte della storia non viene raccontata, e sarebbe utile che nova riceve il codice e dice ok procedo a bloccare l\'accesso di x e bla bla bla, infine si chiude tutto e arriva case closed, poi arriva nuovo caso sempre da nova per nuova missione... (una sorta di play again) > quello che non mi convince è che per il codice abbiamo pulsante rosso, per le domande un pulsante nel terminale con nova... è strano e incoerente» · «io direi senza titolone [...] non scriverei nova, perché nova ci comunica solo da terminale» · «alla fine del gioco direi case k9-7uq8 e poi l\'esito, quindi mission failed o altro»',
-  context: 'Sviluppo la tua proposta, un momento alla volta. Il codice parte dalla conversazione con NOVA, come una domanda: accanto a NEW QUESTION c\'è CODE, rosso come era il tasto. Il codice si scrive sulla riga «MC>» (il formato da terminale che avevi chiesto), e «SEND CODE» ora dice a chi: lo mandi a NOVA, nella sua conversazione. NOVA risponde lì, con le frasi che oggi stanno nella schermata finale; poi le finestre si spengono una dopo l\'altra, nell\'ordine inverso a quello in cui sono arrivate, e al centro arriva il fascicolo del caso: nella linguetta «CASE K9-7UQ8», sotto l\'esito («MISSION SUCCESSFUL» o «MISSION FAILED»), poi codice, domande e ossigeno, il segno «CASE CLOSED» e INCIDENT REPORT. Dopo qualche secondo, sotto arriva la chiamata nuova. Non ci sono più la schermata finale a parte né il titolone. Cose che la tua frase non diceva e che ho chiuso così, da correggere se non tornano: mentre scrivi il codice c\'è CANCEL per tornare alle domande (prima bastava ripremere il tasto); quando le domande sono finite resta solo CODE; se finisce l\'ossigeno NOVA scrive da sola le sue ultime frasi e il caso si chiude allo stesso modo. Testi: sono tutti quelli di oggi tranne quattro, da approvare. «Code», la riga che resta nella conversazione quando tocchi CODE (come «New question»). «CASE CLOSED». Le parole dopo le cifre nel fascicolo, prese dai titoli dei finali e dalle frasi sulle domande: «Accepted», «Rejected», «Depleted», «Not sent», «1 of 2 sent». E la riga in cui NOVA dice chi blocca, che ho ricavato dalle due parti del codice: «Report 04: false. Saboteur: Doyun Park, ID 27.» È una bozza: le frasi di NOVA dopo il codice appartengono alla storia e le scrive la sessione che ce l\'ha, insieme al nome del codice. Con l\'esito scritto in alto nel fascicolo, l\'ultima frase di NOVA («MISSION STATUS: SUCCESS.») lo dice due volte: anche questo va a quella sessione. La chiusura si può guardare nel riquadro «la chiusura, da guardare»; gli altri riquadri sono fermi.',
+  context: 'Sviluppo la tua proposta, un momento alla volta. Il codice parte dalla conversazione con NOVA, come una domanda: accanto a NEW QUESTION c\'è CODE, rosso come era il tasto. Il codice si scrive sulla riga «MC>» (il formato da terminale che avevi chiesto), e «SEND CODE» ora dice a chi: lo mandi a NOVA, nella sua conversazione. NOVA risponde lì, con le frasi che oggi stanno nella schermata finale; poi le finestre si spengono una dopo l\'altra, nell\'ordine inverso a quello in cui sono arrivate, e al centro arriva il fascicolo del caso: nella linguetta «CASE K9-7UQ8», sotto l\'esito («MISSION SUCCESSFUL» o «MISSION FAILED»), poi codice, domande e ossigeno, il segno «CASE CLOSED» e INCIDENT REPORT. Dopo qualche secondo, sotto arriva la chiamata nuova. Non ci sono più la schermata finale a parte né il titolone. Cose che la tua frase non diceva e che ho chiuso così, da correggere se non tornano: mentre scrivi il codice c\'è CANCEL per tornare alle domande (prima bastava ripremere il tasto); quando le domande sono finite resta solo CODE; se finisce l\'ossigeno NOVA scrive da sola le sue ultime frasi e il caso si chiude allo stesso modo. Testi: sono tutti quelli di oggi tranne quattro, da approvare. «Code», la riga che resta nella conversazione quando tocchi CODE (come «New question»). «CASE CLOSED». Le parole dopo le cifre nel fascicolo, prese dai finali della storia (docs/story.md) e dalle frasi sulle domande: «Right», «Wrong», «Depleted», «Not sent», «1 of 2 sent». E la riga in cui NOVA dice chi blocca, che ho ricavato dalle due parti del codice: «Report 04: false. Saboteur: Doyun Park, ID 27.» È una bozza: le frasi di NOVA dopo il codice appartengono alla storia e le scrive la sessione che ce l\'ha, insieme al nome del codice. Con l\'esito scritto in alto nel fascicolo, l\'ultima frase di NOVA («MISSION STATUS: SUCCESS.») lo dice due volte: anche questo va a quella sessione. La chiusura si può guardare nel riquadro «la chiusura, da guardare»; gli altri riquadri sono fermi.',
   common: [
     flowL('1 · Laptop: accanto a NEW QUESTION c\'è CODE; sulla barra il tasto rosso non c\'è', {}),
     flowL('2 · Toccato CODE: NOVA ripete la regola, il codice si scrive sulla riga MC', { codeStep: 1, codeInput: '42' }),
@@ -1280,11 +1282,11 @@ const CODEFLOW = {
 
 const archL = (label, cases, extra = {}) => cap(label, laptop(chosen({ flow: 'live', stage: -1, state: liveState(-1), cases: { style: 'tabs', tab: 'archive', archive: ARCH2, ...cases }, ...extra }), { cls: BASE, big: true }));
 const archP = (label, cases, opts = {}) => cap(label, phone(chosen({ flow: 'live', stage: -1, state: liveState(-1), cases: { style: 'tabs', tab: 'archive', archive: ARCH2, ...cases } }), { cls: BASE, ...opts }));
-const readV = (s = {}) => chosen({ flow: 'live', stage: 8, state: liveState(8, { openReports: c.order.slice(3), log: LOG1, ...sentS('right'), ...s }), remainingMs: REC.right.left, codeAlt: 'nova', noCodeKey: true, reply: REPLY.right, archived: true });
+const readV = (s = {}) => chosen({ flow: 'live', stage: BRIEFING_DONE, state: liveState(BRIEFING_DONE, { openReports: c.order.slice(3), log: LOG1, ...sentS('right'), ...s }), remainingMs: REC.right.left, codeAlt: 'nova', noCodeKey: true, reply: REPLY.right, archived: true });
 const CASEFILE = {
   id: 'casefile', title: 'L\'archivio: cosa si apre toccando un caso',
   quote: '«per il design dell\'archivio... vorrei un mock dettagliato su cosa succede dopo aver cliccato su un caso, come e cosa si apre» · «you did it again... mi hai messo il pulsante new game... è VIETATO, cosa devo fare per farti capire che è la console di mission control»',
-  context: 'Un tocco alla volta, in tre modi. L\'archivio qui è nella forma A della tavola sopra (la seconda vista della finestra dei casi); quello che succede dopo il tocco vale uguale se scegli B o C. In archivio entrano i casi chiusi: codice accettato, codice rifiutato, ossigeno finito. Ogni riga ha il numero del caso e l\'esito, come hai detto per la fine del caso («case k9-7uq8 e poi l\'esito»). La mia posizione: B. Il fascicolo che si apre dall\'archivio è la stessa finestra che arriva quando il caso si chiude (tavola «Il codice si manda a NOVA»): una cosa sola, che il gruppo ha già visto, nello stesso posto. Il rapporto sull\'incidente ha le cinque parti che ha oggi la soluzione: cosa è successo, i rapporti, la domanda che lo risolveva, il codice, le tue trasmissioni. Sul pulsante NEW GAME: nella tavola di prima c\'era perché avevo riusato la schermata della soluzione con la parola vecchia. Adesso nel gioco quella parola non c\'è più, e un controllo automatico fa fallire le verifiche se «game», «player» o «quit» compaiono in una schermata. Di un caso si tengono il numero, l\'esito, il codice inviato, le domande con le risposte e l\'ossigeno rimasto: tutto il resto si rigenera dal numero.',
+  context: 'Un tocco alla volta, in tre modi. L\'archivio qui è nella forma A della tavola sopra (la seconda vista della finestra dei casi); quello che succede dopo il tocco vale uguale se scegli B o C. In archivio entrano i casi chiusi: codice accettato, codice sbagliato, ossigeno finito. Ogni riga ha il numero del caso e l\'esito, come hai detto per la fine del caso («case k9-7uq8 e poi l\'esito»). La mia posizione: B. Il fascicolo che si apre dall\'archivio è la stessa finestra che arriva quando il caso si chiude (tavola «Il codice si manda a NOVA»): una cosa sola, che il gruppo ha già visto, nello stesso posto. Il rapporto sull\'incidente ha le cinque parti che ha oggi la soluzione: cosa è successo, i rapporti, la domanda che lo risolveva, il codice, le tue trasmissioni. Sul pulsante NEW GAME: nella tavola di prima c\'era perché avevo riusato la schermata della soluzione con la parola vecchia. Adesso nel gioco quella parola non c\'è più, e un controllo automatico fa fallire le verifiche se «game», «player» o «quit» compaiono in una schermata. Di un caso si tengono il numero, l\'esito, il codice inviato, le domande con le risposte e l\'ossigeno rimasto: tutto il resto si rigenera dal numero.',
   common: [
     archL('Per tutte: l\'archivio, una riga per caso', {}),
   ],
@@ -1328,7 +1330,7 @@ const CASEFILE = {
 const btnFig = (label, view, key, last = 0) => cap(label, `${phone(view, { cls: `${BASE} btnin-${key}`, scroll: last ? 'bottom' : '' })}<button type="button" class="replay" data-replay="btnin" data-last="${last}">Riguarda</button>`);
 const btnFrames = (key) => [
   btnFig('La richiesta di NOVA: ACCEPT', chosen({ flow: 'live', stage: -1, state: liveState(-1) }), key),
-  btnFig('Una domanda: i tasti dei 10 minuti', chosen({ flow: 'live', stage: 8, state: liveState(8, { askStep: 2, draft: { kind: 'hatch', what: 'M-K', a: null, b: null } }), remainingMs: 8 * MIN }), key, 2),
+  btnFig('Una domanda: i tasti dei 10 minuti', chosen({ flow: 'live', stage: BRIEFING_DONE, state: liveState(BRIEFING_DONE, { askStep: 2, draft: { kind: 'hatch', what: 'M-K', a: null, b: null } }), remainingMs: 8 * MIN }), key, 2),
 ];
 const BTNIN = {
   id: 'btnin', title: 'Come compaiono i pulsanti',
@@ -1367,13 +1369,13 @@ const LIVELEFT = {
       key: 'map', title: 'A · Resta la mappa', rec: true,
       note: `<p>Quando NOVA ha finito, la mappa prende il posto degli appunti e resta lì. Gli appunti si riaprono con il tasto BRIEFING, il codice con CODE; chiudendoli torna la mappa.</p>
         <p>Perché: è quello che hai scritto, e durante l'indagine quello che si guarda di continuo è la mappa; gli appunti servono una volta. Costo: la finestra CASE sparisce da sola a fine briefing, senza che il giocatore tocchi niente.</p>`,
-      frames: [liveL('NOVA ha finito: sotto timer e domande c\'è la mappa', 8, { tab: 'map' }), liveL('Tasto BRIEFING: gli appunti al suo posto', 8, { tab: 'briefing' })],
+      frames: [liveL('NOVA ha finito: sotto timer e domande c\'è la mappa', BRIEFING_DONE, { tab: 'map' }), liveL('Tasto BRIEFING: gli appunti al suo posto', BRIEFING_DONE, { tab: 'briefing' })],
     },
     {
       key: 'notes', title: 'B · Restano gli appunti, la mappa con il tasto MAP',
       note: `<p>Come nello storyboard qui sopra: a fine briefing restano gli appunti del caso, e la mappa compare lì quando premi MAP.</p>
         <p>Perché: niente cambia da solo. Costo: per avere la mappa a sinistra serve un tasto, e per la maggior parte della partita in quel posto c'è un riassunto già letto.</p>`,
-      frames: [liveL('NOVA ha finito: sotto timer e domande ci sono gli appunti', 8, { tab: 'briefing' }), liveL('Tasto MAP: la mappa al loro posto', 8, { tab: 'map' })],
+      frames: [liveL('NOVA ha finito: sotto timer e domande ci sono gli appunti', BRIEFING_DONE, { tab: 'briefing' }), liveL('Tasto MAP: la mappa al loro posto', BRIEFING_DONE, { tab: 'map' })],
     },
   ],
 };
@@ -1382,7 +1384,7 @@ const LIVELEFT = {
 
 // the frames show the console full, with the case notes under the meters: the boards were judged that way, before the
 // map took that place at the end of the briefing. The typed version (key 'type') shows both, the map first
-const fxFrame = (key, label, s = { tab: 'briefing' }) => cap(label, `${laptop(chosen({ flow: 'live', stage: 8, state: liveState(8, s), remainingMs: 10 * MIN - 9000 }), { cls: `${BASE} fxin-${key}`, big: true })}<button type="button" class="replay" data-replay="winfx">Riguarda</button>`);
+const fxFrame = (key, label, s = { tab: 'briefing' }) => cap(label, `${laptop(chosen({ flow: 'live', stage: BRIEFING_DONE, state: liveState(BRIEFING_DONE, s), remainingMs: 10 * MIN - 9000 }), { cls: `${BASE} fxin-${key}`, big: true })}<button type="button" class="replay" data-replay="winfx">Riguarda</button>`);
 const fxDir = (key, title, note, rec = false) => ({
   key, title, rec, note,
   frames: key === 'type'
@@ -1409,7 +1411,7 @@ const WINFX = {
 // ---------- the closed report ----------
 
 const repcFrames = (closed) => {
-  const v = (s) => chosen({ flow: 'live', stage: 8, state: liveState(8, s), remainingMs: 10 * MIN - 9000, repClosed: closed });
+  const v = (s) => chosen({ flow: 'live', stage: BRIEFING_DONE, state: liveState(BRIEFING_DONE, s), remainingMs: 10 * MIN - 9000, repClosed: closed });
   return [
     cap('Telefono, tasto REPORTS: tutti chiusi', phone(v({ tab: 'reports', openReports: [] }), { cls: BASE })),
     cap('Telefono: il secondo aperto', phone(v({ tab: 'reports', openReports: c.order.slice(1, 2) }), { cls: BASE })),

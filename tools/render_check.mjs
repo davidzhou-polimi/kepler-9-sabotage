@@ -3,8 +3,9 @@
 // from a view to a string of HTML.
 //   node tools/render_check.mjs            300 cases
 //   CASES=1000 node tools/render_check.mjs
-import { generateCase, randomCode, answer, HATCHES, MODULES } from '../js/generator.js';
+import { generateCase, randomCode, answer, HATCHES, MODULES, PEOPLE } from '../js/generator.js';
 import { screen, newState } from '../js/ui.js';
+import { BRIEFING_DONE } from '../js/texts.js';
 
 const CASES = Number(process.env.CASES || 300);
 const BAD = [/undefined/, /\bNaN\b/, /\[object /, /\$\{/, />null</];
@@ -39,10 +40,10 @@ const check = (label, v) => {
 for (let i = 0; i < CASES; i += 1) {
   const code = randomCode();
   const c = generateCase(code);
-  const base = () => ({ ...newState(), code, phase: 'play', tab: 'ask', stage: 8, askStep: 0, openReports: [], draft: { kind: 'hatch', what: null, a: null, b: null } });
+  const base = () => ({ ...newState(), code, phase: 'play', tab: 'ask', stage: BRIEFING_DONE, askStep: 0, openReports: [], draft: { kind: 'hatch', what: null, a: null, b: null } });
   check(`${code} request`, view({ ...newState() }, null));
   check(`${code} request, case open`, view({ ...base(), phase: 'home' }, c, { saved: { code, phase: 'play', remainingMs: 432000 } }));
-  for (let stage = 0; stage <= 8; stage += 1) {
+  for (let stage = 0; stage <= BRIEFING_DONE; stage += 1) {
     for (const tab of ['ask', 'reports', 'map', 'briefing', 'code']) check(`${code} stage ${stage} ${tab}`, view({ ...base(), stage, tab }, c));
   }
   // a question, step by step, on every place; then its answer in the conversation
@@ -61,8 +62,12 @@ for (let i = 0; i < CASES; i += 1) {
   check(`${code} quit`, view(base(), c, { quitOpen: true }));
   check(`${code} code typed`, view({ ...base(), tab: 'code', codeInput: c.emergencyCode, confirming: true }, c));
   check(`${code} last minute`, view(base(), c, { remainingMs: 42000 }));
-  for (const ending of ['right', 'wrong', 'timeout']) check(`${code} ending ${ending}`, view({ ...base(), phase: 'ending', ending, sentCode: ending === 'timeout' ? null : '123', log }, c));
-  check(`${code} solution`, view({ ...base(), phase: 'solution', log, sentCode: '123' }, c));
+  // the codes the console lets through: the right one, and a wrong one (a real report and its author's ID)
+  const other = c.order.find((p) => p !== c.sab);
+  const sent = { right: c.emergencyCode, wrong: `${c.order.indexOf(other) + 1}${PEOPLE[other].id}`, timeout: null };
+  for (const ending of ['right', 'wrong', 'timeout']) check(`${code} ending ${ending}`, view({ ...base(), phase: 'ending', ending, sentCode: sent[ending], log }, c));
+  check(`${code} ending wrong, first beat`, view({ ...base(), phase: 'ending', ending: 'wrong', endBeat: 1, sentCode: sent.wrong, log }, c));
+  for (const ending of ['right', 'wrong']) check(`${code} solution after ${ending}`, view({ ...base(), phase: 'solution', log, sentCode: sent[ending] }, c));
 }
 
 if (fails.length) {

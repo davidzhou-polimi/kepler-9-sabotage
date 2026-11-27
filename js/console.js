@@ -5,6 +5,7 @@
 //             'deck' fourth round: one screen with today's windows, and the physical bar (see below)
 // view.fx: whole-screen video effects, a list: 'crt' (glass, always), 'boot' (power-on), 'static' (channel change),
 //          'link' (NOVA's damaged link). In mocks a frame can be frozen on a moment with view.fxFreeze.
+import { BRIEFING_DONE, briefingAt } from './texts.js';
 import { esc, fmtClock, warningIcon, statusBar, reportsPanel, mapPanel, askPanel, briefingPanel, codePanel, profileModal, quitModal, liveSide, MAX_QUESTIONS, OXYGEN_MS } from './ui.js';
 
 const lamp = (label, cls = '') => `<span class="cs-lamp ${cls}"><i></i>${label}</span>`;
@@ -43,7 +44,7 @@ function o2Display(view) {
 }
 const keycap = (label, act, v, { on = false, cls = '' } = {}) =>
   `<button type="button" class="cs-key ${on ? 'is-on' : ''} ${cls}" data-act="${act}" ${v ? `data-v="${v}"` : ''}><span>${label}</span></button>`;
-const codeKey = (on) => `<div class="cs-guard"><span class="cs-guard-label">EMERGENCY</span>${keycap('CODE', 'tab', 'code', { on, cls: 'cs-key-red' })}</div>`;
+const codeKey = (on) => `<div class="cs-guard"><span class="cs-guard-label">LOCKOUT</span>${keycap('CODE', 'tab', 'code', { on, cls: 'cs-key-red' })}</div>`;
 const modals = (view) => `${view.state.profile ? profileModal(view.c, view.state.profile) : ''}${view.quitOpen ? quitModal(view.c) : ''}`;
 const alarmStrip = (view) => (critical(view) ? '<div class="alarm-strip" role="alert"><span>OXYGEN CRITICAL // LESS&nbsp;THAN&nbsp;ONE&nbsp;MINUTE</span></div>' : '');
 
@@ -202,8 +203,8 @@ function deckShell(view, screenFn) {
   // the console that fills up (view.flow 'live'): a key works once NOVA has brought what it opens; on a laptop
   // NOVA and the reports are always on screen, so the keys change only what stands under the meters, on the left
   const filling = view.flow === 'live';
-  const stage = view.stage ?? 8;
-  const avail = filling ? { ask: stage >= 0, briefing: stage >= 1, reports: stage >= 3, map: stage >= 4, code: stage >= 6 } : null;
+  const stage = view.stage ?? BRIEFING_DONE;
+  const avail = filling ? { ask: stage >= 0, briefing: stage >= briefingAt('situation'), reports: stage >= briefingAt('reports'), map: stage >= briefingAt('sensors'), code: stage >= briefingAt('code') } : null;
   // the lit key is the one of what stands under the meters (none while a closed case shows its incident report there)
   if (filling && view.wide) tab = view.archived && tab !== 'map' && tab !== 'briefing' ? 'ask' : liveSide(tab, stage);
   const k = (label, v) => key2(label, v, { on: playing && tab === v && (!avail || avail[v]), live: avail ? playing && avail[v] : playing, cls: `cs-key-${v}` });

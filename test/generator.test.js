@@ -4,9 +4,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CREW, CODE_ALPHABET, HATCH_OF, QUESTIONS, generateCase, analyze, ask, answer, prng, randomCode, normalizeCode, solve,
-  clashPairs, trapQuestions, fmtTime, GRID, QUESTION_WINDOW, STORIES,
+  clashPairs, trapQuestions, fmtTime, GRID, QUESTION_WINDOW, STORIES, checkCode, PEOPLE,
 } from '../js/generator.js';
-import { renderReport, solutionText } from '../js/texts.js';
+import { renderReport, solutionText, codeFlagText, endingBeats, BRIEFING_PARTS } from '../js/texts.js';
 
 const N = Number(process.env.CASES || 3000);
 const rand = prng('test-suite');
@@ -229,4 +229,44 @@ test('rules 3 and 5: who lies within the pair, and who the saboteur is, vary (st
   }
   // rule 5: each of the 4 about 25%
   for (const p of CREW) assert.ok(Math.abs(cases.filter((c) => c.sab === p).length / N - 0.25) < 0.04, `${p} saboteur off 25%`);
+});
+
+test('lockout code: NOVA flags a report number or ID that does not exist, or a report number that does not match the ID; the rest depends on the ID', () => {
+  for (let i = 0; i < 300; i++) {
+    const c = generateCase(randomCode(rand));
+    assert.equal(checkCode(c, c.emergencyCode).right, true);
+    assert.equal(checkCode(c, '299').flag, 'unknown');
+    assert.equal(checkCode(c, '000').flag, 'unknown');
+    c.order.forEach((p, k) => {
+      const id = String(PEOPLE[p].id);
+      assert.equal(checkCode(c, `${k + 1}${id}`).right, p === c.sab); // consistent: right only for the saboteur
+      const other = (k + 1) % 4 + 1;
+      const f = checkCode(c, `${other}${id}`);
+      assert.equal(f.flag, 'inconsistent');
+      assert.equal(codeFlagText(f), `CODE INCONSISTENT. Report ${other} was not written by crew ID ${id}.`);
+      assert.equal(checkCode(c, `9${id}`).flag, 'unknown'); // there is no report 9
+      assert.equal(checkCode(c, `0${id}`).flag, 'unknown');
+    });
+  }
+});
+
+test('update 3: NOVA says why she needs the code; the endings name the ID locked out; the solution says why, and who was locked out by mistake', () => {
+  const ids = BRIEFING_PARTS.map((p) => p.id);
+  assert.equal(ids.indexOf('lockout'), ids.indexOf('link') + 1);
+  for (let i = 0; i < 300; i++) {
+    const c = generateCase(randomCode(rand));
+    const S = PEOPLE[c.sab].short;
+    const [right] = endingBeats('right', c.emergencyCode);
+    assert.ok(right.includes(`Access revoked: crew ID ${PEOPLE[c.sab].id}.`));
+    const p = c.order.find((q) => q !== c.sab);
+    const wrong = `${c.order.indexOf(p) + 1}${PEOPLE[p].id}`;
+    const [w1, w2] = endingBeats('wrong', wrong);
+    assert.ok(w1.includes(`Access revoked: crew ID ${PEOPLE[p].id}.`) && w2[0].startsWith('WARNING:'));
+    const why = `Locking out ${S} was the only way to keep the recycler running.`;
+    for (const sent of [null, c.emergencyCode]) {
+      const h = solutionText(c, { sent }).happened;
+      assert.ok(h.includes(why) && !h.some((l) => l.includes('by mistake')));
+    }
+    assert.ok(solutionText(c, { sent: wrong }).happened.includes(`${PEOPLE[p].short} was locked out by mistake.`));
+  }
 });

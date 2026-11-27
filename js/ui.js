@@ -2,7 +2,7 @@
 // view = { state, c (case), wide, remainingMs, dev }
 
 import { CREW, PEOPLE, MOD_NAME, HATCH_NAME, HATCHES, MODULES, GRID, fmtTime } from './generator.js';
-import { BRIEFING, BRIEFING_PARTS, BRIEFING_SENSORS_CALL, ENDINGS, ANSWERS, PROFILES, renderReport, questionText, solutionText } from './texts.js';
+import { BRIEFING, BRIEFING_PARTS, BRIEFING_DONE, briefingAt, BRIEFING_SENSORS_CALL, ENDINGS, endingBeats, ANSWERS, PROFILES, renderReport, questionText, solutionText } from './texts.js';
 import { portrait } from './portraits.js';
 import { consoleScreen } from './console.js';
 
@@ -507,7 +507,7 @@ export function briefingPanel({ typed = true, style = 'now', start = false, call
       </div>
       <div class="rules">
         ${card('SENSORS', 'sensors', sensorVisual(calls))}${card('QUESTIONS', 'link', linkVisual)}
-        ${card('EMERGENCY CODE', 'code', codeVisual)}${card('OXYGEN', 'oxygen', oxygenVisual)}
+        ${card('LOCKOUT CODE', 'code', codeVisual)}${card('OXYGEN', 'oxygen', oxygenVisual)}
       </div>`, { cls: 'win-briefing win-mix' });
   }
   if (style === 'tx') {
@@ -535,7 +535,7 @@ export function briefingPanel({ typed = true, style = 'now', start = false, call
       <div class="log nova mix-voice ${typed ? 'type-me' : ''}">${['hello', 'situation', 'saboteur', 'reports'].map((id) => `<p class="pl">&gt; ${keyed(BP[id])}</p>`).join('')}</div>
       <div class="rules">
         ${card('SENSORS', 'sensors', sensorVisual(calls))}${card('QUESTIONS', 'link', linkVisual)}
-        ${card('EMERGENCY CODE', 'code', codeVisual)}${card('OXYGEN', 'oxygen', oxygenVisual)}
+        ${card('LOCKOUT CODE', 'code', codeVisual)}${card('OXYGEN', 'oxygen', oxygenVisual)}
       </div>
       ${start ? `<div class="mc-strip">${whoMc}${btn('START MISSION', 'start-mission', { cls: 'btn-primary' })}</div>` : ''}`,
     { cls: 'win-briefing win-mix' });
@@ -669,7 +669,7 @@ export function askPanel(state, c, where = 'chips', detail = {}, callUi = null, 
     <div class="preview">&gt; ${!d.what ? (where === 'tap' ? 'Tap a hatch or a module.' : `Choose ${d.kind === 'hatch' ? 'a hatch' : 'a module'}.`) : d.b <= d.a ? 'The end of the window must come after the start.' : esc(questionText(q))}</div>
     <div class="actions">${btn(`SEND QUESTION`, 'send-question', { cls: 'btn-primary', disabled: !valid })}
       <span class="note">Uses 1 of ${MAX_QUESTIONS}. ${left} left.</span></div>`
-    : log(['&gt; Link capacity reached. Only the emergency code can still be sent.'], 'nova');
+    : log(['&gt; Link capacity reached. Only the lockout code can still be sent.'], 'nova');
 
   const history = state.log.length ? state.log.map((e, i) => `
       <div class="qa">
@@ -690,8 +690,8 @@ export function askPanel(state, c, where = 'chips', detail = {}, callUi = null, 
 // fosse ridotto a quello» (2026-11-25), the channel no longer opens on the map, and the map has no projector:
 //   'open':   the channel is open and quiet; a question starts with a command (askStep 0), then as 'chat'
 //   'thread': the same, with NOVA's own messages (the briefing) at the top: the whole conversation in one place
-// intro (the console fills up, storyboard): { stage, c } with stage -1 NOVA's request, 0..7 the briefing line
-// she is writing, 8 finished. Until she has finished there is nothing to send; the reports come as attachments.
+// intro (the console fills up, storyboard): { stage, c } with stage -1 NOVA's request, 0.. the briefing line
+// she is writing, BRIEFING_DONE finished. Until she has finished there is nothing to send; the reports come as attachments.
 function askTerm(state, mode, detail, intro = null) {
   const left = MAX_QUESTIONS - state.log.length;
   const d = state.draft;
@@ -714,8 +714,8 @@ function askTerm(state, mode, detail, intro = null) {
     // { hold }: she has written the line she is on and waits for it
     const ack = intro.ack && intro.stage >= 0 ? intro.ack : null;
     const last = BRIEFING_PARTS.length - 1;
-    briefing = BRIEFING_PARTS.slice(0, Math.max(0, n) + 1).map((part, i) => row('nova', `${keyed(part)}${i === n && intro.stage < 8 && intro.stage >= 0 && !ack?.hold ? '<span class="tl-cur"></span>' : ''}`, part.id === 'reports' ? files : '')
-      + (ack && i > 0 && i < last && (i < n || intro.stage >= 8) ? row('mc', 'Copy.') : '')
+    briefing = BRIEFING_PARTS.slice(0, Math.max(0, n) + 1).map((part, i) => row('nova', `${keyed(part)}${i === n && intro.stage < BRIEFING_DONE && intro.stage >= 0 && !ack?.hold ? '<span class="tl-cur"></span>' : ''}`, part.id === 'reports' ? files : '')
+      + (ack && i > 0 && i < last && (i < n || intro.stage >= BRIEFING_DONE) ? row('mc', 'Copy.') : '')
       + (ack?.hold && i === n ? row('mc', '<span class="tl-cur"></span>', `<div class="actions">${btn('COPY', 'ack', { cls: 'btn-primary' })}</div>`, 'tl-draft') : '')).join('');
     if (intro.stage < 0) {
       // the request: her first line, then the words on the left and the button at the far right.
@@ -746,7 +746,7 @@ function askTerm(state, mode, detail, intro = null) {
       return win('NOVA ON KEPLER-9', `<div class="term">${briefing}${open}
         <div class="tl-accept"><span class="hc-tag">INCOMING TRANSMISSION</span>${btn('ACCEPT', 'accept', { cls: s ? '' : 'btn-primary' })}</div></div>`, { cls: 'win-ask win-term' });
     }
-    if (intro.stage < 8) return win('NOVA ON KEPLER-9', `<div class="term">${briefing}</div>`, { cls: 'win-ask win-term' });
+    if (intro.stage < BRIEFING_DONE) return win('NOVA ON KEPLER-9', `<div class="term">${briefing}</div>`, { cls: 'win-ask win-term' });
   }
   // intro.codeNova (proposal, mocks only until chosen; 2026-11-26: «per il codice, propongo che sia un'opzione vicino a
   // new question, code, così si invia a nova il codice che procede a bloccare [...] sarebbe utile che nova riceve il
@@ -757,7 +757,7 @@ function askTerm(state, mode, detail, intro = null) {
   const codeBtn = codeNova ? btn('CODE', 'code-step', { cls: 'btn-danger', attrs: 'data-v="1"' }) : '';
   // (an ID never breaks from its number, and the last two words of a line stay together)
   const reply = (intro?.reply || []).map((l) => row('nova', esc(l).replace(/ID (\d+)/g, 'ID&nbsp;$1').replace(/ (\S+)$/, '&nbsp;$1'))).join('');
-  const quiet = row('nova', `The link will carry ${left} ${left === 1 ? 'question' : 'questions'} and the emergency code.`)
+  const quiet = row('nova', `The link will carry ${left} ${left === 1 ? 'question' : 'questions'} and the lockout code.`)
     + row('mc', '<span class="tl-cur"></span>', `<div class="actions">${btn('NEW QUESTION', 'ask-step', { cls: 'btn-primary', attrs: 'data-v="1"' })}${codeBtn}</div>`, 'tl-draft');
   const hint = 'Tap a hatch to ask if it opened, or a module to ask about motion.';
   let live;
@@ -767,7 +767,7 @@ function askTerm(state, mode, detail, intro = null) {
     live = row('mc', 'Code') + row('nova', 'The number of the false report, followed by the saboteur\'s ID. One attempt.')
       + (state.codeStep >= 3 ? row('mc', `<b class="code-sent">${esc(state.sentCode)}</b>`) + reply : codeLine(state, { cancel: true }));
   } else if (intro?.archived || (codeNova && reply)) live = reply; // the oxygen ran out, or a closed case read again: nothing more to send
-  else if (left <= 0) live = row('nova', 'Link capacity reached. Only the emergency code can still be sent.') + (codeNova ? row('mc', '<span class="tl-cur"></span>', `<div class="actions">${codeBtn}</div>`, 'tl-draft') : '');
+  else if (left <= 0) live = row('nova', 'Link capacity reached. Only the lockout code can still be sent.') + (codeNova ? row('mc', '<span class="tl-cur"></span>', `<div class="actions">${codeBtn}</div>`, 'tl-draft') : '');
   else if (mode === 'cmd') {
     const line = d.what
       ? esc(questionText(q)).replace(esc(place), (m) => `<b class="slot">${m}</b>`)
@@ -784,7 +784,7 @@ function askTerm(state, mode, detail, intro = null) {
   return win('NOVA ON KEPLER-9', `<div class="term">${briefing}${past}${live}</div>`, { cls: 'win-ask win-term' });
 }
 
-// ---------- emergency code ----------
+// ---------- lockout code (named 2026-11-27; before, emergency code) ----------
 
 // ui 'term' (proposal, mocks only until chosen; 2026-11-25: «al posto di una casella di input, secondo me ha senso un
 // formato da terminale, come se noi lo stessimo inviando via terminale»): the code is typed on Mission Control's
@@ -792,15 +792,17 @@ function askTerm(state, mode, detail, intro = null) {
 export const codeLine = (state, { cancel = false } = {}) => {
   const v = state.codeInput || '';
   const ok = /^\d{3}$/.test(v);
+  // the console's answer when it doesn't send a code (app.js, send-code)
+  const flag = state.codeFlag ? `<p class="code-flag">${esc(state.codeFlag)}</p>` : '';
   const mc = (html, wide) => `<div class="tl tl-mc tl-draft"><span class="tl-who">MC</span><div class="tl-txt">${html}</div><div class="tl-wide">${wide}</div></div>`;
   return state.confirming && ok
     ? mc(`<b class="code-sent">${esc(v)}</b>`, `<p class="code-ask">Send code <b>${esc(v)}</b>? There is only one attempt.</p><div class="actions">${btn('CONFIRM', 'confirm-code', { cls: 'btn-danger' })}${btn('CANCEL', 'cancel-code')}</div>`)
-    : mc(`<input class="code-line" data-field="code" inputmode="numeric" autocomplete="off" maxlength="3" pattern="[0-9]*" placeholder="___" value="${esc(v)}" style="--n:${v.length || 3}" aria-label="Emergency code"><span class="tl-cur"></span>`,
-      `<div class="actions">${cancel ? btn('CANCEL', 'code-step', { attrs: 'data-v="0"' }) : ''}${btn('SEND CODE', 'send-code', { cls: 'btn-primary', disabled: !ok })}<span class="note">One attempt.</span></div>`);
+    : mc(`<input class="code-line" data-field="code" inputmode="numeric" autocomplete="off" maxlength="3" pattern="[0-9]*" placeholder="___" value="${esc(v)}" style="--n:${v.length || 3}" aria-label="Lockout code"><span class="tl-cur"></span>`,
+      `${flag}<div class="actions">${cancel ? btn('CANCEL', 'code-step', { attrs: 'data-v="0"' }) : ''}${btn('SEND CODE', 'send-code', { cls: 'btn-primary', disabled: !ok })}<span class="note">One attempt.</span></div>`);
 };
 export function codePanel(state, { ui = '' } = {}) {
   if (ui === 'term') {
-    return win('EMERGENCY CODE', `<div class="term code-term"><p class="pl">&gt; The number of the false report, followed by the saboteur's ID.</p>${codeLine(state)}</div>`, { cls: 'win-code', tone: state.confirming ? 'amber' : '' });
+    return win('LOCKOUT CODE', `<div class="term code-term"><p class="pl">&gt; The number of the false report, followed by the saboteur's ID.</p>${codeLine(state)}</div>`, { cls: 'win-code', tone: state.confirming ? 'amber' : '' });
   }
   const v = state.codeInput || '';
   const ok = /^\d{3}$/.test(v);
@@ -811,10 +813,11 @@ export function codePanel(state, { ui = '' } = {}) {
         <div class="actions">${btn('CONFIRM', 'confirm-code', { cls: 'btn-danger' })}${btn('CANCEL', 'cancel-code')}</div>
       </div>` : `
       <p>The number of the false report, followed by the saboteur's ID.</p>
-      <input class="code-input" data-field="code" inputmode="numeric" autocomplete="off" maxlength="3" pattern="[0-9]*" placeholder="___" value="${esc(v)}" aria-label="Emergency code">
+      <input class="code-input" data-field="code" inputmode="numeric" autocomplete="off" maxlength="3" pattern="[0-9]*" placeholder="___" value="${esc(v)}" aria-label="Lockout code">
+      ${state.codeFlag ? `<p class="code-flag">${esc(state.codeFlag)}</p>` : ''}
       <div class="actions">${btn('SEND CODE', 'send-code', { cls: 'btn-primary', disabled: !ok })}<span class="note">One attempt.</span></div>
       ${v && !ok ? '<p class="note">The code has 3 digits.</p>' : ''}`;
-  return win('EMERGENCY CODE', body, { cls: 'win-code', tone: state.confirming ? 'amber' : '' });
+  return win('LOCKOUT CODE', body, { cls: 'win-code', tone: state.confirming ? 'amber' : '' });
 }
 
 // ---------- screens ----------
@@ -989,20 +992,26 @@ export function screenPlay(view) {
 // fine del gioco direi case k9-7uq8 e poi l'esito, quindi mission failed o altro»; before, 2026-11-25: «non è tanto
 // system failure e critical error, ma il caso non è stato risolto, la missione è fallita»).
 // view.endOld: the screen as it was until then, with the big title, for the board that compared its sizes
+// A wrong code comes in two beats (update 3, 24/11): state.endBeat 1 is the code carried out, in the window's own
+// colours and without the outcome; after a short pause (app.js) beat 2 brings the warning, the red emergency state and
+// MISSION FAILED. A state without endBeat is the whole ending.
 export function screenEnding(view) {
   const { state } = view;
   const e = ENDINGS[state.ending];
-  const red = state.ending !== 'right';
+  const first = state.ending === 'wrong' && state.endBeat === 1;
+  const red = state.ending !== 'right' && !first;
   const old = Boolean(view.endOld);
+  const [lines1, lines2] = endingBeats(state.ending, state.sentCode);
+  const said = (lines, k) => (lines.length ? log(lines.map((l) => `&gt; ${esc(l)}`), `nova type-me" data-type-key="end-${state.code}-${k}`) : '');
   const head = old ? (red ? 'SYSTEM FAILURE' : 'RECYCLER ONLINE') : red ? 'MISSION FAILED' : 'MISSION SUCCESSFUL';
   const body = `
     <div class="ending-body">
-      ${red ? warningIcon() : '<div class="ok-mark" aria-hidden="true"></div>'}
+      ${first ? '' : red ? warningIcon() : '<div class="ok-mark" aria-hidden="true"></div>'}
       <div>
-        <p class="ending-head">${head}</p>
-        ${log(e.lines.map((l) => `&gt; ${esc(l)}`), 'nova type-me')}
-        ${state.sentCode ? `<p class="muted">CODE SENT_ ${esc(state.sentCode)}</p>` : ''}
-        <div class="actions">${btn(old ? 'SEE WHAT HAPPENED' : 'INCIDENT REPORT', 'solution', { cls: red ? 'btn-danger' : 'btn-primary' })}</div>
+        ${first ? '' : `<p class="ending-head">${head}</p>`}
+        ${said(lines1, 1)}${first ? '' : said(lines2, 2)}
+        ${state.sentCode && !first ? `<p class="muted">CODE SENT_ ${esc(state.sentCode)}</p>` : ''}
+        ${first ? '' : `<div class="actions">${btn(old ? 'SEE WHAT HAPPENED' : 'INCIDENT REPORT', 'solution', { cls: red ? 'btn-danger' : 'btn-primary' })}</div>`}
       </div>
     </div>`;
   if (old) {
@@ -1020,7 +1029,7 @@ export function screenEnding(view) {
 // The incident report of a case: what happened, who lied, the question that settled it, the code, and what this console
 // sent. Its sections are the same wherever it is read (the screen after an ending, the file of a closed case)
 function incidentBody(c, { log = [], sentCode = null } = {}) {
-  const s = solutionText(c);
+  const s = solutionText(c, { sent: sentCode });
   const section = (h, html) => `<div class="sol-sec"><h3 class="sub">${h}</h3>${html}</div>`;
   const ps = (arr) => arr.map((l) => `<p>${esc(l)}</p>`).join('');
   const asked = log.length
@@ -1053,9 +1062,9 @@ export function screenSolution(view) {
 const OUTCOME = { right: 'MISSION SUCCESSFUL', wrong: 'MISSION FAILED', timeout: 'MISSION FAILED' };
 const outcome = (e) => `<span class="arch-${e.ending}">${OUTCOME[e.ending]}</span>`;
 // the labels are the ones of the case notes and of the QUESTIONS window; the words after the figures come from the
-// titles of the endings («Code accepted», «Code rejected», «Oxygen depleted»)
+// endings of docs/story.md («Right code», «Wrong code»: a wrong code is carried out too, so it is not «Rejected»)
 const fileSum = (e) => `<dl class="notes file-sum">
-    <div><dt>CODE_</dt><dd>${e.sent ? `${esc(e.sent)} · ${e.ending === 'right' ? 'Accepted' : 'Rejected'}` : 'Not sent'}</dd></div>
+    <div><dt>CODE_</dt><dd>${e.sent ? `${esc(e.sent)} · ${e.ending === 'right' ? 'Right' : 'Wrong'}` : 'Not sent'}</dd></div>
     <div><dt>QUESTIONS_</dt><dd>${e.asked} of ${MAX_QUESTIONS} sent</dd></div>
     <div><dt>OXYGEN_</dt><dd>${e.ending === 'timeout' ? '00:00 · Depleted' : fmtClock(e.left)}</dd></div></dl>`;
 // The file of a closed case: the window that comes when a case closes, and the same one opened again from the archive.
@@ -1114,14 +1123,14 @@ const NOTES = [
   ['reports', 'REPORTS_', '4 reports · One is false'],
   ['sensors', 'SENSORS_', 'Hatch openings · Motion · No names recorded'],
   // not the rule about refused questions: the player finds that out (2026-11-25)
-  ['link', 'LINK_', 'Damaged · 2 questions · Emergency code'],
+  ['link', 'LINK_', 'Damaged · 2 questions · Lockout code'],
   ['code', 'CODE_', 'False report number + saboteur\'s ID · One attempt'],
   ['oxygen', 'OXYGEN_', '10 minutes'],
 ];
 // On a laptop, what stands under the meters in the left column: the case while NOVA writes it; once she has finished
 // the map takes its place and stays, and BRIEFING, MAP and CODE put the case, the map or the code there
 // (2026-11-25: «cambia alla mappa dai, così l'utente vede che si può cambiare, e la mappa è più scenografica»)
-export const liveSide = (tab, stage) => (tab === 'map' && stage >= 4 ? 'map' : tab === 'code' && stage >= 6 ? 'code' : tab === 'briefing' ? 'briefing' : stage >= 8 ? 'map' : 'briefing');
+export const liveSide = (tab, stage) => (tab === 'map' && stage >= briefingAt('sensors') ? 'map' : tab === 'code' && stage >= briefingAt('code') ? 'code' : tab === 'briefing' ? 'briefing' : stage >= BRIEFING_DONE ? 'map' : 'briefing');
 
 // The archive of the cases closed on this console (proposal, mocks only until one is chosen; 2026-11-25: «sarebbe
 // interessante una history dei casi svolti, sotto forma di archivio consultabile, così regge anche il ci sono più
@@ -1143,8 +1152,8 @@ export function archivePanel({ style = 'list', cases = [], open = null } = {}) {
 
 export function screenLive(view) {
   const { state, c, wide, remainingMs } = view;
-  const stage = view.stage ?? 8;
-  const at = (id) => BRIEFING_PARTS.findIndex((p) => p.id === id); // the line that brings each thing
+  const stage = view.stage ?? BRIEFING_DONE;
+  const at = briefingAt; // the line that brings each thing
   const has = (id) => stage >= at(id);
   const detail = view.mapDetail || {};
   // view.codeAlt (proposals, mocks only until one is chosen; 2026-11-25: «Io questa finestra forse la metterei a destra
@@ -1154,7 +1163,7 @@ export function screenLive(view) {
   //   'chat': the CODE key starts the code in NOVA's conversation, where everything Mission Control sends is written
   //   'nova': there is no CODE key: CODE stands beside NEW QUESTION in her conversation, and she answers the code there
   //           (view.reply: her lines; 2026-11-26)
-  const codeAlt = stage >= 8 ? view.codeAlt || '' : '';
+  const codeAlt = stage >= BRIEFING_DONE ? view.codeAlt || '' : '';
   const chat = askTerm(state, 'thread', detail, { stage, c, saved: view.saved, ack: view.ack, homeAlt: view.homeAlt, next: view.nextCode, codeHere: codeAlt === 'chat' && state.tab === 'code', codeNova: codeAlt === 'nova', reply: view.reply, archived: Boolean(view.archived) });
   // at the start NOVA's terminal stands alone in the middle of the empty console
   if (stage < 0) {
@@ -1241,7 +1250,7 @@ export function newState() {
   return {
     v: 2, phase: 'home', code: null, tab: 'reports',
     draft: { kind: 'hatch', what: null, a: 0, b: 60 }, // no preselected place: the app never points anywhere
-    log: [], codeInput: '', confirming: false, sentCode: null, ending: null,
+    log: [], codeInput: '', codeFlag: null, confirming: false, sentCode: null, ending: null,
     timer: { elapsed: 0, since: null, speed: 1 },
     // the map comes with Life Support selected (2026-11-25: «A · Si adatta al contenuto > con life support aperto»):
     // NOVA can't answer about it, so it points to no question

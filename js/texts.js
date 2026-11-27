@@ -11,8 +11,10 @@ export const BRIEFING = [
   'Whoever was in Life Support is the saboteur. Its reserve tanks will keep them alive. Nobody else will make it.',
   'I asked the crew where they were. One report is false.',
   'The Life Support sensors were cut from inside. I can answer yes/no questions on every other sensor: hatch openings and motion. Hatches record when they open, never who opened them. No sensor records names.',
-  'The saboteur also damaged our link. It will carry only 2 questions and the emergency code. A question I have to refuse is still sent.',
-  'Emergency code: the number of the false report, followed by the saboteur\'s ID. One attempt.',
+  'The saboteur also damaged our link. It will carry only 2 questions and the lockout code. A question I have to refuse is still sent.',
+  // update 3 (24/11): why she needs the code
+  'I can restart the recycler from here, but the saboteur is sealed in Life Support and would shut it down again. I can\'t lock out the whole crew: my safety protocol lets me revoke access for one person only, and only on your order. Send me the lockout code and I will lock them out before the restart.',
+  'Lockout code: the number of the false report, followed by the saboteur\'s ID. One attempt.',
   'Oxygen: 10 minutes. The countdown has already started.',
 ];
 
@@ -24,9 +26,13 @@ export const BRIEFING_PARTS = [
   { id: 'reports', label: 'REPORTS_', text: BRIEFING[3], keys: ['One report is false.'] },
   { id: 'sensors', label: 'SENSORS_', text: BRIEFING[4], keys: ['hatch openings', 'motion', 'never who opened them'] },
   { id: 'link', label: 'LINK_', text: BRIEFING[5], keys: ['2 questions', 'is still sent'] },
-  { id: 'code', label: 'CODE_', text: BRIEFING[6], keys: ['the number of the false report', 'the saboteur\'s ID', 'One attempt.'] },
-  { id: 'oxygen', label: 'OXYGEN_', text: BRIEFING[7], keys: ['10 minutes'] },
+  { id: 'lockout', text: BRIEFING[6], keys: [] },
+  { id: 'code', label: 'CODE_', text: BRIEFING[7], keys: ['the number of the false report', 'the saboteur\'s ID', 'One attempt.'] },
+  { id: 'oxygen', label: 'OXYGEN_', text: BRIEFING[8], keys: ['10 minutes'] },
 ];
+// The line NOVA brings each thing with (the console fills up as she names it), and the stage when she has finished
+export const briefingAt = (id) => BRIEFING_PARTS.findIndex((p) => p.id === id);
+export const BRIEFING_DONE = BRIEFING_PARTS.length;
 
 // The sensors sentence when the Bridge console call is in the game (update 1, section 3).
 export const BRIEFING_SENSORS_CALL = {
@@ -36,20 +42,40 @@ export const BRIEFING_SENSORS_CALL = {
 };
 
 // Update 1, section 4: system style; the consequence, without naming who survives.
+// The story is docs/story.md («How it ends»): a wrong code is carried out like a right one, NOVA locks out the wrong
+// person and restarts the recycler, and the saboteur shuts it down again from inside Life Support.
+// Update 3 (24/11): {id} is the ID that was locked out; the wrong code comes in two beats (then: the second, after a
+// short pause, in the red emergency state). The MISSION STATUS lines are the app's own wording.
 export const ENDINGS = {
   right: {
     title: 'Code accepted',
-    lines: ['EMERGENCY CODE ACCEPTED.', 'Access revoked.', 'Restarting the oxygen recycler…', 'Oxygen levels rising.', 'The crew will make it, Mission Control.', 'MISSION STATUS: SUCCESS.'],
+    lines: ['LOCKOUT CODE ACCEPTED.', 'Access revoked: crew ID {id}.', 'Restarting the oxygen recycler…', 'Restart holding.', 'Oxygen levels rising.', 'The crew will make it, Mission Control.', 'MISSION STATUS: SUCCESS.'],
   },
   wrong: {
-    title: 'Code rejected',
-    lines: ['EMERGENCY CODE REJECTED.', 'Restart sequence not authorised.', 'Oxygen recycler: OFFLINE.', 'Life Support is now the only module with breathable air.', 'MISSION STATUS: FAILED.'],
+    title: 'Wrong code',
+    lines: ['LOCKOUT CODE ACCEPTED.', 'Access revoked: crew ID {id}.', 'Restarting the oxygen recycler…'],
+    then: ['WARNING: recycler shut down again from inside Life Support.', 'Life Support is now the only module with breathable air.', 'MISSION STATUS: FAILED.'],
   },
   timeout: {
     title: 'Oxygen depleted',
     lines: ['TIME LIMIT EXCEEDED.', 'Oxygen depleted in every module except Life Support.', 'MISSION STATUS: FAILED.'],
   },
 };
+
+// The console's answer to a code it doesn't send (update 3; since 2026-11-27 the console, not NOVA; docs/story.md):
+// the attempt is not used. {n} {id} as typed.
+/** The lines of an ending, with the ID that was locked out (code: the code sent): [first beat, second beat]. */
+export function endingBeats(kind, code) {
+  const e = ENDINGS[kind];
+  const fill = (l) => l.replace('{id}', code ? code.slice(1) : '');
+  return [e.lines.map(fill), (e.then || []).map(fill)];
+}
+
+export const CODE_FLAGS = {
+  unknown: 'CODE NOT RECOGNISED. Check the format: report number followed by crew ID.',
+  inconsistent: 'CODE INCONSISTENT. Report {n} was not written by crew ID {id}.',
+};
+export const codeFlagText = (f) => CODE_FLAGS[f.flag].replace('{n}', f.n).replace('{id}', f.id);
 
 export const ANSWERS = {
   yes: 'Yes.',
@@ -93,12 +119,13 @@ export const PROFILES = {
 // line. True and false reports of a character draw from the same pools, so the false one has the same voice,
 // length and structure. Reports never quote sensor data: a crew member says what they did, saw or heard.
 
-// What each person was doing in each starting module.
+// What each person was doing in each starting module. Hands-on work only, never a console action: every console
+// action records who did it, so a report can't claim one (docs/story.md, «NOVA calls Mission Control»).
 const ACT = {
   hana: { B: 'overseeing station operations', N: 'reviewing the recycler maintenance logs', M: 'reviewing the crew medical files', C: 'auditing the cargo manifest' },
-  doyun: { B: 'recalibrating the navigation console', N: 'checking the oxygen recycler\'s auxiliary pumps', M: 'repairing the body scanner', C: 'sorting spare parts for the recycler' },
+  doyun: { B: 'checking the wiring behind the panels', N: 'checking the oxygen recycler\'s auxiliary pumps', M: 'repairing the body scanner', C: 'sorting spare parts for the recycler' },
   mira: { B: 'covering the night watch', N: 'taking the radiation readings', M: 'doing the medicine inventory', C: 'unpacking the medical supplies' },
-  echo: { B: 'Bridge systems diagnostics', N: 'Engine Room pump maintenance', M: 'Medbay sterilisation cycle', C: 'Cargo Bay inventory scan' },
+  echo: { B: 'Bridge ventilation duct cleaning', N: 'Engine Room pump maintenance', M: 'Medbay sterilisation cycle', C: 'Cargo Bay inventory scan' },
 };
 
 // Why a crew member went out to knock at someone's hatch (the knock story). The same reason whether the knock is
@@ -421,18 +448,24 @@ const tag = (c, p) => `${nm(p)} (report ${n(c, p)})`;
 
 /**
  * Update 1, section 5: facts only. Who was in Life Support, their route (a reconstruction: the Life Support
- * sensors were offline, and hatches never say who opened them), how Voran Industries got them, the 2 reports
- * that couldn't both be true, one decisive question with its answer, the code.
+ * sensors were offline, and hatches never say who opened them), how the rival company got them, the 2 reports
+ * that couldn't both be true, one decisive question with its answer, the code; why the lockout (update 3), and after
+ * a wrong code (sent) who was locked out by mistake. The rival company stays unnamed:
+ * Voran Industries is the company Mission Control works for (docs/story.md).
  * Returns { happened[], reports[], question{}, code }.
  */
-export function solutionText(c) {
+export function solutionText(c, { sent = null } = {}) {
   const s = c.sab, S = nm(s), m = c.start[s];
+  // update 3 (24/11): why the lockout, and after a wrong code who was locked out (a sent code is always consistent)
+  const locked = sent ? CREW.find((p) => String(PEOPLE[p].id) === sent.slice(1)) : null;
   const happened = [
     `${S} was in Life Support at 03:00.`,
     `Reconstructed route (the Life Support sensors were offline): ${S} stayed ${inMod(m)} until around ${fmtTime(c.t)}, then crossed ${m === 'C' ? 'the Bridge and the Corridor' : 'the Corridor'} into Life Support.`,
     PEOPLE[s].human
-      ? 'Voran Industries paid them to make the recycler test fail.'
-      : 'Voran Industries hacked ECHO-7 from outside the station to make the recycler test fail.',
+      ? 'A rival company paid them to make the recycler test fail.'
+      : 'A rival company hacked ECHO-7 from outside the station to make the recycler test fail.',
+    `Locking out ${S} was the only way to keep the recycler running.`,
+    ...(locked && locked !== s ? [`${nm(locked)} was locked out by mistake.`] : []),
   ];
 
   const A = c.accuser, D = c.denier;
